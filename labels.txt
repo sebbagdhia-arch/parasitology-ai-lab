@@ -1,0 +1,7 @@
+0 Amoeba
+1 Giardia
+2 Leishmania
+3 Plasmodium
+4 Trypanosoma
+5 Schistosoma
+6 Negative
