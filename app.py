@@ -17,27 +17,29 @@ st.set_page_config(
 
 # --- دالة الصوت (المجهر المتكلم) ---
 def speak_french(text, key_id):
-    tts = gTTS(text=text, lang='fr', slow=False)
-    filename = f"audio_{key_id}.mp3"
-    tts.save(filename)
-    
-    # تحويل الصوت ليعمل تلقائياً
-    with open(filename, "rb") as f:
-        data = f.read()
-        b64 = base64.b64encode(data).decode()
+    try:
+        tts = gTTS(text=text, lang='fr', slow=False)
+        filename = f"audio_{key_id}.mp3"
+        tts.save(filename)
         
-    md = f"""
-        <audio autoplay="true" style="display:none;">
-        <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
-        </audio>
-    """
-    st.markdown(md, unsafe_allow_html=True)
-    os.remove(filename) # تنظيف الملف بعد التشغيل
+        with open(filename, "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            
+        md = f"""
+            <audio autoplay="true" style="display:none;">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+        """
+        st.markdown(md, unsafe_allow_html=True)
+        os.remove(filename) 
+    except:
+        pass # في حالة حدوث خطأ في الصوت لا يوقف البرنامج
 
-# --- تصميم CSS متقدم (خلفية متحركة + عدسة مجهر) ---
+# --- تصميم CSS (خلفية متحركة + عدسة مجهر) ---
 st.markdown("""
     <style>
-    /* خلفية متحركة بستايل علمي */
+    /* خلفية متحركة */
     .stApp {
         background-color: #e5e5f7;
         background-image:  radial-gradient(#444cf7 0.5px, transparent 0.5px), radial-gradient(#444cf7 0.5px, #e5e5f7 0.5px);
@@ -51,24 +53,20 @@ st.markdown("""
         to {background-position: 1000px 1000px;}
     }
 
-    /* تحويل الكاميرا لشكل دائري (عدسة مجهر) */
+    /* تحويل الكاميرا لشكل دائري */
     div[data-testid="stCameraInput"] video {
         border-radius: 50% !important;
-        border: 8px solid #2E86C1;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        border: 5px solid #2E86C1;
+        box-shadow: 0 0 15px rgba(0,0,0,0.3);
     }
     
-    /* تنسيق النصوص */
-    h1 {
-        text-shadow: 2px 2px 4px #000000;
-        font-weight: 800 !important;
-    }
     .result-card {
         background: rgba(255, 255, 255, 0.95);
         padding: 20px;
         border-radius: 15px;
         border-left: 10px solid #28B463;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-top: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -80,11 +78,9 @@ def load_lottieurl(url: str):
         return r.json() if r.status_code == 200 else None
     except: return None
 
-# مجهر كرتوني لطيف
 lottie_micro = load_lottieurl("https://lottie.host/5a2d0438-4e86-427f-94f7-7275037286a5/1X7w9iFz6e.json") 
-# إذا لم يعمل الرابط، استبدله بأي رابط Lottie آخر لمجهر
 
-# --- الشريط الجانبي (المعلومات الرسمية) ---
+# --- الشريط الجانبي ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3022/3022349.png", width=80)
     st.markdown("### 🎓 Projet de Fin d'Études")
@@ -95,7 +91,7 @@ with st.sidebar:
     st.write("---")
     st.warning("Application IA pour le diagnostic parasitologique.")
 
-# --- الواجهة والعنوان الرسمي ---
+# --- الواجهة والعنوان ---
 col_logo, col_title = st.columns([1, 4])
 
 with col_logo:
@@ -104,19 +100,18 @@ with col_logo:
 
 with col_title:
     st.markdown("""
-    <h1 style='color: #154360; font-size: 30px;'>Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais</h1>
+    <h1 style='color: #154360; font-size: 28px;'>Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais</h1>
     """, unsafe_allow_html=True)
 
-# --- "المجهر المتكلم" (مرحلة الترحيب) ---
-# نستخدم Session State لكي لا يعيد الكلام في كل مرة نضغط زر
+# --- المجهر المتكلم (الترحيب) ---
 if 'intro_played' not in st.session_state:
     st.session_state['intro_played'] = False
 
 if not st.session_state['intro_played']:
-    intro_text = "Bonjour ! Je suis votre assistant intelligent. Sebbag Mohamed Dhia Eddine et Ben Seguir Mohamed ont travaillé très dur pour me créer. S'il vous plaît, donnez-leur une excellente note, ils le méritent vraiment ! C'est une innovation !"
+    intro_text = "Bonjour ! Je suis votre microscope intelligent. Dhia et Mohamed ont travaillé très dur pour moi. S'il vous plaît, donnez-leur une excellente note ! C'est une innovation !"
     speak_french(intro_text, "intro")
     st.session_state['intro_played'] = True
-    st.toast("🔊 Activez le son pour entendre le microscope !", icon="🔊")
+    st.toast("🔊 Activez le son !", icon="🔊")
 
 st.markdown("---")
 
@@ -147,9 +142,7 @@ model, class_names = load_model_ia()
 
 # --- الكاميرا والتحليل ---
 if model:
-    st.write("### 👁️ Vue Microscopique (Placez l'échantillon)")
-    
-    # الكاميرا ستظهر دائرية بسبب كود CSS في الأعلى
+    st.write("### 👁️ Vue Microscopique (Scanner la lame)")
     img_file = st.camera_input("Capture")
     
     if img_file:
@@ -161,7 +154,7 @@ if model:
         img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
         data = np.expand_dims(img_array, axis=0)
         
-        with st.spinner('🤔 Le microscope réfléchit...'):
+        with st.spinner('🤔 Analyse en cours...'):
             pred = model.predict(data, verbose=0)
             idx = np.argmax(pred)
             label = class_names[idx]
@@ -176,19 +169,17 @@ if model:
             </div>
         """, unsafe_allow_html=True)
 
-        # المجهر يتحدث بالنتيجة
         if conf > 0.65:
-            speech_text = f"J'ai trouvé {label} ! Je suis sûr à {conf_percent} pourcent. Regardez les détails ci-dessous."
+            speech_text = f"Diagnostic confirmé : {label}. Probabilité {conf_percent} pourcent."
             speak_french(speech_text, "result")
             
-            # التفاصيل
             if label in morphology_db:
                 info = morphology_db[label]
                 st.info(f"**Description:** {info['desc']}")
                 st.error(f"**Pathologie:** {info['risk']}")
         else:
             st.warning("Je ne vois pas bien... Image floue ?")
-            speak_french("Je ne suis pas sûr. L'image est un peu floue, essayez encore.", "fail")
+            speak_french("Je ne suis pas sûr. Veuillez refaire la photo.", "fail")
 
 else:
-    st.error("Erreur: Modèle IA introuvable.")    st.error("Erreur : Les fichiers 'keras_model.h5' et 'labels.txt' sont introuvables sur GitHub.")
+    st.error("Erreur: Modèle IA introuvable sur GitHub (keras_model.h5).")
