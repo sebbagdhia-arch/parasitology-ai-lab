@@ -7,17 +7,19 @@ import requests
 from streamlit_lottie import st_lottie
 from gtts import gTTS
 import base64
+import time
 
 # --- إعداد الصفحة ---
 st.set_page_config(
-    page_title="PFE: Exploration IA Parasitologie",
-    page_icon="🔬",
+    page_title="PFE: Dhia & Mouhamed",
+    page_icon="🦠",
     layout="wide"
 )
 
-# --- دالة الصوت (المجهر المتكلم) ---
-def speak_french(text, key_id):
+# --- دالة الصوت (النطق) ---
+def speak_dz(text, key_id):
     try:
+        # نستخدم الفرنسية كلغة أساسية
         tts = gTTS(text=text, lang='fr', slow=False)
         filename = f"audio_{key_id}.mp3"
         tts.save(filename)
@@ -26,105 +28,126 @@ def speak_french(text, key_id):
             data = f.read()
             b64 = base64.b64encode(data).decode()
             
+        # كود HTML لتشغيل الصوت مخفي
         md = f"""
             <audio autoplay="true" style="display:none;">
             <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
             </audio>
         """
         st.markdown(md, unsafe_allow_html=True)
-        os.remove(filename) 
+        # تنظيف
+        os.remove(filename)
     except:
-        pass # في حالة حدوث خطأ في الصوت لا يوقف البرنامج
+        pass
 
-# --- تصميم CSS (خلفية متحركة + عدسة مجهر) ---
+# --- CSS المجنون (خلفية طفيليات + كاميرا مجهر) ---
 st.markdown("""
     <style>
-    /* خلفية متحركة */
-    .stApp {
-        background-color: #e5e5f7;
-        background-image:  radial-gradient(#444cf7 0.5px, transparent 0.5px), radial-gradient(#444cf7 0.5px, #e5e5f7 0.5px);
-        background-size: 20px 20px;
-        background-position: 0 0, 10px 10px;
-        animation: slide 100s linear infinite;
+    /* 1. خلفية الطفيليات المتحركة */
+    @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); opacity: 0.2; }
+        50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; }
+        100% { transform: translateY(0px) rotate(360deg); opacity: 0.2; }
     }
     
-    @keyframes slide {
-        from {background-position: 0 0;}
-        to {background-position: 1000px 1000px;}
+    .stApp {
+        background-color: #f0f8ff;
+        background-image: url("https://cdn-icons-png.flaticon.com/512/822/822102.png"); /* أيقونة فيروس باهتة */
+        background-blend-mode: overlay;
+        background-size: 100px 100px;
+    }
+    
+    /* 2. تحويل الكاميرا لعدسة مجهر حقيقية */
+    div[data-testid="stCameraInput"] {
+        text-align: center;
+        margin: auto;
+    }
+    
+    div[data-testid="stCameraInput"] video {
+        border-radius: 50% !important; /* دائرة كاملة */
+        border: 10px solid #333;
+        box-shadow: inset 0 0 50px #000; /* تأثير الظل الداخلي للعدسة */
+        width: 300px !important;
+        height: 300px !important;
+        object-fit: cover;
+    }
+    
+    /* إضافة خطوط التصويب (Crosshair) فوق الكاميرا */
+    div[data-testid="stCameraInput"]::after {
+        content: "+";
+        font-size: 100px;
+        color: rgba(255, 0, 0, 0.3);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -60%);
+        pointer-events: none;
     }
 
-    /* تحويل الكاميرا لشكل دائري */
-    div[data-testid="stCameraInput"] video {
-        border-radius: 50% !important;
-        border: 5px solid #2E86C1;
-        box-shadow: 0 0 15px rgba(0,0,0,0.3);
-    }
-    
-    .result-card {
-        background: rgba(255, 255, 255, 0.95);
+    /* 3. تصميم بطاقة النتيجة */
+    .fun-card {
+        background: white;
+        border: 4px solid #2E86C1;
+        border-radius: 20px;
         padding: 20px;
-        border-radius: 15px;
-        border-left: 10px solid #28B463;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-top: 20px;
+        text-align: center;
+        box-shadow: 5px 5px 0px #2E86C1;
+        animation: pop 0.5s ease-out;
+    }
+    @keyframes pop {
+        0% { transform: scale(0); }
+        80% { transform: scale(1.1); }
+        100% { transform: scale(1); }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- تحميل الأنيميشن ---
+# --- تحميل أنيميشن المجهر (شخصية كرتونية) ---
 def load_lottieurl(url: str):
     try:
         r = requests.get(url)
         return r.json() if r.status_code == 200 else None
     except: return None
 
-lottie_micro = load_lottieurl("https://lottie.host/5a2d0438-4e86-427f-94f7-7275037286a5/1X7w9iFz6e.json") 
+# هذا رابط لمجهر أو عالم كرتوني متحرك
+lottie_character = load_lottieurl("https://lottie.host/625a6662-811c-4f81-9b68-80414436940d/D3f3j5gq2X.json")
 
-# --- الشريط الجانبي ---
+# --- الشريط الجانبي (معلومات جدية) ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3022/3022349.png", width=80)
-    st.markdown("### 🎓 Projet de Fin d'Études")
+    st.markdown("### 🇩🇿 Projet PFE 2026")
     st.write("---")
-    st.markdown("#### 👨‍🔬 Réalisé par :")
     st.info("**Sebbag Mohamed Dhia Eddine**")
     st.info("**Ben Seguir Mohamed**")
     st.write("---")
-    st.warning("Application IA pour le diagnostic parasitologique.")
+    st.caption("Application intelligente pour le diagnostic.")
 
-# --- الواجهة والعنوان ---
-col_logo, col_title = st.columns([1, 4])
+# --- الواجهة الرئيسية ---
+col_anim, col_text = st.columns([1, 3])
 
-with col_logo:
-    if lottie_micro:
-        st_lottie(lottie_micro, height=150, key="intro_anim")
+with col_anim:
+    if lottie_character:
+        st_lottie(lottie_character, height=200)
 
-with col_title:
+with col_text:
     st.markdown("""
-    <h1 style='color: #154360; font-size: 28px;'>Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais</h1>
+    <h1 style='color: #1B4F72;'>Exploration IA & Parasitologie</h1>
+    <h3 style='color: #E74C3C;'>Dhia & Mouhamed (Les Boss du Labo)</h3>
     """, unsafe_allow_html=True)
 
-# --- المجهر المتكلم (الترحيب) ---
-if 'intro_played' not in st.session_state:
-    st.session_state['intro_played'] = False
+# --- السيناريو المضحك (Intro) ---
+if 'intro_done' not in st.session_state:
+    st.session_state['intro_done'] = False
 
-if not st.session_state['intro_played']:
-    intro_text = "Bonjour ! Je suis votre microscope intelligent. Dhia et Mohamed ont travaillé très dur pour moi. S'il vous plaît, donnez-leur une excellente note ! C'est une innovation !"
-    speak_french(intro_text, "intro")
-    st.session_state['intro_played'] = True
-    st.toast("🔊 Activez le son !", icon="🔊")
+if not st.session_state['intro_done']:
+    # النص الجزائري/الفرنسي المضحك
+    # نكتب الفرنسية بطريقة تجعل النطق يضحك
+    text_intro = "Salam alikom l'équipe ! C'est moi, le microscope intelligent de Dhia et Mouhamed. Écoutez bien les profs, le projet est harba ! C'est du lourd. Donnez-nous une bonne note, genre 18 ou 19, ma tcassrouch rasskoum ! Allez, testez-moi !"
+    speak_dz(text_intro, "welcome")
+    st.session_state['intro_done'] = True
+    st.toast("🔊 ارفع الصوت ! المجهر يتحدث !", icon="😂")
 
-st.markdown("---")
-
-# --- قاعدة البيانات ---
-morphology_db = {
-    "Amoeba": {"title": "Entamoeba histolytica", "desc": "Forme irrégulière, pseudopodes, noyau unique.", "risk": "Dysenterie amibienne."},
-    "Giardia": {"title": "Giardia lamblia", "desc": "Forme de poire, 2 noyaux, flagelles, axostyle.", "risk": "Giardiose."},
-    "Leishmania": {"title": "Leishmania (Amastigote)", "desc": "Forme ovoïde, noyau + kinétoplaste.", "risk": "Leishmaniose."},
-    "Plasmodium": {"title": "Plasmodium (Malaria)", "desc": "Forme en bague dans les hématies.", "risk": "Paludisme."},
-    "Trypanosoma": {"title": "Trypanosoma", "desc": "Fusiforme, flagelle libre, extracellulaire.", "risk": "Maladie du sommeil."},
-    "Schistosoma": {"title": "Schistosoma (Oeuf)", "desc": "Gros œuf à éperon (épine) latéral/terminal.", "risk": "Bilharziose."},
-    "Negative": {"title": "Négatif / Rien à signaler", "desc": "Aucun parasite détecté.", "risk": "RAS."}
-}
+st.write("---")
 
 # --- تحميل النموذج ---
 @st.cache_resource
@@ -140,46 +163,79 @@ def load_model_ia():
 
 model, class_names = load_model_ia()
 
-# --- الكاميرا والتحليل ---
+# --- القاموس (الخصائص + جملة مضحكة لكل طفيلي) ---
+morphology_db = {
+    "Amoeba": {
+        "desc": "Forme irrégulière, pseudopodes.", 
+        "funny": "Ayaaa ! C'est une Amibe ! Elle bouge comme un ninja. Attention à la dysenterie sahbi !"},
+    "Giardia": {
+        "desc": "Forme de poire, 2 noyaux.", 
+        "funny": "Regarde sa tête ! On dirait un petit fantôme avec des lunettes. C'est Giardia !"},
+    "Leishmania": {
+        "desc": "Forme ovoïde, kinétoplaste.", 
+        "funny": "Oulala, Leishmania ! C'est petit mais c'est méchant. Faut traiter ça vite fait !"},
+    "Plasmodium": {
+        "desc": "Forme en bague (Ring).", 
+        "funny": "Aïe aïe aïe ! Paludisme détecté ! Les moustiques ont fait des dégâts mon frère."},
+    "Trypanosoma": {
+        "desc": "Fusiforme, flagelle libre.", 
+        "funny": "Wesh ! C'est Trypanosoma ! Ça court dans le sang comme Usain Bolt."},
+    "Schistosoma": {
+        "desc": "Oeuf à éperon (épine).", 
+        "funny": "Gros œuf en vue ! Regarde l'épine sur le côté, c'est Schistosoma. Pas bon du tout !"},
+    "Negative": {
+        "desc": "Rien à signaler.", 
+        "funny": "Hamdoullah ! Y'a rien du tout. Le patient est propre, c'est clean !"}
+}
+
+# --- منطقة الكاميرا (العدسة) ---
 if model:
-    st.write("### 👁️ Vue Microscopique (Scanner la lame)")
-    img_file = st.camera_input("Capture")
+    st.markdown("<h3 style='text-align: center;'>📸 Visez la lentille ici</h3>", unsafe_allow_html=True)
+    
+    # الكاميرا ستظهر دائرية ومعدلة بالـ CSS
+    img_file = st.camera_input("Placez l'échantillon", label_visibility="hidden")
     
     if img_file:
         image = Image.open(img_file).convert("RGB")
         
-        # المعالجة
+        # بروسيسينغ
         size = (224, 224)
         image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
         img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
         data = np.expand_dims(img_array, axis=0)
         
-        with st.spinner('🤔 Analyse en cours...'):
+        with st.spinner('⏳ Attends, je calcule... (Dkika berk)'):
             pred = model.predict(data, verbose=0)
             idx = np.argmax(pred)
             label = class_names[idx]
             conf = pred[0][idx]
-            conf_percent = round(conf * 100, 1)
+            conf_percent = int(conf * 100)
 
-        # --- عرض النتيجة والمجهر المتكلم ---
-        st.markdown(f"""
-            <div class="result-card">
-                <h2 style="color: #196F3D;">Diagnostic : {label}</h2>
-                <h4>Confiance : {conf_percent}%</h4>
-            </div>
-        """, unsafe_allow_html=True)
-
-        if conf > 0.65:
-            speech_text = f"Diagnostic confirmé : {label}. Probabilité {conf_percent} pourcent."
-            speak_french(speech_text, "result")
+        # --- النتيجة والعرض ---
+        col_res1, col_res2 = st.columns([2, 1])
+        
+        info = morphology_db.get(label, {"desc": "Inconnu", "funny": f"C'est {label} !"})
+        
+        with col_res1:
+            st.markdown(f"""
+                <div class="fun-card">
+                    <h1 style="color: #2E86C1;">{label}</h1>
+                    <h2 style="color: #28B463;">Probabilité: {conf_percent}%</h2>
+                    <p style="font-size: 18px;"><b>🔬 Caractéristiques:</b> {info['desc']}</p>
+                </div>
+            """, unsafe_allow_html=True)
             
-            if label in morphology_db:
-                info = morphology_db[label]
-                st.info(f"**Description:** {info['desc']}")
-                st.error(f"**Pathologie:** {info['risk']}")
+        with col_res2:
+            st.image(image, caption="Votre Capture", width=150)
+
+        # --- الكلام المضحك عند النتيجة ---
+        if conf > 0.65:
+            # دمجنا النتيجة + النسبة + الجملة المضحكة
+            speech = f"J'ai trouvé {label} à {conf_percent} pourcent ! {info['funny']}"
+            speak_dz(speech, "res")
         else:
-            st.warning("Je ne vois pas bien... Image floue ?")
-            speak_french("Je ne suis pas sûr. Veuillez refaire la photo.", "fail")
+            st.warning("الصورة غير واضحة")
+            speak_dz("Oh mon frère, l'image est floue ! Je vois walou. Refais la photo stp.", "flou")
 
 else:
-    st.error("Erreur: Modèle IA introuvable sur GitHub (keras_model.h5).")
+    st.error("Wesh ? Les fichiers du modèle sont où ?")
