@@ -18,7 +18,7 @@ st.set_page_config(
 # --- 2. دوال النظام ---
 
 def speak_audio(text, lang='fr'):
-    """تشغيل الصوت مع حساب مدة الانتظار المناسبة"""
+    """تشغيل الصوت مع توقيت دقيق جداً"""
     try:
         tts = gTTS(text=text, lang=lang, slow=False)
         filename = "temp_audio.mp3"
@@ -28,7 +28,6 @@ def speak_audio(text, lang='fr'):
             data = f.read()
             b64 = base64.b64encode(data).decode()
         
-        # كود HTML لتشغيل الصوت مخفي
         md = f"""
             <audio autoplay="true" style="display:none;">
             <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
@@ -36,15 +35,17 @@ def speak_audio(text, lang='fr'):
         """
         st.markdown(md, unsafe_allow_html=True)
         
-        # حساب مدة تقريبية للانتظار
-        estimated_duration = (len(text) / 10) + 2
+        # === تعديل التوقيت ===
+        # سابقاً كان يقسم على 10 ويضيف 2 (بطيء جداً)
+        # الآن يقسم على 13 (سرعة فرنسية عادية) ويضيف نصف ثانية فقط
+        estimated_duration = (len(text) / 14) + 0.5
         return estimated_duration
     except:
-        return 3
+        return 2
 
 @st.cache_resource
 def load_model_and_labels():
-    """تحميل النموذج وتنظيف الأسماء"""
+    """تحميل النموذج"""
     model = None
     classes = ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Negative"]
     
@@ -67,16 +68,16 @@ def load_model_and_labels():
         
     return model, classes
 
-# --- 3. التصميم (CSS) - النسخة المحسنة ---
+# --- 3. التصميم الموحد (لحل مشكلة الخلفية والكاميرا) ---
 st.markdown("""
     <style>
-    /* خلفية متدرجة جميلة */
+    /* خلفية التطبيق */
     .stApp {
         background: radial-gradient(circle at 50% 50%, #F4F6F7 0%, #D4E6F1 100%);
-        overflow: hidden; /* لمنع ظهور أشرطة التمرير بسبب الطفيليات */
+        overflow-x: hidden;
     }
     
-    /* 1. أنيميشن المجهر الراقص */
+    /* 1. أنيميشن المجهر */
     @keyframes shake {
         0% { transform: rotate(0deg); }
         25% { transform: rotate(5deg); }
@@ -84,7 +85,6 @@ st.markdown("""
         75% { transform: rotate(-5deg); }
         100% { transform: rotate(0deg); }
     }
-    
     .talking-microscope {
         animation: shake 2s infinite ease-in-out;
         cursor: pointer;
@@ -94,55 +94,54 @@ st.markdown("""
         transform: scale(1.1);
     }
 
-    /* 2. الطفيليات العائمة (أكثر وضوحاً وحركة) */
+    /* 2. الطفيليات العائمة */
     .floating-parasite {
         position: fixed;
         z-index: 0;
         pointer-events: none;
-        opacity: 0.6; /* جعلناها أوضح */
-        animation-timing-function: linear;
-        animation-iteration-count: infinite;
+        opacity: 0.6;
     }
-
     @keyframes floatUp {
         0% { transform: translateY(110vh) rotate(0deg) scale(0.8); }
         100% { transform: translateY(-10vh) rotate(360deg) scale(1.2); }
     }
 
-    /* 3. تصميم الكاميرا الدائرية بالكامل (إزالة المربع) */
-    div[data-testid="stCameraInput"] {
-        background-color: transparent !important;
+    /* 3. إصلاح الكاميرا (إزالة المربع الرمادي) */
+    
+    /* إخفاء حدود الحاوية وتفريغ الخلفية */
+    [data-testid="stCameraInput"] {
+        width: auto !important;
+        background: transparent !important;
         border: none !important;
         box-shadow: none !important;
     }
+    
+    [data-testid="stCameraInput"] > div {
+        background-color: transparent !important;
+        border: none !important;
+    }
 
-    /* جعل الفيديو دائرياً وقص الزوائد */
-    div[data-testid="stCameraInput"] video {
+    /* جعل الفيديو دائرياً بدقة */
+    video {
         border-radius: 50% !important;
         width: 300px !important;
         height: 300px !important;
         object-fit: cover;
         border: 8px solid #3498DB;
         box-shadow: 0 0 30px rgba(52, 152, 219, 0.5);
-        clip-path: circle(50% at 50% 50%); /* قص حقيقي */
+        clip-path: circle(50% at 50% 50%);
+        margin: 0 auto;
+        display: block;
     }
 
-/* تغيير شكل زر التصوير المزعج */
-    div[data-testid="stCameraInput"] button {
-        border-radius: 50px !important;
-        background-color: #E74C3C !important;
-        color: white !important;
-        border: 2px solid white !important;
-        font-weight: bold;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
-    }
-    div[data-testid="stCameraInput"] button:hover {
-        background-color: #C0392B !important;
-        transform: scale(1.05);
+    /* زر التصوير */
+    button {
+        border-radius: 30px !important;
+        margin-top: 10px !important;
     }
 
-    /* 4. البطاقة */
+
+/* 4. البطاقة */
     .result-card {
         background: rgba(255, 255, 255, 0.90);
         backdrop-filter: blur(10px);
@@ -152,24 +151,20 @@ st.markdown("""
         text-align: center;
         border: 2px solid white;
         margin-top: 20px;
-        animation: popIn 0.5s ease-out;
-    }
-    
-    @keyframes popIn {
-        0% { transform: scale(0.8); opacity: 0; }
-        100% { transform: scale(1); opacity: 1; }
+        position: relative;
+        z-index: 1;
     }
     </style>
     
-    <div class="floating-parasite" style="left: 5%; bottom: -10%; font-size: 50px; animation: floatUp 15s infinite;">🦠</div>
-    <div class="floating-parasite" style="left: 15%; bottom: -20%; font-size: 30px; animation: floatUp 12s infinite; color: darkred;">🩸</div>
-    <div class="floating-parasite" style="left: 25%; bottom: -50%; font-size: 60px; animation: floatUp 20s infinite;">🧫</div>
-    <div class="floating-parasite" style="left: 35%; bottom: -15%; font-size: 40px; animation: floatUp 18s infinite; color: green;">🦠</div>
-    <div class="floating-parasite" style="left: 50%; bottom: -30%; font-size: 70px; animation: floatUp 25s infinite;">🔬</div>
-    <div class="floating-parasite" style="left: 65%; bottom: -10%; font-size: 45px; animation: floatUp 16s infinite; color: orange;">🦠</div>
-    <div class="floating-parasite" style="left: 75%; bottom: -40%; font-size: 35px; animation: floatUp 14s infinite;">🩸</div>
-    <div class="floating-parasite" style="left: 85%; bottom: -25%; font-size: 55px; animation: floatUp 22s infinite; color: purple;">🦠</div>
-    <div class="floating-parasite" style="left: 95%; bottom: -5%; font-size: 25px; animation: floatUp 10s infinite;">🧫</div>
+    <div class="floating-parasite" style="left: 5%; bottom: -10%; font-size: 50px; animation: floatUp 15s infinite linear;">🦠</div>
+    <div class="floating-parasite" style="left: 15%; bottom: -20%; font-size: 30px; animation: floatUp 12s infinite linear; color: darkred;">🩸</div>
+    <div class="floating-parasite" style="left: 25%; bottom: -50%; font-size: 60px; animation: floatUp 20s infinite linear;">🧫</div>
+    <div class="floating-parasite" style="left: 35%; bottom: -15%; font-size: 40px; animation: floatUp 18s infinite linear; color: green;">🦠</div>
+    <div class="floating-parasite" style="left: 50%; bottom: -30%; font-size: 70px; animation: floatUp 25s infinite linear;">🔬</div>
+    <div class="floating-parasite" style="left: 65%; bottom: -10%; font-size: 45px; animation: floatUp 16s infinite linear; color: orange;">🦠</div>
+    <div class="floating-parasite" style="left: 75%; bottom: -40%; font-size: 35px; animation: floatUp 14s infinite linear;">🩸</div>
+    <div class="floating-parasite" style="left: 85%; bottom: -25%; font-size: 55px; animation: floatUp 22s infinite linear; color: purple;">🦠</div>
+    <div class="floating-parasite" style="left: 95%; bottom: -5%; font-size: 25px; animation: floatUp 10s infinite linear;">🧫</div>
 
 """, unsafe_allow_html=True)
 
@@ -179,57 +174,55 @@ if 'step' not in st.session_state:
 
 microscope_url = "https://cdn-icons-png.flaticon.com/512/930/930263.png"
 
-# النصوص
-intro_script = "Salam alikoum la famille ! C'est moi, le microscope intelligent de Dhia et Mouhamed. On a trop galéré pour me créer, on est K.O ! S'il vous plaît, donnez-nous une note légendaire, genre 19 sur 20 ! Ma t'cassrouch rasskoum !"
-title_script = "Le titre officiel est : Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais."
+# تم تقصير النص قليلاً ليكون أسرع
+intro_script = "Salam les amis! C'est le microscope intelligent de Dhia et Mouhamed. Donnez-nous une note légendaire svp!"
+title_script = "Titre officiel: IA pour l'examen parasitologique."
 
-# قاموس المعلومات
 morphology_db = {
-    "Amoeba": {"desc": "Forme irrégulière, pseudopodes.", "funny": "C'est une Amibe ! Elle bouge en mode ninja."},
-    "Giardia": {"desc": "Forme de poire, 2 noyaux.", "funny": "Wesh ! C'est Giardia avec ses lunettes de soleil."},
-    "Leishmania": {"desc": "Forme ovoïde, kinétoplaste.", "funny": "Leishmania détectée ! Petit mais costaud."},
-    "Plasmodium": {"desc": "Forme en bague (Ring).", "funny": "Aïe aïe aïe ! Paludisme confirmé. Les moustiques ont gagné."},
-    "Trypanosoma": {"desc": "Fusiforme, flagelle libre.", "funny": "C'est Trypanosoma ! Il court comme Mahrez !"},
-    "Schistosoma": {"desc": "Oeuf à éperon (épine).", "funny": "Gros œuf piquant ! C'est la Bilharziose."},
-    "Negative": {"desc": "Rien à signaler.", "funny": "Hamdoullah ! C'est propre, makach mard."}
+    "Amoeba": {"desc": "Forme irrégulière, pseudopodes.", "funny": "Amibe ninja!"},
+    "Giardia": {"desc": "Forme de poire, 2 noyaux.", "funny": "Giardia avec lunettes!"},
+    "Leishmania": {"desc": "Forme ovoïde, kinétoplaste.", "funny": "Petit mais costaud!"},
+    "Plasmodium": {"desc": "Forme en bague.", "funny": "Aïe le Paludisme!"},
+    "Trypanosoma": {"desc": "Fusiforme, flagelle.", "funny": "Il court vite!"},
+    "Schistosoma": {"desc": "Oeuf à éperon.", "funny": "Attention ça pique!"},
+    "Negative": {"desc": "Rien à signaler.", "funny": "Tout est propre!"}
 }
 
 # --- 5. التطبيق ---
 
-st.markdown("<h1 style='text-align: center; color: #154360; text-shadow: 2px 2px 4px #aaa;'>🧪 Laboratoire IA : Dhia & Mohamed</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #154360; text-shadow: 2px 2px 4px #aaa; position: relative; z-index: 1;'>🧪 Laboratoire IA</h1>", unsafe_allow_html=True)
 
 # === المرحلة 0: المجهر المتكلم ===
 if st.session_state.step == 0:
-    st.markdown("<h3 style='text-align: center;'>🔊 Cliquez sur le microscope</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; position: relative; z-index: 1;'>🔊 Cliquez sur le microscope</h3>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # صورة المجهر المتحركة (CSS class added)
         st.markdown(f"""
-            <div style="display: flex; justify-content: center;">
+            <div style="display: flex; justify-content: center; position: relative; z-index: 1;">
                 <img src="{microscope_url}" class="talking-microscope" width="200">
             </div>
         """, unsafe_allow_html=True)
         
-        # مسافة بسيطة
         st.write("") 
         
-        if st.button("🎙 Démarrer (Click Ici)", use_container_width=True):
+        if st.button("🎙 Démarrer", use_container_width=True):
             wait_time = speak_audio(intro_script)
-            with st.status("Le microscope parle...", expanded=True) as status:
-                st.write("Initialisation de l'humour algérien...")
+            with st.status("...", expanded=True) as status:
+                st.write("Le microscope parle...")
                 time.sleep(wait_time)
-                status.update(label="Terminé !", state="complete", expanded=False)
+                status.update(label="Go!", state="complete", expanded=False)
             st.session_state.step = 1
             st.rerun()
 
+
 # === المرحلة 1: قراءة العنوان ===
 elif st.session_state.step == 1:
-    st.markdown("<h3 style='text-align: center;'>📜 Lecture du Titre</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; position: relative; z-index: 1;'>📜 Lecture du Titre</h3>", unsafe_allow_html=True)
     
-    if st.button("🎓 Lire le titre officiel", type="primary", use_container_width=True):
+    if st.button("🎓 Lire le titre", type="primary", use_container_width=True):
         wait_time = speak_audio(title_script)
-        with st.spinner("Lecture en cours..."):
+        with st.spinner("Lecture..."):
             time.sleep(wait_time)
         st.session_state.step = 2
         st.rerun()
@@ -237,24 +230,22 @@ elif st.session_state.step == 1:
 # === المرحلة 2: الكاميرا والنتيجة ===
 elif st.session_state.step == 2:
     
-    # تحميل الموديل
     model, class_names = load_model_and_labels()
     
-    st.markdown("<h3 style='text-align: center; color: #C0392B;'>📸 Placez l'échantillon sous la caméra</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #C0392B; position: relative; z-index: 1;'>📸 Placez l'échantillon</h3>", unsafe_allow_html=True)
     
-    # الكاميرا الدائرية
+    # الكاميرا
     img_file = st.camera_input("Scanner", label_visibility="hidden")
     
     if img_file:
         image = Image.open(img_file).convert("RGB")
         
-        # --- التحليل (مع إصلاح الخطأ) ---
+        # تحليل
         label = "Inconnu"
         conf = 0
         
         if model:
             size = (224, 224)
-            # التصحيح هنا: استخدام Image.LANCZOS بدلاً من Image.Resampling.LANCZOS لتجنب الأخطاء
             image_res = ImageOps.fit(image, size, method=Image.LANCZOS)
             img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
             data = np.expand_dims(img_array, axis=0)
@@ -267,16 +258,14 @@ elif st.session_state.step == 2:
             
             conf = int(prediction[0][idx] * 100)
         else:
-            # محاكاة في حالة عدم وجود الموديل
-            time.sleep(1)
+            time.sleep(0.5)
             label = "Giardia"
             conf = 95
-            st.warning("Mode Simulation (Modèle introuvable)")
+            st.warning("Simulation Mode")
 
         clean_key = label.strip()
-        info = morphology_db.get(clean_key, {"desc": "...", "funny": f"C'est {clean_key} !"})
+        info = morphology_db.get(clean_key, {"desc": "...", "funny": f"C'est {clean_key}"})
         
-        # --- عرض النتيجة ---
         st.markdown(f"""
         <div class="result-card">
             <h1 style="color: #2E86C1; font-size: 45px; margin:0;">{clean_key}</h1>
@@ -288,10 +277,9 @@ elif st.session_state.step == 2:
         </div>
         """, unsafe_allow_html=True)
         
-        final_text = f"Résultat : {clean_key}. {info['funny']}"
+        final_text = f"{clean_key}. {info['funny']}"
         speak_audio(final_text)
 
-    # زر العودة
     st.write("---")
     if st.button("🔄 Nouvelle Analyse", use_container_width=True):
         st.session_state.step = 0
