@@ -209,26 +209,28 @@ elif st.session_state.step == 2:
 
 conf = 0
         
-        if model:
-            size = (224, 224)
-            image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-            img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
-            data = np.expand_dims(img_array, axis=0)
-            
-            prediction = model.predict(data, verbose=0)
-            idx = np.argmax(prediction)
-            
-            # التأكد من صحة الفهرس
-            if idx < len(class_names):
-                label = class_names[idx] # الاسم هنا سيكون نظيفاً بدون أرقام
-            
-            conf = int(prediction[0][idx] * 100)
-        else:
-            # وضع المحاكاة إذا لم يوجد موديل
-            time.sleep(1)
-            label = "Giardia" # مثال
-            conf = 95
-            st.warning("Mode Simulation (Modèle introuvable)")
+if model:
+    size = (224, 224)
+    image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+    img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
+    data = np.expand_dims(img_array, axis=0)
+
+    prediction = model.predict(data, verbose=0)
+    idx = np.argmax(prediction)
+
+    # التأكد من صحة الفهرس
+    if idx < len(class_names):
+        label = class_names[idx]  # الاسم هنا سيكون نظيفاً بدون أرقام
+
+    conf = int(prediction[0][idx] * 100)
+
+else:
+    # وضع المحاكاة إذا لم يوجد موديل
+    time.sleep(1)
+    label = "Giardia"  # مثال
+    conf = 95
+    st.warning("Mode Simulation (Modèle introuvable)")
+
 
         # تنظيف إضافي للاسم لضمان التطابق مع القاموس
         # مثلاً لو الاسم ما زال فيه مسافات زائدة
@@ -257,3 +259,4 @@ conf = 0
     if st.button("🔄 Nouvelle Analyse"):
         st.session_state.step = 0
         st.rerun()
+
