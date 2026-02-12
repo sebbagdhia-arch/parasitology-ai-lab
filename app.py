@@ -4,23 +4,22 @@ from PIL import Image, ImageOps
 import numpy as np
 import os
 import requests
-from streamlit_lottie import st_lottie
 from gtts import gTTS
 import base64
 import time
 
-# --- Configuration de la Page ---
+# --- إعداد الصفحة ---
 st.set_page_config(
     page_title="PFE IA Parasitologie | Dhia & Mouhamed",
     page_icon="🔬",
     layout="centered"
 )
 
-# --- Gestion des Étapes (Session State) ---
+# --- إدارة المراحل (Session State) ---
 if 'step' not in st.session_state:
     st.session_state.step = 0
 
-# --- Fonction Audio ---
+# --- دالة الصوت (النطق) ---
 def speak_audio(text, lang='fr'):
     try:
         tts = gTTS(text=text, lang=lang, slow=False)
@@ -35,126 +34,141 @@ def speak_audio(text, lang='fr'):
             </audio>
         """
         st.markdown(md, unsafe_allow_html=True)
+        # لا نحذف الملف فوراً لتجنب قطع الصوت
     except:
         pass
 
-# --- Design CSS (Arrière-plan Parasites Animés + Caméra Circulaire) ---
+# --- CSS (خلفية طفيليات متحركة + تصميم الكاميرا والمجهر) ---
 st.markdown("""
     <style>
-    /* Arrière-plan avec Parasites Animés Colorés */
+    /* 1. خلفية الطفيليات العائمة (Floating Parasites) */
     .stApp {
-        background-color: #f0f4f8;
-        /* Remplacer par une URL valide d'une image de parasites colorés */
-        background-image: url("https://www.transparenttextures.com/patterns/microbes.png");
-        background-attachment: fixed;
+        background-color: #f0f8ff;
+        overflow: hidden;
+    }
+    
+    /* إنشاء عناصر طفيليات متحركة في الخلفية */
+    .floating-parasite {
+        position: fixed;
+        color: rgba(0,0,0,0.1); /* شفافية */
+        font-size: 40px;
+        animation: float 15s infinite linear;
+        z-index: 0;
+        pointer-events: none;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(110vh) rotate(0deg); opacity: 0.3; }
+        100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
     }
 
-    /* Animation de flottement des parasites */
-    @keyframes move-background {
-        from { background-position: 0 0; }
-        to { background-position: 1000px 1000px; }
-    }
-    .stApp {
-        animation: move-background 50s linear infinite;
-    }
-
-    /* Caméra Circulaire (Lentille de Microscope) */
+    /* 2. جعل الكاميرا دائرية (عدسة) */
     div[data-testid="stCameraInput"] video {
         border-radius: 50% !important;
-        border: 12px solid #2C3E50;
-        box-shadow: 0 0 25px rgba(0,0,0,0.4);
+        border: 10px solid #2874A6;
+        box-shadow: 0 0 30px rgba(40, 116, 166, 0.5);
         width: 300px !important;
         height: 300px !important;
         object-fit: cover;
+        margin: auto;
+        display: block;
     }
 
-    /* Boutons Modernes */
-    .stButton button {
-        width: 100%;
-        background-color: #2E86C1;
-        color: white;
+    /* 3. تصميم المجهر (زر شفاف فوق الصورة) */
+    .microscope-container {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .microscope-container:active {
+        transform: scale(0.95);
+    }
+    
+    /* 4. تنسيق بطاقة النتيجة */
+    .result-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+        padding: 20px;
         border-radius: 20px;
-        font-weight: bold;
-        padding: 15px;
-        border: none;
-        transition: 0.3s;
+        border-left: 10px solid #28B463;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        text-align: center;
+        margin-top: 20px;
+        position: relative;
+        z-index: 1;
     }
-    .stButton button:hover {
-        background-color: #1B4F72;
-        transform: scale(1.02);
-    }
+    
+    /* تنسيق العناوين */
+    h1, h2, h3 { z-index: 1; position: relative; }
     </style>
+    
+    <div class="floating-parasite" style="left: 10%; animation-duration: 12s;">🦠</div>
+    <div class="floating-parasite" style="left: 30%; animation-duration: 18s; color: red;">🩸</div>
+    <div class="floating-parasite" style="left: 70%; animation-duration: 15s; font-size: 60px;">🐛</div>
+    <div class="floating-parasite" style="left: 50%; animation-duration: 20s;">🧫</div>
+    <div class="floating-parasite" style="left: 85%; animation-duration: 10s; color: green;">🦠</div>
+    <div class="floating-parasite" style="left: 20%; animation-duration: 25s; font-size: 50px;">🔬</div>
 """, unsafe_allow_html=True)
 
-# --- Chargement de l'image du microscope fourni ---
-# Assurez-vous que 'image_0.png' est dans le même dossier ou utilisez le bon chemin
-microscope_image_path = "image_0.png" # Remplacez par le chemin correct si nécessaire
+# --- رابط صورة المجهر (اونلاين لضمان العمل) ---
+# استخدمنا رابط مباشر لصورة مجهر كرتوني ثلاثي الأبعاد لنتجنب خطأ الملف المفقود
+microscope_url = "https://cdn-icons-png.flaticon.com/512/2821/2821012.png" 
 
-# --- Contenu du Script ---
-funny_script = "Salam alikoum la famille ! C'est moi, le microscope intelligent de Dhia et Mouhamed. On a trop galéré pour me créer, on est fatigués ! S'il vous plaît, donnez-nous une super note, genre 19 sur 20, ma t'cassrouch rasskoum ! Allez, on commence ?"
-full_title = "Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais."
+# --- النصوص ---
+funny_script = "Salam alikoum la famille ! C'est moi, le microscope intelligent de Dhia et Mouhamed. On a trop galéré pour me créer, on est K.O ! S'il vous plaît, donnez-nous une note légendaire, genre 19 sur 20 ! Ma t'cassrouch rasskoum ! Allez, cliquez encore !"
+full_title = "Le titre officiel est : Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais."
 
-# --- Interface Principale ---
-st.markdown(f"<h1 style='text-align: center; color: #1B4F72;'>{full_title}</h1>", unsafe_allow_html=True)
-st.markdown(f"<h3 style='text-align: center; color: #1B4F72;'>🧪 Laboratoire IA : Dhia & Mouhamed</h3>", unsafe_allow_html=True)
+# --- الواجهة الرئيسية ---
 
-# --- Base de Données Morphologique (Structure détaillée et drôle) ---
-morphology_db = {
-    "Amoeba": {
-        "title": "Entamoeba histolytica",
-        "desc": "Forme irrégulière avec présence de pseudopodes (faux pieds).",
-        "funny": "Ayaaa ! C'est une Amibe ! Elle bouge comme un ninja avec ses faux pieds. Attention à la dysenterie sahbi !"},
-    "Giardia": {
-        "title": "Giardia lamblia",
-        "desc": "Forme de poire (pyriforme), symétrie bilatérale, deux noyaux.",
-        "funny": "Regarde sa tête ! On dirait un petit fantôme avec des lunettes (ses noyaux). C'est Giardia !"},
-    "Leishmania": {
-        "title": "Leishmania (Amastigote)",
-        "desc": "Petite forme ovoïde ou arrondie (2 à 5 µm), kinétoplaste.",
-        "funny": "Oulala, Leishmania ! C'est tout petit mais c'est méchant avec son kinétoplaste. Faut traiter ça vite fait !"},
-    "Plasmodium": {
-        "title": "Plasmodium (Malaria)",
-        "desc": "Forme en anneau (Ring form) à l'intérieur des globules rouges.",
-        "funny": "Aïe aïe aïe ! Paludisme détecté ! Il se cache en forme de bague dans tes globules. Les moustiques ont fait des dégâts mon frère."},
-    "Trypanosoma": {
-        "title": "Trypanosoma spp.",
-        "desc": "Forme allongée, fusiforme avec un flagelle libre à l'extrémité.",
-        "funny": "Wesh ! C'est Trypanosoma ! Avec son flagelle libre, il court dans le sang comme Usain Bolt."},
-    "Schistosoma": {
-        "title": "Schistosoma (Oeuf)",
-        "desc": "Oeuf volumineux avec une coque transparente et un éperon (épine).",
-        "funny": "Gros œuf en vue ! Regarde l'épine sur le côté, c'est Schistosoma. Pas bon du tout !"},
-    "Negative": {
-        "title": "Échantillon Négatif",
-        "desc": "Structure cellulaire normale.",
-        "funny": "Hamdoullah ! Y'a rien du tout. Le patient est propre, c'est clean !"}
-}
+# 1. العنوان والأسماء (دائماً ظاهرين)
+st.markdown("<h1 style='text-align: center; color: #154360;'>🧪 Laboratoire IA : Dhia & Mouhamed</h1>", unsafe_allow_html=True)
 
-# --- Système de Navigation par Étapes ---
+# --- المراحل ---
+
+# المرحلة 0: المجهر يرحب
 if st.session_state.step == 0:
-    st.markdown("<h4 style='text-align: center;'>Cliquez sur le microscope pour écouter son message</h4>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>🔊 Cliquez sur le microscope pour commencer</h3>", unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("🎤 Écouter le Message Spécial"):
+        # عرض صورة المجهر كزر
+        if st.button("🎙️ Écouter le message (Click 1)"):
             speak_audio(funny_script)
+            time.sleep(10) # انتظار انتهاء الكلام
             st.session_state.step = 1
             st.rerun()
-    st.image(microscope_image_path, use_container_width=True)
+            
+    # عرض صورة المجهر الكبيرة
+    st.markdown(f"""
+        <div style="text-align: center;">
+            <img src="{microscope_url}" width="200" class="microscope-container">
+        </div>
+    """, unsafe_allow_html=True)
 
+# المرحلة 1: قراءة العنوان
 elif st.session_state.step == 1:
-    st.markdown("<h4 style='text-align: center;'>Cliquez pour écouter le titre officiel du projet</h4>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>📜 Lecture du Titre Officiel</h3>", unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        if st.button("📜 Lire le Titre du Projet"):
+        if st.button("🎓 Lire le Titre (Click 2)"):
             speak_audio(full_title)
+            time.sleep(10)
             st.session_state.step = 2
             st.rerun()
-    st.image(microscope_image_path, use_container_width=True)
+            
+    st.markdown(f"""
+        <div style="text-align: center;">
+            <img src="{microscope_url}" width="150" style="opacity: 0.8;">
+        </div>
+    """, unsafe_allow_html=True)
 
+# المرحلة 2: الكاميرا والتحليل
 elif st.session_state.step == 2:
-    st.markdown("<h3 style='text-align: center; color: #E74C3C;'>📸 Analyse en Temps Réel</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h5 style='text-align: center; color: #566573;'>{full_title}</h5>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #E74C3C;'>📸 Placez votre échantillon</h2>", unsafe_allow_html=True)
     
-    # Chargement du modèle
+    # تحميل النموذج
     @st.cache_resource
     def load_model_ia():
         m_path = next((f for f in os.listdir() if f.endswith(".h5")), None)
@@ -168,37 +182,74 @@ elif st.session_state.step == 2:
 
     model, class_names = load_model_ia()
 
+    # القاموس المضحك (محدث)
+    morphology_db = {
+        "Amoeba": {
+            "desc": "Forme irrégulière, pseudopodes.",
+            "funny": "C'est une Amibe ! Elle bouge en mode ninja. Attention la dysenterie !"},
+        "Giardia": {
+            "desc": "Forme de poire, 2 noyaux.",
+            "funny": "Wesh ! C'est Giardia avec ses lunettes de soleil. Il te regarde !"},
+        "Leishmania": {
+            "desc": "Forme ovoïde, kinétoplaste.",
+            "funny": "Leishmania détectée ! Petit mais costaud. Faut appeler le médecin !"},
+        "Plasmodium": {
+            "desc": "Forme en bague (Ring).",
+            "funny": "Aïe aïe aïe ! Paludisme confirmé. Les moustiques ont gagné cette fois."},
+        "Trypanosoma": {
+            "desc": "Fusiforme, flagelle libre.",
+            "funny": "C'est Trypanosoma ! Il court aussi vite que Mahrez dans le sang !"},
+        "Schistosoma": {
+            "desc": "Oeuf à éperon (épine).",
+            "funny": "Gros œuf piquant ! C'est la Bilharziose. C'est du sérieux mon frère."},
+        "Negative": {
+            "desc": "Rien à signaler.",
+            "funny": "Hamdoullah ! C'est propre. Tu peux dormir tranquille, makach mard."}
+    }
+
     if model:
-        # Caméra circulaire
-        img_file = st.camera_input("Scanner la lame")
+        # الكاميرا
+        img_file = st.camera_input("Scanner")
         
         if img_file:
             image = Image.open(img_file).convert("RGB")
+            
+            # معالجة
             size = (224, 224)
             image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
             img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
             data = np.expand_dims(img_array, axis=0)
             
-            with st.spinner('Analyse morphologique...'):
+            # توقع
+            with st.spinner('Le microscope réfléchit...'):
                 prediction = model.predict(data, verbose=0)
                 idx = np.argmax(prediction)
                 label = class_names[idx]
                 conf = int(prediction[0][idx] * 100)
             
-            # Affichage Résultat
-            info = morphology_db.get(label, {"desc": "Inconnu", "funny": f"C'est {label} !"})
+            # جلب المعلومات
+            info = morphology_db.get(label, {"desc": "...", "funny": f"C'est {label} !"})
+            
+            # عرض النتيجة
             st.markdown(f"""
-                <div style="background: white; padding: 20px; border-radius: 20px; text-align: center; border-left: 10px solid #2E86C1;">
-                    <h2 style="color: #2E86C1;">Résultat : {label}</h2>
-                    <h3>Confiance : {conf}%</h3>
-                    <p>{info['desc']}</p>
-                </div>
+            <div class="result-card">
+                <h1 style="color: #2E86C1;">{label}</h1>
+                <h2 style="color: #28B463;">Probabilité: {conf}%</h2>
+                <p><b>🔬 Caractéristiques:</b> {info['desc']}</p>
+                <hr>
+                <p style="color: #E74C3C; font-size: 18px;"><b>🤖 Le Microscope dit :</b> "{info['funny']}"</p>
+            </div>
             """, unsafe_allow_html=True)
             
-            # Voix du résultat (Marrante)
-            res_voice = f"J'ai trouvé {label} à {conf} pourcent ! {info['funny']}"
-            speak_audio(res_voice)
+            # نطق النتيجة
+            voice_text = f"J'ai trouvé {label} à {conf} pourcent ! {info['funny']}"
+            if conf > 60:
+                speak_audio(voice_text)
+            else:
+                st.warning("Image floue")
+                speak_audio("Je ne vois rien, c'est flou. Refais la photo !")
 
-    if st.button("🔄 Recommencer la présentation"):
+    # زر العودة
+    if st.button("🔄 Recommencer"):
         st.session_state.step = 0
         st.rerun()
