@@ -8,108 +8,85 @@ import base64
 import time
 from gtts import gTTS
 
-# --- 1. إعداد الصفحة وتكوينها ---
+# --- 1. إعداد الصفحة ---
 st.set_page_config(
-    page_title="PFE Dhia & Mohamed",
+    page_title="Laboratoire Parasitologie IA",
     page_icon="🔬",
     layout="centered"
 )
 
-# --- 2. إدارة الحالة (Session State) ---
-if 'step' not in st.session_state:
-    st.session_state.step = 0
+# --- 2. دوال النظام ---
 
-# --- 3. دوال مساعدة (الصوت وتحميل النموذج) ---
 def speak_audio(text, lang='fr'):
-    """دالة لتشغيل الصوت دون إيقاف التطبيق"""
+    """تشغيل الصوت مع حساب مدة الانتظار المناسبة"""
     try:
         tts = gTTS(text=text, lang=lang, slow=False)
-        filename = "audio_temp.mp3"
+        filename = "temp_audio.mp3"
         tts.save(filename)
+        
         with open(filename, "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
         
+        # كود HTML لتشغيل الصوت
         md = f"""
             <audio autoplay="true" style="display:none;">
             <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
             </audio>
         """
         st.markdown(md, unsafe_allow_html=True)
-    except Exception as e:
-        st.error(f"Erreur Audio: {e}")
+        
+        # حساب مدة تقريبية: كل 12 حرف يستغرق ثانية تقريباً + 2 ثانية احتياط
+        estimated_duration = (len(text) / 10) + 2
+        return estimated_duration
+    except:
+        return 3 # مدة افتراضية في حال الخطأ
 
 @st.cache_resource
-def load_model_ia():
-    """تحميل النموذج أو استخدام وضع المحاكاة إذا لم يوجد ملف"""
-    # محاولة البحث عن ملف الموديل
-    model_path = next((f for f in os.listdir() if f.endswith(".h5")), None)
+def load_model_and_labels():
+    """تحميل النموذج وتنظيف الأسماء من الأرقام"""
+    model = None
+    classes = ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Negative"] # افتراضي
     
-    if model_path:
-        model = tf.keras.models.load_model(model_path, compile=False)
-        # محاولة قراءة ملف التصنيفات
-        try:
-            with open("labels.txt", "r") as f:
-                class_names = [line.strip() for line in f.readlines()]
-        except:
-            class_names = ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Negative"]
-        return model, class_names
-    else:
-        return None, None
+    # البحث عن ملف الموديل
+    m_path = next((f for f in os.listdir() if f.endswith(".h5")), None)
+    if m_path:
+        model = tf.keras.models.load_model(m_path, compile=False)
+    
+    # البحث عن ملف الأسماء وتنظيفه
+    l_path = next((f for f in os.listdir() if f.endswith(".txt") and "req" not in f), None)
+    if l_path:
+        cleaned_classes = []
+        with open(l_path, "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                # هذا السطر يحل مشكلة 6égative
+                # يقوم بفصل الرقم عن الاسم (مثل '0 Giardia' تصبح 'Giardia')
+                parts = line.strip().split(" ", 1)
+                if len(parts) > 1 and parts[0].isdigit():
+                    cleaned_classes.append(parts[1])
+                else:
+                    cleaned_classes.append(line.strip())
+        classes = cleaned_classes
+        
+    return model, classes
 
-# --- 4. التصميم (CSS) - هنا قمنا بإصلاح شكل الكاميرا والمجهر ---
+# --- 3. التصميم (CSS) ---
 st.markdown("""
     <style>
-    /* استيراد خط جميل */
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
-
-    html, body, [class*="css"] {
-        font-family: 'Poppins', sans-serif;
-    }
-
-    /* خلفية التطبيق */
+    /* 1. إجبار الخلفية الملونة (تدرج أزرق طبي) */
     .stApp {
-        background: linear-gradient(to bottom, #E3F2FD, #FFFFFF);
-    }
-
-    /* 1. جعل الكاميرا دائرية (Fix Camera Shape) */
-    [data-testid="stCameraInput"] {
-        width: 100% !important;
-        text-align: center;
+        background: linear-gradient(180deg, #EBF5FB 0%, #D6EAF8 100%);
     }
     
-    [data-testid="stCameraInput"] video {
-        border-radius: 50% !important;  /* جعل الفيديو دائري */
-        border: 8px solid #2874A6;      /* إطار أزرق مثل المجهر */
-        box-shadow: 0 0 20px rgba(40, 116, 166, 0.6);
-        width: 320px !important;        /* تثبيت العرض */
-        height: 320px !important;       /* تثبيت الطول */
-        object-fit: cover;              /* تغطية كاملة للدائرة */
-        mask-image: radial-gradient(circle, white 100%, black 100%);
-    }
-
-    /* 2. تحسين الأزرار */
-    .stButton>button {
-        background-color: #2874A6;
-        color: white;
-        border-radius: 30px;
-        padding: 10px 25px;
-        font-weight: bold;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        background-color: #1A5276;
-        transform: scale(1.05);
-    }
-
-    /* 3. الطفيليات العائمة (الخلفية) */
+    /* 2. الطفيليات العائمة (تم جعلها أوضح) */
     .floating-parasite {
         position: fixed;
-        font-size: 35px;
-        opacity: 0.15; /* شفافية خفيفة جداً لكي لا تزعج */
+        font-size: 45px;
+        opacity: 0.25; /* زيادة الوضوح قليلاً */
         z-index: 0;
-        animation: floatUp 15s infinite linear;
+        animation: floatUp 20s infinite linear;
+        pointer-events: none;
     }
 
     @keyframes floatUp {
@@ -117,50 +94,54 @@ st.markdown("""
         100% { transform: translateY(-10vh) rotate(360deg); }
     }
 
-    /* 4. كارت النتيجة */
-    .result-card {
-        background-color: white;
-        padding: 25px;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        text-align: center;
-        border-top: 5px solid #E74C3C;
-        animation: fadeIn 1s;
+    /* 3. تصميم الكاميرا الدائرية (عدسة المجهر) */
+    div[data-testid="stCameraInput"] video {
+        border-radius: 50% !important;
+        border: 12px solid #2E86C1;
+        box-shadow: 0 0 25px rgba(46, 134, 193, 0.6);
+        width: 300px !important;
+        height: 300px !important;
+        object-fit: cover;
+    }
+    
+    /* توسيط الكاميرا */
+    div[data-testid="stCameraInput"] {
+        display: flex;
+        justify-content: center;
+    }
 
-dhia, [12/02/2026 20:48]
-}
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* صورة المجهر التفاعلي */
-    .microscope-img {
-        transition: transform 0.3s;
-        cursor: pointer;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .microscope-img:hover {
-        transform: scale(1.1) rotate(5deg);
+    /* 4. البطاقة */
+    .result-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        text-align: center;
+        border-top: 6px solid #E74C3C;
+        margin-top: 20px;
     }
     </style>
     
-    <div class="floating-parasite" style="left: 10%; animation-duration: 12s;">🦠</div>
-    <div class="floating-parasite" style="left: 80%; animation-duration: 18s; font-size: 50px;">🩸</div>
-    <div class="floating-parasite" style="left: 40%; animation-duration: 25s;">🧫</div>
-    <div class="floating-parasite" style="left: 60%; animation-duration: 15s; color: green;">🦠</div>
+    <div class="floating-parasite" style="left: 10%; animation-duration: 15s;">🦠</div>
+    <div class="floating-parasite" style="left: 85%; animation-duration: 22s; color: darkred;">🩸</div>
+
+<div class="floating-parasite" style="left: 30%; animation-duration: 18s;">🧫</div>
+    <div class="floating-parasite" style="left: 60%; animation-duration: 25s; color: green;">🦠</div>
+    <div class="floating-parasite" style="left: 50%; animation-duration: 12s; font-size: 60px;">🔬</div>
 """, unsafe_allow_html=True)
 
-# --- 5. النصوص والبيانات ---
-# رابط صورة مجهر واضحة جداً (مختبر)
+# --- 4. المتغيرات والنصوص ---
+if 'step' not in st.session_state:
+    st.session_state.step = 0
+
 microscope_url = "https://cdn-icons-png.flaticon.com/512/930/930263.png"
 
-funny_script = "Salam alikoum la famille ! C'est moi, le microscope intelligent de Dhia et Mouhamed. On a trop galéré pour me créer, on est K.O ! S'il vous plaît, donnez-nous une note légendaire, genre 19 sur 20 ! Ma t'cassrouch rasskoum !"
-full_title = "Le titre officiel est : Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais."
+# النص الطويل المضحك
+intro_script = "Salam alikoum la famille ! C'est moi, le microscope intelligent de Dhia et Mouhamed. On a trop galéré pour me créer, on est K.O ! S'il vous plaît, donnez-nous une note légendaire, genre 19 sur 20 ! Ma t'cassrouch rasskoum !"
 
+title_script = "Le titre officiel est : Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais."
+
+# قاموس المعلومات
 morphology_db = {
     "Amoeba": {"desc": "Forme irrégulière, pseudopodes.", "funny": "C'est une Amibe ! Elle bouge en mode ninja."},
     "Giardia": {"desc": "Forme de poire, 2 noyaux.", "funny": "Wesh ! C'est Giardia avec ses lunettes de soleil."},
@@ -168,109 +149,111 @@ morphology_db = {
     "Plasmodium": {"desc": "Forme en bague (Ring).", "funny": "Aïe aïe aïe ! Paludisme confirmé. Les moustiques ont gagné."},
     "Trypanosoma": {"desc": "Fusiforme, flagelle libre.", "funny": "C'est Trypanosoma ! Il court comme Mahrez !"},
     "Schistosoma": {"desc": "Oeuf à éperon (épine).", "funny": "Gros œuf piquant ! C'est la Bilharziose."},
-    "Negative": {"desc": "Rien à signaler.", "funny": "Hamdoullah ! C'est propre. Tu peux dormir tranquille."}
+    "Negative": {"desc": "Rien à signaler.", "funny": "Hamdoullah ! C'est propre, makach mard."}
 }
 
-# --- 6. منطق التطبيق (Logic) ---
+# --- 5. التطبيق ---
 
-# العنوان الرئيسي
 st.markdown("<h1 style='text-align: center; color: #154360;'>🧪 Laboratoire IA : Dhia & Mohamed</h1>", unsafe_allow_html=True)
 
-# == المرحلة 0: الترحيب ==
+# === المرحلة 0: المجهر المتكلم ===
 if st.session_state.step == 0:
-    st.markdown("<h3 style='text-align: center; color: #555;'>🔊 Cliquez sur le microscope pour commencer</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>🔊 Cliquez sur le microscope</h3>", unsafe_allow_html=True)
     
-    # عرض المجهر كصورة قابلة للنقر (عن طريق زر مخفي فوقها تقريباً أو تحتها)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown(f'<img src="{microscope_url}" width="200" class="microscope-img">', unsafe_allow_html=True)
-        st.write("") # مسافة
-        if st.button("🎙 Activer le Microscope (Click Me)"):
-            speak_audio(funny_script)
-            with st.spinner("Le microscope parle..."):
-                time.sleep(11) # وقت لإنهاء الكلام
+        # صورة المجهر
+        st.image(microscope_url, width=180)
+        
+        if st.button("🎙 Démarrer (Click Ici)"):
+            # تشغيل الصوت
+            wait_time = speak_audio(intro_script)
+            
+            # إظهار رسالة انتظار وشريط تقدم وهمي لضمان اكتمال الصوت
+            with st.status("Le microscope parle...", expanded=True) as status:
+                st.write("Initialisation de l'humour algérien...")
+                time.sleep(wait_time) # الانتظار هنا حسب طول الجملة
+                status.update(label="Terminé !", state="complete", expanded=False)
+            
             st.session_state.step = 1
             st.rerun()
 
-# == المرحلة 1: العنوان الرسمي ==
+# === المرحلة 1: قراءة العنوان ===
 elif st.session_state.step == 1:
-    st.markdown("<h3 style='text-align: center; color: #555;'>📜 Présentation du Titre</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>📜 Lecture du Titre</h3>", unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f'<img src="{microscope_url}" width="120" class="microscope-img" style="opacity:0.7;">', unsafe_allow_html=True)
-        if st.button("🎓 Lire le Titre Officiel"):
-            speak_audio(full_title)
-            with st.spinner("Lecture en cours..."):
-                time.sleep(10)
-            st.session_state.step = 2
-            st.rerun()
+    if st.button("🎓 Lire le titre officiel"):
+        wait_time = speak_audio(title_script)
+        with st.spinner("Lecture en cours..."):
+            time.sleep(wait_time)
+        st.session_state.step = 2
+        st.rerun()
 
-# == المرحلة 2: الكشف (الكاميرا) ==
+# === المرحلة 2: الكاميرا والنتيجة ===
 elif st.session_state.step == 2:
-    st.info(f"📝 {full_title}")
+    st.info("Exploration du potentiel de l'IA pour l'examen parasitologique.")
     
-    st.markdown("<h2 style='text-align: center; color: #E74C3C;'>📸 Placez l'échantillon sous la lentille</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #C0392B;'>📸 Placez l'échantillon</h2>", unsafe_allow_html=True)
     
-    # تحميل النموذج
-    model, class_names = load_model_ia()
-
-# الكاميرا
+    # تحميل الموديل والأسماء (مع إصلاح الأرقام)
+    model, class_names = load_model_and_labels()
+    
+    # الكاميرا
     img_file = st.camera_input("Scanner", label_visibility="hidden")
-
+    
     if img_file:
-        # عرض صورة التحميل
-        with st.spinner('Analyse intelligente en cours...'):
-            image = Image.open(img_file).convert("RGB")
-            
-            # --- إذا كان النموذج موجوداً نستخدمه ---
-            if model:
-                size = (224, 224)
-                image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-                img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
-                data = np.expand_dims(img_array, axis=0)
-                
-                prediction = model.predict(data, verbose=0)
-                idx = np.argmax(prediction)
-                label = class_names[idx] if idx < len(class_names) else "Inconnu"
-                conf = int(prediction[0][idx] * 100)
-            
-            # --- وضع المحاكاة (للتجربة فقط إذا لم يكن النموذج جاهزاً) ---
-            else:
-                time.sleep(2) # تمثيل وقت المعالجة
-                label = "Giardia" # نتيجة تجريبية
-                conf = 98
-                st.warning("⚠️ Mode Simulation (Modèle introuvable)")
+        image = Image.open(img_file).convert("RGB")
+        
+        # --- التحليل ---
+        label = "Inconnu"
 
-            # جلب النصوص
-            # تنظيف الاسم من أي أرقام أو مسافات زائدة للمطابقة مع القاموس
-            clean_label = label.split()[0] if " " in label else label
-            info = morphology_db.get(clean_label, {"desc": "Non identifié", "funny": f"C'est quoi ça ? ({label})"})
-
-            # عرض النتيجة بتصميم جميل
-            st.markdown(f"""
-            <div class="result-card">
-                <h1 style="color: #2E86C1; margin-bottom: 0;">{label}</h1>
-                <h3 style="color: #28B463; margin-top: 0;">Certitude: {conf}%</h3>
-                <div style="background: #F4F6F7; padding: 10px; border-radius: 10px; margin: 15px 0;">
-                    <p style="font-size: 18px;"><b>🔬 Morphologie:</b> {info['desc']}</p>
-                </div>
-                <p style="color: #CB4335; font-size: 20px; font-weight: bold; font-style: italic;">
-                    🤖 "{info['funny']}"
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+conf = 0
+        
+        if model:
+            size = (224, 224)
+            image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+            img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
+            data = np.expand_dims(img_array, axis=0)
             
-            # الصوت النهائي
-            if conf > 60:
-                speak_audio(f"{label} détecté à {conf} pourcent. {info['funny']}")
-            else:
-                speak_audio("L'image est floue, je ne vois rien. Refais la photo !")
+            prediction = model.predict(data, verbose=0)
+            idx = np.argmax(prediction)
+            
+            # التأكد من صحة الفهرس
+            if idx < len(class_names):
+                label = class_names[idx] # الاسم هنا سيكون نظيفاً بدون أرقام
+            
+            conf = int(prediction[0][idx] * 100)
+        else:
+            # وضع المحاكاة إذا لم يوجد موديل
+            time.sleep(1)
+            label = "Giardia" # مثال
+            conf = 95
+            st.warning("Mode Simulation (Modèle introuvable)")
 
-    # زر إعادة البدء
+        # تنظيف إضافي للاسم لضمان التطابق مع القاموس
+        # مثلاً لو الاسم ما زال فيه مسافات زائدة
+        clean_key = label.strip()
+        # البحث عن جزء من الكلمة في القاموس (مثلا Negative matches Negative)
+        info = morphology_db.get(clean_key, {"desc": "...", "funny": f"C'est {clean_key} !"})
+        
+        # --- عرض النتيجة ---
+        st.markdown(f"""
+        <div class="result-card">
+            <h1 style="color: #2E86C1; font-size: 40px;">{clean_key}</h1>
+            <h3 style="color: #27AE60;">Confiance: {conf}%</h3>
+            <hr>
+            <p style="font-size: 18px;"><b>🔬 Morphologie:</b> {info['desc']}</p>
+            <br>
+            <p style="color: #C0392B; font-weight: bold; font-size: 20px;">🤖 {info['funny']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # الصوت النهائي
+        final_text = f"Résultat : {clean_key}. {info['funny']}"
+        speak_audio(final_text)
+
+    # زر العودة
     st.write("---")
     if st.button("🔄 Nouvelle Analyse"):
         st.session_state.step = 0
         st.rerun()
-
-
