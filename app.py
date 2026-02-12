@@ -232,31 +232,31 @@ else:
     st.warning("Mode Simulation (Modèle introuvable)")
 
 
-        # تنظيف إضافي للاسم لضمان التطابق مع القاموس
-        # مثلاً لو الاسم ما زال فيه مسافات زائدة
-        clean_key = label.strip()
-        # البحث عن جزء من الكلمة في القاموس (مثلا Negative matches Negative)
-        info = morphology_db.get(clean_key, {"desc": "...", "funny": f"C'est {clean_key} !"})
-        
-        # --- عرض النتيجة ---
-        st.markdown(f"""
-        <div class="result-card">
-            <h1 style="color: #2E86C1; font-size: 40px;">{clean_key}</h1>
-            <h3 style="color: #27AE60;">Confiance: {conf}%</h3>
-            <hr>
-            <p style="font-size: 18px;"><b>🔬 Morphologie:</b> {info['desc']}</p>
-            <br>
-            <p style="color: #C0392B; font-weight: bold; font-size: 20px;">🤖 {info['funny']}</p>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # الصوت النهائي
-        final_text = f"Résultat : {clean_key}. {info['funny']}"
-        speak_audio(final_text)
+# تنظيف إضافي للاسم لضمان التطابق مع القاموس
+# مثلاً لو الاسم ما زال فيه مسافات زائدة
+clean_key = label.strip()
 
-    # زر العودة
-    st.write("---")
-    if st.button("🔄 Nouvelle Analyse"):
-        st.session_state.step = 0
-        st.rerun()
+# البحث عن جزء من الكلمة في القاموس (مثلا Negative matches Negative)
+info = morphology_db.get(clean_key, {"desc": "...", "funny": f"C'est {clean_key} !"})
 
+# --- عرض النتيجة ---
+st.markdown(f"""
+<div class="result-card">
+    <h1 style="color: #2E86C1; font-size: 40px;">{clean_key}</h1>
+    <h3 style="color: #27AE60;">Confiance: {conf}%</h3>
+    <hr>
+    <p style="font-size: 18px;"><b>🔬 Morphologie:</b> {info['desc']}</p>
+    <br>
+    <p style="color: #C0392B; font-weight: bold; font-size: 20px;">🤖 {info['funny']}</p>
+</div>
+""", unsafe_allow_html=True)
+
+# الصوت النهائي
+final_text = f"Résultat : {clean_key}. {info['funny']}"
+speak_audio(final_text)
+
+# زر العودة
+st.write("---")
+if st.button("🔄 Nouvelle Analyse"):
+    st.session_state.step = 0
+    st.rerun()
