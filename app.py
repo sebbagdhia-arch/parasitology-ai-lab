@@ -211,14 +211,14 @@ elif st.session_state.step == 2:
 
 conf = 0
         
-        if model:
-            size = (224, 224)
-            image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
-            img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
-            data = np.expand_dims(img_array, axis=0)
+    if model:
+        size = (224, 224)
+        image_res = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+        img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
+        data = np.expand_dims(img_array, axis=0)
             
-            prediction = model.predict(data, verbose=0)
-            idx = np.argmax(prediction)
+        prediction = model.predict(data, verbose=0)
+        idx = np.argmax(prediction)
             
             # التأكد من صحة الفهرس
             if idx < len(class_names):
@@ -560,3 +560,4 @@ elif st.session_state.step == 2:
     if st.button("🔄 Nouvelle Analyse", use_container_width=True):
         st.session_state.step = 0
         st.rerun()
+
