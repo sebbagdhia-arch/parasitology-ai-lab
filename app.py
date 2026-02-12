@@ -215,7 +215,6 @@ elif st.session_state.step == 2:
     # تحميل النموذج
     model, class_names = load_model_ia()
 
-dhia, [12/02/2026 20:48]
 # الكاميرا
     img_file = st.camera_input("Scanner", label_visibility="hidden")
 
@@ -273,4 +272,5 @@ dhia, [12/02/2026 20:48]
     if st.button("🔄 Nouvelle Analyse"):
         st.session_state.step = 0
         st.rerun()
+
 
