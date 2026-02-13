@@ -24,20 +24,19 @@ if 'step' not in st.session_state:
     st.session_state.step = 0
 
 # --- 2. الشعار الخاص (Logo SVG) ---
-# شعار أسود وأحمر كما طلبت
-render_logo()
+def render_logo():
     logo_svg = """
-    <svg width="100%" height="80" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="40" cy="40" r="35" fill="#E74C3C" opacity="0.1"/>
-        <path d="M30 60 L50 60 L40 20 Z" fill="#000000"/>
-        <circle cx="40" cy="20" r="10" stroke="#E74C3C" stroke-width="3" fill="none"/>
-        <rect x="25" y="60" width="30" height="5" fill="#E74C3C"/>
-        
-        <text x="80" y="50" font-family="Arial, sans-serif" font-size="35" font-weight="bold" fill="#000000">
-            DHIA <tspan fill="#E74C3C">LAB</tspan>
-        </text>
-    </svg>
-    """
+<svg width="100%" height="80" viewBox="0 0 300 80" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="40" r="35" fill="#E74C3C" opacity="0.1"/>
+    <path d="M30 60 L50 60 L40 20 Z" fill="#000000"/>
+    <circle cx="40" cy="20" r="10" stroke="#E74C3C" stroke-width="3" fill="none"/>
+    <rect x="25" y="60" width="30" height="5" fill="#E74C3C"/>
+    
+    <text x="80" y="50" font-family="Arial, sans-serif" font-size="35" font-weight="bold" fill="#000000">
+        DHIA <tspan fill="#E74C3C">LAB</tspan>
+    </text>
+</svg>
+"""
     st.sidebar.markdown(logo_svg, unsafe_allow_html=True)
 
 # --- 3. قاموس اللغات (واجهة المستخدم فقط) ---
@@ -386,6 +385,7 @@ else:
             if st.button(f"🔄 {txt['restart']}", use_container_width=True):
                 st.session_state.step = 0
                 st.rerun()
+
 
 
 
