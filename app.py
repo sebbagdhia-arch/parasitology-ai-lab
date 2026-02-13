@@ -8,7 +8,7 @@ import time
 from gtts import gTTS
 import pandas as pd
 
-# --- 1. إعداد الصفحة وتخزين البيانات ---
+# إعداد الصفحة
 st.set_page_config(
     page_title="Laboratoire Parasitologie IA",
     page_icon="🔬",
@@ -16,7 +16,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-render_logo()   # 👈 عرض الشعار في sidebar
+# عرض الشعار
+render_logo()
 
 # تهيئة سجل الفحوصات (للوحة التحكم)
 if 'history' not in st.session_state:
@@ -40,6 +41,7 @@ def render_logo():
 </svg>
 """
     st.sidebar.markdown(logo_svg, unsafe_allow_html=True)
+
 
 # --- 3. قاموس اللغات (واجهة المستخدم فقط) ---
 # الكلام الصوتي (السيناريو) يبقى كما هو
@@ -387,6 +389,7 @@ else:
             if st.button(f"🔄 {txt['restart']}", use_container_width=True):
                 st.session_state.step = 0
                 st.rerun()
+
 
 
 
