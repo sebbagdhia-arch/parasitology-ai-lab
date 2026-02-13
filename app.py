@@ -9,12 +9,14 @@ from gtts import gTTS
 import pandas as pd
 
 # --- 1. إعداد الصفحة وتخزين البيانات ---
-render_logo(
+st.set_page_config(
     page_title="Laboratoire Parasitologie IA",
     page_icon="🔬",
-    layout="wide", # جعلناها Wide لتناسب لوحة التحكم
+    layout="wide",
     initial_sidebar_state="expanded"
 )
+
+render_logo()   # 👈 عرض الشعار في sidebar
 
 # تهيئة سجل الفحوصات (للوحة التحكم)
 if 'history' not in st.session_state:
@@ -385,6 +387,7 @@ else:
             if st.button(f"🔄 {txt['restart']}", use_container_width=True):
                 st.session_state.step = 0
                 st.rerun()
+
 
 
 
