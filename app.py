@@ -376,14 +376,16 @@ else:
             # صورة توضيحية (Placeholder logic using standard images via Streamlit if desired, here keeping clean)
             # You can add 
 
-# [Image of X]
-# here if you want external images
+            # [Image of X]
+            # here if you want external images
 
-final_text = f"Résultat : {clean_key}. {info['funny']}"
-speak_audio(final_text)
+            final_text = f"Résultat : {clean_key}. {info['funny']}"
+            speak_audio(final_text)
 
-st.write("---")
-if st.button(f"🔄 {txt['restart']}", use_container_width=True):
-    st.session_state.step = 0
-    st.rerun()
+            st.write("---")
+            if st.button(f"🔄 {txt['restart']}", use_container_width=True):
+                st.session_state.step = 0
+                st.rerun()
+
+
 
