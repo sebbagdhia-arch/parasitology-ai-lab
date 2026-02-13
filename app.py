@@ -1,4 +1,3 @@
-
 import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageOps
@@ -18,7 +17,7 @@ st.set_page_config(
 # --- 2. دوال النظام ---
 
 def speak_audio(text, lang='fr'):
-    """تشغيل الصوت مع حساب مدة الانتظار المناسبة"""
+    """تشغيل الصوت مع حساب مدة الانتظار بدقة"""
     try:
         tts = gTTS(text=text, lang=lang, slow=False)
         filename = "temp_audio.mp3"
@@ -36,11 +35,13 @@ def speak_audio(text, lang='fr'):
         """
         st.markdown(md, unsafe_allow_html=True)
         
-        # حساب مدة تقريبية للانتظار
-        estimated_duration = (len(text) / 10) + 2
+        # === تعديل المعادلة الزمنية ===
+        # المعدل الطبيعي للنطق هو 0.08 ثانية للحرف
+        # نضيف 0.5 ثانية احتياط لضمان عدم قطع الصوت
+        estimated_duration = (len(text) * 0.08) + 0.5
         return estimated_duration
     except:
-        return 3
+        return 2
 
 @st.cache_resource
 def load_model_and_labels():
@@ -67,20 +68,21 @@ def load_model_and_labels():
         
     return model, classes
 
-# --- 3. التصميم (CSS) - النسخة المحسنة ---
+# --- 3. التصميم (CSS + HTML الخلفية المدمجة) ---
+# تم دمج كود الخلفية هنا لحل مشكلة ظهور الأكواد
 st.markdown("""
     <style>
     /* خلفية متدرجة جميلة */
     .stApp {
         background: radial-gradient(circle at 50% 50%, #F4F6F7 0%, #D4E6F1 100%);
-        overflow: hidden; /* لمنع ظهور أشرطة التمرير بسبب الطفيليات */
+        overflow: hidden;
     }
     
     /* 1. أنيميشن المجهر الراقص */
     @keyframes shake {
         0% { transform: rotate(0deg); }
         25% { transform: rotate(5deg); }
-        50% { transform: rotate(0eg); }
+        50% { transform: rotate(0deg); }
         75% { transform: rotate(-5deg); }
         100% { transform: rotate(0deg); }
     }
@@ -94,14 +96,13 @@ st.markdown("""
         transform: scale(1.1);
     }
 
-    /* 2. الطفيليات العائمة (أكثر وضوحاً وحركة) */
+    /* 2. الطفيليات العائمة */
     .floating-parasite {
         position: fixed;
         z-index: 0;
         pointer-events: none;
-        opacity: 0.6; /* جعلناها أوضح */
-        animation-timing-function: linear;
-        animation-iteration-count: infinite;
+        opacity: 0.6;
+        font-family: "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
     }
 
     @keyframes floatUp {
@@ -109,38 +110,35 @@ st.markdown("""
         100% { transform: translateY(-10vh) rotate(360deg) scale(1.2); }
     }
 
-    /* 3. تصميم الكاميرا الدائرية بالكامل (إزالة المربع) */
-    div[data-testid="stCameraInput"] {
-        background-color: transparent !important;
+    /* 3. إصلاح الكاميرا (إزالة المربع المزعج) */
+    
+    /* إخفاء حدود الحاوية */
+    [data-testid="stCameraInput"] {
         border: none !important;
+        background: transparent !important;
         box-shadow: none !important;
     }
+    
+    /* إخفاء أي خلفية داخلية للكاميرا */
+    [data-testid="stCameraInput"] > div {
+        background-color: transparent !important;
+        border: none !important;
+    }
 
-    /* جعل الفيديو دائرياً وقص الزوائد */
-    div[data-testid="stCameraInput"] video {
+    /* جعل الفيديو دائرياً بدقة */
+    video {
         border-radius: 50% !important;
         width: 300px !important;
         height: 300px !important;
-        object-fit: cover;
-        border: 8px solid #3498DB;
-        box-shadow: 0 0 30px rgba(52, 152, 219, 0.5);
-        clip-path: circle(50% at 50% 50%); /* قص حقيقي */
+        object-fit: cover !important;
+        border: 8px solid #3498DB !important;
+        box-shadow: 0 0 30px rgba(52, 152, 219, 0.5) !important;
+        clip-path: circle(50% at 50% 50%);
     }
 
-
-/* تغيير شكل زر التصوير المزعج */
-    div[data-testid="stCameraInput"] button {
-        border-radius: 50px !important;
-        background-color: #E74C3C !important;
-        color: white !important;
-        border: 2px solid white !important;
-        font-weight: bold;
-        transition: all 0.3s;
-        box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
-    }
-    div[data-testid="stCameraInput"] button:hover {
-        background-color: #C0392B !important;
-        transform: scale(1.05);
+    /* زر التصوير (تجميل) */
+    button {
+        border-radius: 20px !important;
     }
 
     /* 4. البطاقة */
@@ -153,6 +151,8 @@ st.markdown("""
         text-align: center;
         border: 2px solid white;
         margin-top: 20px;
+        position: relative; 
+        z-index: 1; /* لتظهر فوق الطفيليات */
         animation: popIn 0.5s ease-out;
     }
     
@@ -162,16 +162,15 @@ st.markdown("""
     }
     </style>
     
-    <div class="floating-parasite" style="left: 5%; bottom: -10%; font-size: 50px; animation: floatUp 15s infinite;">🦠</div>
-    <div class="floating-parasite" style="left: 15%; bottom: -20%; font-size: 30px; animation: floatUp 12s infinite; color: darkred;">🩸</div>
-    <div class="floating-parasite" style="left: 25%; bottom: -50%; font-size: 60px; animation: floatUp 20s infinite;">🧫</div>
-    <div class="floating-parasite" style="left: 35%; bottom: -15%; font-size: 40px; animation: floatUp 18s infinite; color: green;">🦠</div>
-    <div class="floating-parasite" style="left: 50%; bottom: -30%; font-size: 70px; animation: floatUp 25s infinite;">🔬</div>
-    <div class="floating-parasite" style="left: 65%; bottom: -10%; font-size: 45px; animation: floatUp 16s infinite; color: orange;">🦠</div>
-    <div class="floating-parasite" style="left: 75%; bottom: -40%; font-size: 35px; animation: floatUp 14s infinite;">🩸</div>
-    <div class="floating-parasite" style="left: 85%; bottom: -25%; font-size: 55px; animation: floatUp 22s infinite; color: purple;">🦠</div>
-    <div class="floating-parasite" style="left: 95%; bottom: -5%; font-size: 25px; animation: floatUp 10s infinite;">🧫</div>
-
+    <div class="floating-parasite" style="left: 5%; bottom: -10%; font-size: 50px; animation: floatUp 15s infinite linear;">🦠</div>
+    <div class="floating-parasite" style="left: 15%; bottom: -20%; font-size: 30px; animation: floatUp 12s infinite linear; color: darkred;">🩸</div>
+    <div class="floating-parasite" style="left: 25%; bottom: -50%; font-size: 60px; animation: floatUp 20s infinite linear;">🧫</div>
+    <div class="floating-parasite" style="left: 35%; bottom: -15%; font-size: 40px; animation: floatUp 18s infinite linear; color: green;">🦠</div>
+    <div class="floating-parasite" style="left: 50%; bottom: -30%; font-size: 70px; animation: floatUp 25s infinite linear;">🔬</div>
+    <div class="floating-parasite" style="left: 65%; bottom: -10%; font-size: 45px; animation: floatUp 16s infinite linear; color: orange;">🦠</div>
+    <div class="floating-parasite" style="left: 75%; bottom: -40%; font-size: 35px; animation: floatUp 14s infinite linear;">🩸</div>
+    <div class="floating-parasite" style="left: 85%; bottom: -25%; font-size: 55px; animation: floatUp 22s infinite linear; color: purple;">🦠</div>
+    <div class="floating-parasite" style="left: 95%; bottom: -5%; font-size: 25px; animation: floatUp 10s infinite linear;">🧫</div>
 """, unsafe_allow_html=True)
 
 # --- 4. المتغيرات والنصوص ---
@@ -197,23 +196,22 @@ morphology_db = {
 
 # --- 5. التطبيق ---
 
-st.markdown("<h1 style='text-align: center; color: #154360; text-shadow: 2px 2px 4px #aaa;'>🧪 Laboratoire IA : Dhia & Mohamed</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; color: #154360; text-shadow: 2px 2px 4px #aaa; position: relative; z-index: 1;'>🧪 Laboratoire IA : Dhia & Mohamed</h1>", unsafe_allow_html=True)
 
 
 # === المرحلة 0: المجهر المتكلم ===
 if st.session_state.step == 0:
-    st.markdown("<h3 style='text-align: center;'>🔊 Cliquez sur le microscope</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; position: relative; z-index: 1;'>🔊 Cliquez sur le microscope</h3>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # صورة المجهر المتحركة (CSS class added)
+        # صورة المجهر المتحركة
         st.markdown(f"""
-            <div style="display: flex; justify-content: center;">
+            <div style="display: flex; justify-content: center; position: relative; z-index: 1;">
                 <img src="{microscope_url}" class="talking-microscope" width="200">
             </div>
         """, unsafe_allow_html=True)
         
-        # مسافة بسيطة
         st.write("") 
         
         if st.button("🎙 Démarrer (Click Ici)", use_container_width=True):
@@ -227,7 +225,7 @@ if st.session_state.step == 0:
 
 # === المرحلة 1: قراءة العنوان ===
 elif st.session_state.step == 1:
-    st.markdown("<h3 style='text-align: center;'>📜 Lecture du Titre</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; position: relative; z-index: 1;'>📜 Lecture du Titre</h3>", unsafe_allow_html=True)
     
     if st.button("🎓 Lire le titre officiel", type="primary", use_container_width=True):
         wait_time = speak_audio(title_script)
@@ -242,7 +240,7 @@ elif st.session_state.step == 2:
     # تحميل الموديل
     model, class_names = load_model_and_labels()
     
-    st.markdown("<h3 style='text-align: center; color: #C0392B;'>📸 Placez l'échantillon sous la caméra</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center; color: #C0392B; position: relative; z-index: 1;'>📸 Placez l'échantillon</h3>", unsafe_allow_html=True)
     
     # الكاميرا الدائرية
     img_file = st.camera_input("Scanner", label_visibility="hidden")
@@ -250,13 +248,12 @@ elif st.session_state.step == 2:
     if img_file:
         image = Image.open(img_file).convert("RGB")
         
-        # --- التحليل (مع إصلاح الخطأ) ---
+        # --- التحليل ---
         label = "Inconnu"
         conf = 0
         
         if model:
             size = (224, 224)
-            # التصحيح هنا: استخدام Image.LANCZOS بدلاً من Image.Resampling.LANCZOS لتجنب الأخطاء
             image_res = ImageOps.fit(image, size, method=Image.LANCZOS)
             img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
             data = np.expand_dims(img_array, axis=0)
@@ -269,7 +266,6 @@ elif st.session_state.step == 2:
             
             conf = int(prediction[0][idx] * 100)
         else:
-            # محاكاة في حالة عدم وجود الموديل
             time.sleep(1)
             label = "Giardia"
             conf = 95
