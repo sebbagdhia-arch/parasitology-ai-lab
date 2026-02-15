@@ -115,7 +115,6 @@ st.markdown(f"""
         text-align: {text_align};
     }}
 
-dhia, [16/02/2026 00:16]
 /* Cards */
     .medical-card {{
         background-color: {theme['card']};
@@ -166,7 +165,7 @@ def generate_heatmap_simulation(image):
     y0 = img_array.shape[0] // 2
     sigma = 100 
     
-    heatmap = np.exp(-((x-x0)2 + (y-y0)2) / (2*sigma**2))
+    heatmap = np.exp(-((x-x0)**2 + (y-y0)**2) / (2*sigma**2))
     
     # Colorize
     heatmap = plt.cm.jet(heatmap)[:, :, :3] * 255
@@ -536,3 +535,4 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
