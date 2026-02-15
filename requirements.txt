@@ -6,3 +6,4 @@ numpy
 requests
 streamlit-lottie
 gTTS
+fpdf
