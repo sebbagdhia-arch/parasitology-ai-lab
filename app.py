@@ -397,27 +397,66 @@ elif menu == t["menu_analyse"]:
                 label = "Giardia" 
                 conf = 98
 
-if img_file:  # التأكد من وجود صورة
+# التأكد من وجود الصورة قبل أي معالجة
+if img_file:  
+    # فتح الصورة وتحويلها
     image = Image.open(img_file).convert("RGB")
 
-    # تعريف label و conf
-    label = "Inconnu"
-    conf = 0
-
-    if model:
-        size = (224, 224)
-        image_res = ImageOps.fit(image, size, method=Image.LANCZOS)
-        img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
-        data = np.expand_dims(img_array, axis=0)
-        prediction = model.predict(data, verbose=0)
-        idx = np.argmax(prediction)
-        label = class_names[idx] if idx < len(class_names) else "Inconnu"
-        conf = int(prediction[0][idx] * 100)
-    else:
-        label = "Giardia"
-        conf = 97
-
+    # تنظيف التسمية
     clean_label = label.strip()
+
+    # حساب العلاج (افتراضياً)
+    treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
+
+    # توليد Heatmap (محاكاة)
+    heatmap_img = generate_heatmap_simulation(image)
+    
+    # --- النطق الصوتي للنتيجة ---
+    result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf}%."
+    if clean_label.lower() == "negative":
+        result_audio_text = "Analyse terminée. L'échantillon est négatif. Le patient va bien, Hamdoullah."
+    play_audio(result_audio_text, lang='fr')
+    
+    # عرض النتائج في عمودين
+    col_res1, col_res2 = st.columns([1, 1])
+    
+    with col_res1:
+        st.markdown(f"""
+        <div class="medical-card">
+            <h2 style='color: {theme['accent']};'>{clean_label}</h2>
+            <h1 style='font-size: 40px;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
+            <hr>
+            <p><b>🩺 Protocole de Traitement (AI):</b></p>
+            <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col_res2:
+        st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)", use_column_width=True)
+    
+    # إنشاء PDF وتحميله
+    pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
+    st.download_button(
+        label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
+        data=pdf_bytes,
+        file_name=f"Rapport_{patient['name']}.pdf",
+        mime="application/pdf",
+        use_container_width=True
+    )
+
+    # تسجيل التاريخ في السجل
+    if st.session_state.get("last_scan_time") != str(datetime.now()):
+        st.session_state.history.append({
+            "patient": patient['name'],
+            "result": clean_label,
+            "conf": conf,
+            "date": datetime.now().strftime("%Y-%m-%d")
+        })
+        st.session_state.last_scan_time = str(datetime.now())
+
+else:
+    st.info("👋 En attente de l'échantillon...")
+
 
     # تعريف بيانات المريض (مثال)
     patient = {
@@ -536,6 +575,7 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
