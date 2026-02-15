@@ -236,17 +236,23 @@ pdf.set_font("Arial", 'B', 14)
 pdf.cell(0, 10, "PROTOCOLE DE TRAITEMENT:", ln=True)
 pdf.set_font("Arial", size=11)
 
-    # Handle unicode/latin-1 issues loosely
-    treatment_safe = treatment_plan.encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 10, treatment_safe)
-    
-    pdf.ln(20)
-    pdf.cell(0, 10, f"Technicien: {st.session_state.get('doctor_name', 'Tech. Inconnu')}", ln=True)
-    pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
-    
-    return pdf.output(dest='S').encode('latin-1')
+# Handle unicode/latin-1 issues loosely
+treatment_safe = treatment_plan.encode('latin-1', 'replace').decode('latin-1')
+pdf.multi_cell(0, 10, treatment_safe)
 
+pdf.ln(20)
+pdf.cell(0, 10, f"Technicien: {st.session_state.get('doctor_name', 'Tech. Inconnu')}", ln=True)
+pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
+
+# إرجاع محتوى الـ PDF كـ bytes
+return pdf.output(dest='S').encode('latin-1')
+
+
+# --- تخزين المورد في كاش Streamlit ---
 @st.cache_resource
+def get_pdf(result, confidence, treatment_plan):
+    return generate_pdf(result, confidence, treatment_plan)
+
 def load_model_ia():
     """Loads Keras model or returns None if missing."""
     try:
@@ -536,5 +542,6 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
