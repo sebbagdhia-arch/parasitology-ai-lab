@@ -300,24 +300,26 @@ with st.sidebar:
     st.caption("v2.0 Enterprise Edition")
 
 st.markdown("---")
-    st.session_state.language = st.selectbox("🌐 Langue / Language / اللغة", ["Français", "English", "العربية"])
-    
-    if st.toggle("🌙 Mode Sombre / Dark Mode", value=st.session_state.dark_mode):
-        st.session_state.dark_mode = True
-    else:
-        st.session_state.dark_mode = False
-    
-    st.markdown("---")
-    menu = st.radio("Menu", [
-        t["menu_patient"], 
-        t["menu_analyse"], 
-        t["menu_dash"], 
-        t["menu_sys"],
-        t["menu_about"] # إضافة قسم من نحن
-    ])
 
-    st.markdown("---")
-    st.success(f"👨‍🔬 {t['tech_title']}:\n{st.session_state.doctor_name}")
+st.session_state.language = st.selectbox(
+    "🌐 Langue / Language / اللغة",
+    ["Français", "English", "العربية"]
+)
+
+if st.toggle("🌙 Mode Sombre / Dark Mode", value=st.session_state.dark_mode):
+    st.session_state.dark_mode = True
+else:
+    st.session_state.dark_mode = False
+
+st.markdown("---")
+
+menu = st.radio("Menu", [
+    t["menu_patient"], 
+    t["menu_analyse"], 
+    t["menu_dash"], 
+    t["menu_sys"],
+    t["menu_about"]
+])
 
 # صفحة 1: تسجيل المرضى 
 if menu == t["menu_patient"]:
@@ -493,4 +495,5 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
