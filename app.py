@@ -474,7 +474,7 @@ st.download_button(
 
 
 # --- PAGE: Dashboard ---
-elif menu == t["menu_dash"]:
+if menu == t["menu_dash"]:
     st.title(t["title_dash"])
     
     if st.session_state.history:
@@ -555,6 +555,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
