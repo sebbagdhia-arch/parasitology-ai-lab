@@ -393,8 +393,8 @@ elif menu == t["menu_analyse"]:
                 conf = 98
 
 clean_label = label.strip()
-            treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-            heatmap_img = generate_heatmap_simulation(image)
+treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
+heatmap_img = generate_heatmap_simulation(image)
             
  # --- النطق الصوتي للنتيجة ---
 clean_label = label.strip()
@@ -518,6 +518,7 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
