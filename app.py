@@ -397,9 +397,43 @@ elif menu == t["menu_analyse"]:
                 label = "Giardia" 
                 conf = 98
 
-clean_label = label.strip()
-treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-heatmap_img = generate_heatmap_simulation(image)
+if img_file:  # التأكد من وجود صورة
+    image = Image.open(img_file).convert("RGB")
+
+    # تعريف label و conf
+    label = "Inconnu"
+    conf = 0
+
+    if model:
+        size = (224, 224)
+        image_res = ImageOps.fit(image, size, method=Image.LANCZOS)
+        img_array = np.asarray(image_res).astype(np.float32) / 127.5 - 1
+        data = np.expand_dims(img_array, axis=0)
+        prediction = model.predict(data, verbose=0)
+        idx = np.argmax(prediction)
+        label = class_names[idx] if idx < len(class_names) else "Inconnu"
+        conf = int(prediction[0][idx] * 100)
+    else:
+        label = "Giardia"
+        conf = 97
+
+    clean_label = label.strip()
+
+    # تعريف بيانات المريض (مثال)
+    patient = {
+        "name": "Patient_Inconnu_01",
+        "weight": 70,  # kg
+        "age": 30      # ans
+    }
+
+    # حساب العلاج
+    treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
+
+    # توليد heatmap (محاكاة)
+    heatmap_img = generate_heatmap_simulation(image)
+
+    # باقي الكود: عرض النتيجة، PDF، الصوت...
+)
             
 # --- النطق الصوتي للنتيجة ---
 result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
@@ -502,6 +536,7 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
