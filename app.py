@@ -422,16 +422,16 @@ with col_res1:
           
 with col_res2:
     st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)", use_column_width=True)
-            
- pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
-st.download_button(
-label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
-    data=pdf_bytes,
-    file_name=f"Rapport_{patient['name']}.pdf",
-    mime="application/pdf",
+    
+    pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
+    st.download_button(
+        label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
+        data=pdf_bytes,
+        file_name=f"Rapport_{patient['name']}.pdf",
+        mime="application/pdf",
         use_container_width=True
-            )
-            
+    )
+
 if st.session_state.get("last_scan_time") != str(datetime.now()):
     st.session_state.history.append({"patient": patient['name'], "result": clean_label, "conf": conf, "date": datetime.now().strftime("%Y-%m-%d")})
     st.session_state.last_scan_time = str(datetime.now())
@@ -502,5 +502,6 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
