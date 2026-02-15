@@ -211,7 +211,6 @@ class MedicalReport(FPDF):
         self.set_font('Arial', 'I', 8)
         self.cell(0, 10, 'Systeme securise par DHIA-AI Encryption Standard (AES-256)', 0, 0, 'C')
 
-dhia, [15/02/2026 21:34]
 def create_pdf(patient_data, result, confidence, treatment_plan, image_path=None):
     pdf = MedicalReport()
     pdf.add_page()
@@ -495,3 +494,4 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
