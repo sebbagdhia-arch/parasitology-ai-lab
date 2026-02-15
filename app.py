@@ -429,45 +429,49 @@ elif menu == t["menu_analyse"]:
             # Save to history
 
 scan_id = f"{patient['name']}_{datetime.now().strftime('%H%M%S')}"
-            # Simple check to avoid duplicates on rerun
-            if not st.session_state.history or st.session_state.history[-1]['id'] != scan_id:
-                 st.session_state.history.append({
-                     "id": scan_id,
-                     "patient": patient['name'], 
-                     "result": clean_label, 
-                     "conf": conf, 
-                     "date": datetime.now().strftime("%Y-%m-%d")
-                 })
-            
-            # 4. Display Results
-            col_res1, col_res2 = st.columns([1, 1])
-            with col_res1:
-                st.markdown(f"""
-                <div class="medical-card">
-                    <h2 style='color: {theme['accent']};'>{clean_label}</h2>
-                    <h1 style='font-size: 40px; margin:0;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
-                    <hr>
-                    <p><b>🩺 Protocole de Traitement:</b></p>
-                    <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            with col_res2:
-                st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
+# --- 1. Simple check to avoid duplicates on rerun ---
+if not st.session_state.history or st.session_state.history[-1]['id'] != scan_id:
+    st.session_state.history.append({
+        "id": scan_id,
+        "patient": patient['name'], 
+        "result": clean_label, 
+        "conf": conf, 
+        "date": datetime.now().strftime("%Y-%m-%d")
+    })
 
-            # 5. Audio & PDF
-            audio_text = f"Diagnostic: {clean_label}. Confiance: {conf} pourcents."
-            if st.button("🔊 Écouter le rapport"):
-                play_audio(audio_text)
-                
-            pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
-            st.download_button(
-                label="📄 Télécharger Rapport PDF",
-                data=pdf_bytes,
-                file_name=f"Rapport_{patient['name']}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
+# --- 2. Display Results ---
+col_res1, col_res2 = st.columns([1, 1])
+
+with col_res1:
+    st.markdown(f"""
+    <div class="medical-card">
+        <h2 style='color: {theme['accent']};'>{clean_label}</h2>
+        <h1 style='font-size: 40px; margin:0;'>{conf}% 
+            <span style='font-size: 15px; color: grey;'>Confiance</span>
+        </h1>
+        <hr>
+        <p><b>🩺 Protocole de Traitement:</b></p>
+        <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col_res2:
+    st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
+
+# --- 3. Audio & PDF ---
+audio_text = f"Diagnostic: {clean_label}. Confiance: {conf} pourcents."
+if st.button("🔊 Écouter le rapport"):
+    play_audio(audio_text)
+
+pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
+st.download_button(
+    label="📄 Télécharger Rapport PDF",
+    data=pdf_bytes,
+    file_name=f"Rapport_{patient['name']}.pdf",
+    mime="application/pdf",
+    use_container_width=True
+)
+
 
 # --- PAGE: Dashboard ---
 elif menu == t["menu_dash"]:
@@ -542,6 +546,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
