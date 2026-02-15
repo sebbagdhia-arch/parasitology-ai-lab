@@ -177,7 +177,7 @@ def generate_heatmap_simulation(image):
     heatmap = np.zeros((img_array.shape[0], img_array.shape[1]), dtype=np.uint8)
     center_x, center_y = img_array.shape[1] // 2, img_array.shape[0] // 2
     cv_x, cv_y = np.meshgrid(np.arange(img_array.shape[1]), np.arange(img_array.shape[0]))
-    dist = np.sqrt((cv_x - center_x)2 + (cv_y - center_y)2)
+    dist = np.sqrt((cv_x - center_x)**2 + (cv_y - center_y)**2))
     heatmap = np.exp(-dist2 / (2 * (802))) * 255
     heatmap_colored = plt.cm.jet(heatmap)[:, :, :3] * 255
     heatmap_colored = heatmap_colored.astype(np.uint8)
@@ -494,4 +494,5 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
