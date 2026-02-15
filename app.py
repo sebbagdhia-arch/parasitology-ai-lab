@@ -222,19 +222,20 @@ def create_pdf(patient_data, result, confidence, treatment_plan):
     pdf.ln(30)
     
     # Diagnosis
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "DIAGNOSTIC IA:", ln=True)
-    pdf.set_font("Arial", size=12)
+pdf.set_font("Arial", 'B', 14)
+pdf.cell(0, 10, "DIAGNOSTIC IA:", ln=True)
+pdf.set_font("Arial", size=12)
 
 pdf.cell(0, 10, f"Pathogene Detecte: {result}", ln=True)
-    pdf.cell(0, 10, f"Indice de Confiance: {confidence}%", ln=True)
-    
-    pdf.ln(10)
-    # Treatment
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "PROTOCOLE DE TRAITEMENT:", ln=True)
-    pdf.set_font("Arial", size=11)
-    
+pdf.cell(0, 10, f"Indice de Confiance: {confidence}%", ln=True)
+
+pdf.ln(10)
+
+# Treatment
+pdf.set_font("Arial", 'B', 14)
+pdf.cell(0, 10, "PROTOCOLE DE TRAITEMENT:", ln=True)
+pdf.set_font("Arial", size=11)
+
     # Handle unicode/latin-1 issues loosely
     treatment_safe = treatment_plan.encode('latin-1', 'replace').decode('latin-1')
     pdf.multi_cell(0, 10, treatment_safe)
@@ -535,4 +536,5 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
