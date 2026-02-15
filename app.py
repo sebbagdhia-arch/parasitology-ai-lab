@@ -398,63 +398,106 @@ elif menu == t["menu_analyse"]:
                 conf = 98
 
 clean_label = label.strip()
-treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-heatmap_img = generate_heatmap_simulation(image)
+            treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
+            heatmap_img = generate_heatmap_simulation(image)
+            
+            # --- النطق الصوتي للنتيجة ---
+            result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
+            if clean_label.lower() == "negative":
+                 result_audio_text = "Analyse terminée. L'échantillon est négatif. Le patient va bien, Hamdoullah."
+            play_audio(result_audio_text, lang='fr')
+            
+            col_res1, col_res2 = st.columns([1, 1])
+            with col_res1:
+                st.markdown(f"""
+                <div class="medical-card">
+                    <h2 style='color: {theme['accent']};'>{clean_label}</h2>
+                    <h1 style='font-size: 40px;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
+                    <hr>
+                    <p><b>🩺 Protocole de Traitement (AI):</b></p>
+                    <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            with col_res2:
+                st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)", use_column_width=True)
+            
+            pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
+            st.download_button(
+                label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
+                data=pdf_bytes,
+                file_name=f"Rapport_{patient['name']}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+            
+            if st.session_state.get("last_scan_time") != str(datetime.now()):
+                st.session_state.history.append({"patient": patient['name'], "result": clean_label, "conf": conf, "date": datetime.now().strftime("%Y-%m-%d")})
+                st.session_state.last_scan_time = str(datetime.now())
 
-# --- النطق الصوتي ---
-result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
+# صفحة 3: Analytics
+elif menu == t["menu_dash"]:
+    st.title(t["title_dash"])
+    
+    if st.session_state.history:
+        df = pd.DataFrame(st.session_state.history)
+        
+        k1, k2, k3 = st.columns(3)
+        k1.metric("Total Consultations", len(df))
+        k2.metric("Cas Positifs", len(df[df['result'] != 'Negative']))
+        k3.metric("Taux d'Infection", f"{int((len(df[df['result'] != 'Negative'])/len(df))*100)}%")
+        
+        st.markdown("---")
+        
+        c1, c2 = st.columns(2)
+        with c1:
+            st.subheader("📈 Répartition des Parasites")
+            st.bar_chart(df['result'].value_counts())
+        
+        with c2:
+            st.subheader("⚠️ Niveau de Risque")
+            chart_data = pd.DataFrame(
+                np.random.randn(20, 3),
+                columns=['Giardia', 'Amoeba', 'Leishmania'])
+            st.line_chart(chart_data)
+            
+    else:
+        st.info("Aucune donnée disponible / لا توجد بيانات.")
 
-if clean_label.lower() == "negative":
-    result_audio_text = "Analyse terminée. L'échantillon est négatif. Le patient va bien, Hamdoullah."
+# صفحة 4: النظام
+elif menu == t["menu_sys"]:
+    st.title(t["title_sys"])
+    st.markdown('<div class="medical-card">', unsafe_allow_html=True)
+    st.write("📡 Statut Serveur: En ligne (Localhost)")
+    st.write("🔒 Cryptage: AES-256 Enabled")
+    st.write("🧠 Modèle AI: v3.5 (Optimisé)")
+    
+    if st.button("🗑️ Réinitialiser / Reset / إعادة ضبط"):
+        st.session_state.patients = {}
+        st.session_state.history = []
+        st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-play_audio(result_audio_text, lang='fr')
-
-col_res1, col_res2 = st.columns([1, 1])
-
-with col_res1:
+# صفحة 5: من نحن (الجديدة)
+elif menu == t["menu_about"]:
+    st.title(t["title_about"])
     st.markdown(f"""
     <div class="medical-card">
-        <h2 style="color: {theme['accent']};">{clean_label}</h2>
-        <h1 style="font-size: 40px;">
-            {conf}% 
-            <span style="font-size: 15px; color: grey;">Confiance</span>
-        </h1>
+        <h2 style='color: {theme['primary']}; text-align: center;'>🎓 Présentation du Projet</h2>
+
+
+<br>
+        <p style='font-size: 18px;'><b>Thème :</b> Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais.</p>
         <hr>
-        <p><b>🩺 Protocole de Traitement (AI):</b></p>
-        <p style="color: {theme['primary']}; font-weight: bold;">
-            {treatment}
-        </p>
+        <h3 style='color: {theme['accent']};'>👨‍🔬 L'Équipe Réalisatrice :</h3>
+        <ul>
+            <li style='font-size: 16px; margin-bottom: 10px;'><b>Sebbag Mohamed Dhia Eddine</b></li>
+            <li style='font-size: 16px; margin-bottom: 10px;'><b>Bn Sghiaer Mohamed</b></li>
+        </ul>
+        <p><i>Statut :</i> Élèves manipulateurs en laboratoire, 3ème année (طلاب سنة ثالثة مخبريون).</p>
+        <hr>
+        <h3 style='color: {theme['primary']};'>🏛️ Établissement :</h3>
+        <p style='font-size: 16px; font-weight: bold;'>Institut National de Formation Supérieure Paramédicale de Ouargla (INFSP Ouargla)</p>
+        <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
-
-with col_res2:
-    st.image(
-        heatmap_img,
-        caption="👁️ AI Vision Heatmap (Zone de détection)",
-        use_column_width=True
-    )
-
-pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
-
-st.download_button(
-    label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
-    data=pdf_bytes,
-    file_name=f"Rapport_{patient['name']}.pdf",
-    mime="application/pdf",
-    use_container_width=True
-)
-
-if st.session_state.get("last_scan_time") != str(datetime.now()):
-    st.session_state.history.append({
-        "patient": patient['name'],
-        "result": clean_label,
-        "conf": conf,
-        "date": datetime.now().strftime("%Y-%m-%d")
-    })
-    st.session_state.last_scan_time = str(datetime.now())
-
-
-
-
-
-
