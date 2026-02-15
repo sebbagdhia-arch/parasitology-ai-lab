@@ -323,8 +323,8 @@ menu = st.radio("Menu", [
 ])
 
 
-    st.markdown("---")
-    st.success(f"👨‍🔬 {t['tech_title']}:\n{st.session_state.doctor_name}")
+st.markdown("---")
+st.success(f"👨‍🔬 {t['tech_title']}:\n{st.session_state.doctor_name}")
 
 # صفحة 1: تسجيل المرضى 
 if menu == t["menu_patient"]:
@@ -500,6 +500,7 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
