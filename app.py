@@ -478,12 +478,14 @@ elif menu == t["menu_dash"]:
     st.title(t["title_dash"])
     
     if st.session_state.history:
+        # تحويل سجل التاريخ إلى DataFrame
         df = pd.DataFrame(st.session_state.history)
         
+        # --- Statistiques clés ---
         k1, k2, k3 = st.columns(3)
         total = len(df)
         positives = len(df[df['result'] != 'Negative'])
-        rate = int((positives/total)*100) if total > 0 else 0
+        rate = int((positives / total) * 100) if total > 0 else 0
         
         k1.metric("Total Consultations", total)
         k2.metric("Cas Positifs", positives)
@@ -491,16 +493,23 @@ elif menu == t["menu_dash"]:
         
         st.markdown("---")
         
+        # --- Graphiques et tableau ---
         c1, c2 = st.columns(2)
+        
         with c1:
             st.subheader("📈 Répartition des Pathogènes")
             if not df.empty:
                 counts = df['result'].value_counts()
                 st.bar_chart(counts)
+            else:
+                st.info("Aucune répartition disponible.")
         
         with c2:
             st.subheader("🗓️ Activité Récente")
-            st.dataframe(df[['date', 'patient', 'result', 'conf']], use_container_width=True)
+            st.dataframe(
+                df[['date', 'patient', 'result', 'conf']].sort_values(by='date', ascending=False),
+                use_container_width=True
+            )
             
     else:
         st.info("Aucune donnée disponible. Effectuez une analyse d'abord.")
@@ -546,6 +555,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
