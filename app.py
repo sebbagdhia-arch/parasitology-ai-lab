@@ -433,7 +433,7 @@ if img_file:  # التأكد من وجود صورة
     heatmap_img = generate_heatmap_simulation(image)
 
     # باقي الكود: عرض النتيجة، PDF، الصوت...
-)
+
             
 # --- النطق الصوتي للنتيجة ---
 result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
@@ -536,6 +536,7 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
