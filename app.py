@@ -409,16 +409,17 @@ play_audio(result_audio_text, lang='fr')
             
 col_res1, col_res2 = st.columns([1, 1])
 with col_res1:
-st.markdown(f"""
-<div class="medical-card">
-    <h2 style='color: {theme['accent']};'>{clean_label}</h2>
-    <h1 style='font-size: 40px;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
-    <hr>
-       <p><b>🩺 Protocole de Traitement (AI):</b></p>
-         <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
-     </div>
-     """, unsafe_allow_html=True)
-            
+    st.markdown(f"""
+    <div class="medical-card">
+        <h2 style='color: {theme['accent']};'>{clean_label}</h2>
+        <h1 style='font-size: 40px;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
+        <hr>
+        <p><b>🩺 Protocole de Traitement (AI):</b></p>
+        <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+          
 with col_res2:
     st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)", use_column_width=True)
             
@@ -501,4 +502,5 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
