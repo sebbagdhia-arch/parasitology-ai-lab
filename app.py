@@ -393,61 +393,34 @@ elif menu == t["menu_analyse"]:
                 conf = 98
 
  # --- النطق الصوتي للنتيجة ---
-clean_label = label.strip()
-treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-heatmap_img = generate_heatmap_simulation(image)
+# التأكد من وجود الصورة والمريض قبل أي عملية
+if img_file and patient:  
+    # فتح الصورة
+    image = Image.open(img_file).convert("RGB")
+    
+    # تحديد تسمية التحليل (Label) محاكي أو من النموذج
+    label = "Giardia"  # مثال، استبدل بالنتيجة الحقيقية من نموذج IA
+    conf = 97          # مثال للثقة
 
-# --- النطق الصوتي ---
-result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
+    # تنظيف التسمية
+    clean_label = label.strip()
 
-if clean_label.lower() == "negative":
-    result_audio_text = "Analyse terminée. L'échantillon est négatif. Le patient va bien, Hamdoullah."
+    # حساب العلاج بناء على بيانات المريض
+    treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
 
-play_audio(result_audio_text, lang='fr')
+    # توليد Heatmap وهمي
+    heatmap_img = generate_heatmap_simulation(image)
 
-col_res1, col_res2 = st.columns([1, 1])
-
-with col_res1:
+    # الآن يمكنك استخدام clean_label و treatment و heatmap_img بأمان
+    st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)")
     st.markdown(f"""
-    <div class="medical-card">
-        <h2 style="color: {theme['accent']};">{clean_label}</h2>
-        <h1 style="font-size: 40px;">
-            {conf}% 
-            <span style="font-size: 15px; color: grey;">Confiance</span>
-        </h1>
-        <hr>
-        <p><b>🩺 Protocole de Traitement (AI):</b></p>
-        <p style="color: {theme['primary']}; font-weight: bold;">
-            {treatment}
-        </p>
-    </div>
+        <div class="medical-card">
+            <h2>{clean_label}</h2>
+            <h3>Traitement: {treatment}</h3>
+            <p>Confiance: {conf}%</p>
+        </div>
     """, unsafe_allow_html=True)
 
-with col_res2:
-    st.image(
-        heatmap_img,
-        caption="👁️ AI Vision Heatmap (Zone de détection)",
-        use_column_width=True
-    )
-
-pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
-
-st.download_button(
-    label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
-    data=pdf_bytes,
-    file_name=f"Rapport_{patient['name']}.pdf",
-    mime="application/pdf",
-    use_container_width=True
-)
-
-if st.session_state.get("last_scan_time") != str(datetime.now()):
-    st.session_state.history.append({
-        "patient": patient['name'],
-        "result": clean_label,
-        "conf": conf,
-        "date": datetime.now().strftime("%Y-%m-%d")
-    })
-    st.session_state.last_scan_time = str(datetime.now())
 
 # صفحة 3: Analytics
 elif menu == t["menu_dash"]:
@@ -514,6 +487,7 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
