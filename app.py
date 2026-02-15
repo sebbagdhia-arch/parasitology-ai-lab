@@ -1,4 +1,3 @@
-
 import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageOps, ImageDraw, ImageFilter
@@ -36,7 +35,7 @@ if 'current_patient' not in st.session_state:
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = True # Default to Dark Mode for "Hacker" feel
+    st.session_state.dark_mode = True
 if 'language' not in st.session_state:
     st.session_state.language = "Français"
 if 'doctor_name' not in st.session_state:
@@ -108,14 +107,12 @@ st.markdown(f"""
         background-color: {theme['bg']};
     }}
     
-    /* Global Text Settings */
     h1, h2, h3, h4, h5, p, div, span, label, li {{
         color: {theme['text']} !important;
         font-family: {'"Cairo", sans-serif' if st.session_state.language == 'العربية' else '"Roboto", sans-serif'};
         text-align: {text_align};
     }}
 
-/* Cards */
     .medical-card {{
         background-color: {theme['card']};
         padding: 25px;
@@ -126,7 +123,6 @@ st.markdown(f"""
         direction: {dir_set};
     }}
 
-    /* Buttons */
     div.stButton > button {{
         background: linear-gradient(90deg, {theme['primary']}, #2980B9);
         color: white !important;
@@ -138,9 +134,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- 4. Helper Functions ---
-
 def play_audio(text, lang='fr'):
-    """Plays audio using gTTS."""
     try:
         tts = gTTS(text=text, lang=lang)
         fp = BytesIO()
@@ -149,41 +143,31 @@ def play_audio(text, lang='fr'):
         audio_html = f'<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
         st.markdown(audio_html, unsafe_allow_html=True)
     except:
-        pass # Fail silently if no internet
+        pass
 
 def generate_heatmap_simulation(image):
-    """Generates a simulated heatmap overlay."""
     image = image.convert("RGB")
     img_array = np.array(image)
-    
-    # Create a Gaussian blob in the center
     x = np.arange(0, img_array.shape[1], 1, float)
     y = np.arange(0, img_array.shape[0], 1, float)
     x, y = np.meshgrid(x, y)
-    
     x0 = img_array.shape[1] // 2
     y0 = img_array.shape[0] // 2
-    sigma = 100 
-    
+    sigma = 100
     heatmap = np.exp(-((x-x0)**2 + (y-y0)**2) / (2*sigma**2))
-    
-    # Colorize
     heatmap = plt.cm.jet(heatmap)[:, :, :3] * 255
     heatmap = heatmap.astype(np.uint8)
     heatmap_img = Image.fromarray(heatmap)
-    
-    # Blend
     blended = Image.blend(image, heatmap_img, alpha=0.3)
     return blended
 
 def calculate_treatment(parasite, weight_kg, age):
-    """Returns treatment protocol based on detection."""
     parasite = parasite.strip()
     if "Giardia" in parasite:
         dosage = weight_kg * 15
         return f"💊 Metronidazole (Flagyl). Dose recommandée: {dosage:.0f} mg/jour pendant 5 jours."
     elif "Amoeba" in parasite:
-        dosage = weight_kg * 35 
+        dosage = weight_kg * 35
         return f"💊 Metronidazole. Dose forte: {dosage:.0f} mg/jour pendant 10 jours."
     elif "Plasmodium" in parasite:
         return "🚑 URGENCE: Protocole ACT (Artemisinin-based Combination Therapy). Hospitalisation immédiate."
@@ -199,53 +183,48 @@ class MedicalReport(FPDF):
         self.set_font('Arial', 'B', 16)
         self.cell(0, 10, 'DHIA Smart Lab AI - Rapport Clinique', 0, 1, 'C')
         self.ln(5)
-    
     def footer(self):
         self.set_y(-15)
         self.set_font('Arial', 'I', 8)
         self.cell(0, 10, 'Systeme securise par DHIA-AI Encryption Standard (AES-256)', 0, 0, 'C')
 
 def create_pdf(patient_data, result, confidence, treatment_plan):
-    """Generates PDF report."""
     pdf = MedicalReport()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    
-    # Patient Info Box
+
+    # Patient Info
     pdf.set_fill_color(240, 240, 240)
     pdf.rect(10, 30, 190, 40, 'F')
     pdf.set_xy(15, 35)
     pdf.cell(0, 10, f"Nom du Patient: {patient_data['name']}", ln=True)
     pdf.set_xy(15, 45)
     pdf.cell(0, 10, f"Age: {patient_data['age']} ans | Poids: {patient_data['weight']} kg | Sexe: {patient_data['sex']}", ln=True)
-    
+
     pdf.ln(30)
-    
+
     # Diagnosis
-pdf.set_font("Arial", 'B', 14)
-pdf.cell(0, 10, "DIAGNOSTIC IA:", ln=True)
-pdf.set_font("Arial", size=12)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "DIAGNOSTIC IA:", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Pathogene Detecte: {result}", ln=True)
+    pdf.cell(0, 10, f"Indice de Confiance: {confidence}%", ln=True)
 
-pdf.cell(0, 10, f"Pathogene Detecte: {result}", ln=True)
-pdf.cell(0, 10, f"Indice de Confiance: {confidence}%", ln=True)
+    pdf.ln(10)
 
-pdf.ln(10)
+    # Treatment
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "PROTOCOLE DE TRAITEMENT:", ln=True)
+    pdf.set_font("Arial", size=11)
+    treatment_safe = treatment_plan.encode('latin-1', 'replace').decode('latin-1')
+    pdf.multi_cell(0, 10, treatment_safe)
 
-# Treatment
-pdf.set_font("Arial", 'B', 14)
-pdf.cell(0, 10, "PROTOCOLE DE TRAITEMENT:", ln=True)
-pdf.set_font("Arial", size=11)
+    pdf.ln(20)
+    pdf.cell(0, 10, f"Technicien: {st.session_state.get('doctor_name', 'Tech. Inconnu')}", ln=True)
+    pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
 
-# Handle unicode/latin-1 issues loosely
-treatment_safe = treatment_plan.encode('latin-1', 'replace').decode('latin-1')
-pdf.multi_cell(0, 10, treatment_safe)
+    return pdf.output(dest='S').encode('latin-1')
 
-pdf.ln(20)
-pdf.cell(0, 10, f"Technicien: {st.session_state.get('doctor_name', 'Tech. Inconnu')}", ln=True)
-pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
-
-# إرجاع محتوى الـ PDF كـ bytes
-return pdf.output(dest='S').encode('latin-1')
 
 
 # --- تخزين المورد في كاش Streamlit ---
@@ -555,6 +534,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
