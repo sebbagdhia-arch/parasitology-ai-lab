@@ -405,18 +405,29 @@ elif menu == t["menu_analyse"]:
             treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
             heatmap_img = generate_heatmap_simulation(image)
             
-            # Save to history
+# --- Save to history safely ---
+if st.session_state.current_patient:
+    patient = st.session_state.patients[st.session_state.current_patient]
 
-scan_id = f"{patient['name']}_{datetime.now().strftime('%H%M%S')}"
-# --- 1. Simple check to avoid duplicates on rerun ---
-if not st.session_state.history or st.session_state.history[-1]['id'] != scan_id:
-    st.session_state.history.append({
-        "id": scan_id,
-        "patient": patient['name'], 
-        "result": clean_label, 
-        "conf": conf, 
-        "date": datetime.now().strftime("%Y-%m-%d")
-    })
+    img_file = st.camera_input("Microscope Feed")
+    
+    if img_file:
+        # بعد معالجة الصورة ونتيجة الـ AI
+        clean_label = label.strip()
+        treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
+        heatmap_img = generate_heatmap_simulation(image)
+
+        # حفظ التاريخ مع scan_id
+        scan_id = f"{patient['name']}_{datetime.now().strftime('%H%M%S')}"
+        if not st.session_state.history or st.session_state.history[-1]['id'] != scan_id:
+            st.session_state.history.append({
+                "id": scan_id,
+                "patient": patient['name'], 
+                "result": clean_label, 
+                "conf": conf, 
+                "date": datetime.now().strftime("%Y-%m-%d")
+            })
+
 
 # --- 2. Display Results ---
 col_res1, col_res2 = st.columns([1, 1])
@@ -534,6 +545,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
