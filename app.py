@@ -398,42 +398,42 @@ elif menu == t["menu_analyse"]:
                 conf = 98
 
 clean_label = label.strip()
-            treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-            heatmap_img = generate_heatmap_simulation(image)
+treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
+heatmap_img = generate_heatmap_simulation(image)
             
-            # --- النطق الصوتي للنتيجة ---
-            result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
-            if clean_label.lower() == "negative":
-                 result_audio_text = "Analyse terminée. L'échantillon est négatif. Le patient va bien, Hamdoullah."
-            play_audio(result_audio_text, lang='fr')
+# --- النطق الصوتي للنتيجة ---
+result_audio_text = f"Analyse terminée. Résultat : {clean_label}, avec une confiance de {conf} pourcents."
+if clean_label.lower() == "negative":
+    result_audio_text = "Analyse terminée. L'échantillon est négatif. Le patient va bien, Hamdoullah."
+play_audio(result_audio_text, lang='fr')
             
-            col_res1, col_res2 = st.columns([1, 1])
-            with col_res1:
-                st.markdown(f"""
-                <div class="medical-card">
-                    <h2 style='color: {theme['accent']};'>{clean_label}</h2>
-                    <h1 style='font-size: 40px;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
-                    <hr>
-                    <p><b>🩺 Protocole de Traitement (AI):</b></p>
-                    <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
-                </div>
-                """, unsafe_allow_html=True)
+col_res1, col_res2 = st.columns([1, 1])
+with col_res1:
+st.markdown(f"""
+<div class="medical-card">
+    <h2 style='color: {theme['accent']};'>{clean_label}</h2>
+    <h1 style='font-size: 40px;'>{conf}% <span style='font-size: 15px; color: grey;'>Confiance</span></h1>
+    <hr>
+       <p><b>🩺 Protocole de Traitement (AI):</b></p>
+         <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
+     </div>
+     """, unsafe_allow_html=True)
             
-            with col_res2:
-                st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)", use_column_width=True)
+with col_res2:
+    st.image(heatmap_img, caption="👁️ AI Vision Heatmap (Zone de détection)", use_column_width=True)
             
-            pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
-            st.download_button(
-                label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
-                data=pdf_bytes,
-                file_name=f"Rapport_{patient['name']}.pdf",
-                mime="application/pdf",
-                use_container_width=True
+ pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
+st.download_button(
+label="📄 Télécharger Rapport (PDF) / تحميل التقرير",
+    data=pdf_bytes,
+    file_name=f"Rapport_{patient['name']}.pdf",
+    mime="application/pdf",
+        use_container_width=True
             )
             
-            if st.session_state.get("last_scan_time") != str(datetime.now()):
-                st.session_state.history.append({"patient": patient['name'], "result": clean_label, "conf": conf, "date": datetime.now().strftime("%Y-%m-%d")})
-                st.session_state.last_scan_time = str(datetime.now())
+if st.session_state.get("last_scan_time") != str(datetime.now()):
+    st.session_state.history.append({"patient": patient['name'], "result": clean_label, "conf": conf, "date": datetime.now().strftime("%Y-%m-%d")})
+    st.session_state.last_scan_time = str(datetime.now())
 
 # صفحة 3: Analytics
 elif menu == t["menu_dash"]:
@@ -501,3 +501,4 @@ elif menu == t["menu_about"]:
         <p>معهد التكوين العالي شبه الطبي ورقلة</p>
     </div>
     """, unsafe_allow_html=True)
+
