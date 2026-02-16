@@ -10,7 +10,6 @@ import pandas as pd
 from datetime import datetime
 from fpdf import FPDF
 
-import streamlit as st
 
 # إعداد الصفحة
 st.set_page_config(
@@ -509,4 +508,5 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
