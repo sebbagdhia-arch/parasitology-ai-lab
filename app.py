@@ -428,7 +428,6 @@ if st.session_state.current_patient:
                 "date": datetime.now().strftime("%Y-%m-%d")
             })
 
-
 # --- Display Results Safely ---
 col_res1, col_res2 = st.columns([1, 1])
 
@@ -444,6 +443,9 @@ with col_res1:
         <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
     </div>
     """, unsafe_allow_html=True)
+
+with col_res2:
+    st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
 
 with col_res2:
     st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
@@ -545,6 +547,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
