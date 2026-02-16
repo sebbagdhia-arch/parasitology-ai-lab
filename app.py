@@ -376,7 +376,7 @@ if not st.session_state.logged_in:
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100) # صورة رمزية
-    st.markdown("## 🧬 DHIA LAB AI")
+    st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
     menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"])
@@ -387,7 +387,7 @@ with st.sidebar:
         st.session_state.dark_mode = dark
         st.rerun()
         
-    if st.button("🔴 Déconnexion"):
+    if st.button(" Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
 
@@ -614,6 +614,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
