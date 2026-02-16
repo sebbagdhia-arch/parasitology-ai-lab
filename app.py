@@ -354,80 +354,10 @@ if menu == t["menu_patient"]:
             st.caption("Aucun patient enregistré.")
 
 # --- PAGE: Analysis ---
-elif menu == t["menu_analyse"]:
-    st.title(t["title_analyse"])
-    
-    if not st.session_state.current_patient:
-        st.warning("⚠️ Veuillez sélectionner un patient dans l'onglet 'Dossier Patient' d'abord.")
-    else:
-        patient = st.session_state.patients[st.session_state.current_patient]
-        st.markdown(f"Patient Actuel: {patient['name']} ({patient['age']} ans)")
-        
-        img_file = st.camera_input("Microscope Feed")
-        
-        if img_file:
-            # 1. Processing Animation
-            with st.status("🧬 Analyse en cours...", expanded=True) as status:
-                st.write("📥 Acquisition de l'image...")
-                time.sleep(0.5)
-                st.write("🧠 Activation des neurones artificiels...")
-                time.sleep(0.5)
-                
-                # 2. AI Logic
-                model, classes = load_model_ia()
-                image = Image.open(img_file).convert("RGB")
-                
-                label = "Inconnu"
-                conf = 0
-                
-                if model:
-                    # Real Prediction
-                    size = (224, 224)
-                    img_res = ImageOps.fit(image, size, method=Image.LANCZOS)
-                    img_arr = np.asarray(img_res).astype(np.float32) / 127.5 - 1
-                    data = np.expand_dims(img_arr, axis=0)
-                    pred = model.predict(data, verbose=0)
-                    idx = np.argmax(pred)
-                    label = classes[idx]
-                    conf = int(pred[0][idx] * 100)
-                else:
-                    # Mock Prediction (Simulation Mode)
-                    st.warning("⚠️ Mode Simulation (Modèle AI non détecté)")
-                    import random
-                    label = random.choice(["Giardia", "Amoeba", "Leishmania", "Negative"])
-                    conf = random.randint(75, 99)
-                
-                st.write("✅ Diagnostic généré.")
-                status.update(label="Terminé", state="complete", expanded=False)
-
-            # 3. Results Processing
-            clean_label = label.strip()
-            treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-            heatmap_img = generate_heatmap_simulation(image)
-            
-# --- Save to history safely ---
-if st.session_state.current_patient:
-    patient = st.session_state.patients[st.session_state.current_patient]
-    
-        img_file = st.camera_input("Microscope Feed", key="camera_analysis")
-    
-    if img_file:
-        # بعد معالجة الصورة ونتيجة الـ AI
-        clean_label = label.strip()
-        treatment = calculate_treatment(clean_label, patient['weight'], patient['age'])
-        heatmap_img = generate_heatmap_simulation(image)
-
-        # حفظ التاريخ مع scan_id
-        scan_id = f"{patient['name']}_{datetime.now().strftime('%H%M%S')}"
-        if not st.session_state.history or st.session_state.history[-1]['id'] != scan_id:
-            st.session_state.history.append({
-                "id": scan_id,
-                "patient": patient['name'], 
-                "result": clean_label, 
-                "conf": conf, 
-                "date": datetime.now().strftime("%Y-%m-%d")
-            })
-
+File "/mount/src/parasitology-ai-lab/app.py", line 412
+          img_file = st.camera_input("Microscope Feed", key="camera_analysis")
+         ^
+IndentationError: unexpected indent
 # --- Display Results Safely ---
 col_res1, col_res2 = st.columns([1, 1])
 
@@ -447,8 +377,6 @@ with col_res1:
 with col_res2:
     st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
 
-with col_res2:
-    st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
 
 # --- 3. Audio & PDF ---
 audio_text = f"Diagnostic: {clean_label}. Confiance: {conf} pourcents."
@@ -547,6 +475,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
