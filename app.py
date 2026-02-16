@@ -173,137 +173,112 @@ parasite_db = {
 # --- 4. التصميم السحري (CSS Magic) ---
 # هذا الكود هو المسؤول عن الخلفية المتحركة وشكل المستشفى
 def apply_css():
-
-    if st.session_state.dark_mode:
+    # إعدادات الألوان بناءً على الوضع الليلي أو النهاري
+    if st.session_state.get("dark_mode", False):
         bg_color = "#0f172a"
         text_color = "#e5e7eb"
         card_bg = "#1e293b"
         pattern_color = "rgba(255,255,255,0.08)"
+        sidebar_bg = "#020617"
+        sidebar_input_border = "#334155"
     else:
         bg_color = "#f8fafc"
         text_color = "#0f172a"
         card_bg = "#ffffff"
         pattern_color = "rgba(15,23,42,0.08)"
-
+        sidebar_bg = "#f0f2f6"
+        sidebar_input_border = "#cbd5e1"
 
     st.markdown(f"""
-<style>
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-
-html, body, [class*="css"], p, span, label, div {{
-    font-family: 'Poppins', sans-serif;
-    color: {text_color} !important;
-}}
-
-h1, h2, h3, h4, h5, h6 {{
-    color: {text_color} !important;
-}}
-
-/* الخلفية */
-.stApp {{
-    background-color: {bg_color};
-    background-image:
-    radial-gradient({pattern_color} 1px, transparent 1px);
-    background-size: 35px 35px;
-}}
-
-/* العناصر العائمة */
-.floating-parasite {{
-    position: fixed;
-    opacity: 0.25;
-    z-index: 0;
-    animation: float 18s linear infinite;
-    font-size: 48px;
-    pointer-events: none;
-}}
-
-@keyframes float {{
-    from {{
-        transform: translateY(110vh) rotate(0deg);
+    html, body, [class*="css"], p, span, label, div {{
+        font-family: 'Poppins', sans-serif;
+        color: {text_color} !important;
     }}
-    to {{
-        transform: translateY(-15vh) rotate(360deg);
+
+    h1, h2, h3, h4, h5, h6 {{
+        color: {text_color} !important;
     }}
-}}
 
-/* البطاقات */
-.medical-card {{
-    background-color: {card_bg};
-    border-radius: 18px;
-    padding: 22px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    border-left: 6px solid #2563eb;
-    margin-bottom: 18px;
-    position: relative;
-    z-index: 2;
-}}
+    /* الخلفية */
+    .stApp {{
+        background-color: {bg_color};
+        background-image:
+        radial-gradient({pattern_color} 1px, transparent 1px);
+        background-size: 35px 35px;
+    }}
 
-/* الأزرار */
-div.stButton > button {{
-    background: linear-gradient(90deg,#2563eb,#1e40af);
-    color: white !important;
-    border-radius: 10px;
-    padding: 10px 22px;
-    font-weight: 600;
-}}
+    /* Sidebar */
+    section[data-testid="stSidebar"] {{
+        background-color: {sidebar_bg};
+    }}
 
-div.stButton > button:hover {{
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(37,99,235,0.5);
-}}
+    section[data-testid="stSidebar"] * {{
+        color: {text_color} !important;
+        font-weight: 500;
+    }}
 
-import streamlit as st
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] textarea,
+    section[data-testid="stSidebar"] select {{
+        background-color: {sidebar_bg} !important;
+        color: {text_color} !important;
+        border: 1px solid {sidebar_input_border};
+    }}
 
-def apply_css():
-    st.markdown("""
-<style>
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background-color: #020617;
-}
+    /* العناصر العائمة */
+    .floating-parasite {{
+        position: fixed;
+        opacity: 0.25;
+        z-index: 0;
+        animation: float 18s linear infinite;
+        font-size: 48px;
+        pointer-events: none;
+    }}
 
-/* كتابة و عناصر Sidebar */
-section[data-testid="stSidebar"] * {
-    color: #ffffff !important;
-    font-weight: 500;
-}
+    @keyframes float {{
+        from {{ transform: translateY(110vh) rotate(0deg); }}
+        to {{ transform: translateY(-15vh) rotate(360deg); }}
+    }}
 
-/* مدخلات Sidebar */
-section[data-testid="stSidebar"] input,
-section[data-testid="stSidebar"] textarea,
-section[data-testid="stSidebar"] select {
-    background-color: #020617 !important;
-    color: white !important;
-    border: 1px solid #334155;
-}
+    /* البطاقات */
+    .medical-card {{
+        background-color: {card_bg};
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-left: 6px solid #2563eb;
+        margin-bottom: 18px;
+        position: relative;
+        z-index: 2;
+    }}
 
-/* العناصر العائمة */
-.floating-parasite {
-    position: fixed;
-    opacity: 0.25;
-    z-index: 0;
-    animation: float 18s linear infinite;
-    font-size: 48px;
-    pointer-events: none;
-}
+    /* الأزرار */
+    div.stButton > button {{
+        background: linear-gradient(90deg,#2563eb,#1e40af);
+        color: white !important;
+        border-radius: 10px;
+        padding: 10px 22px;
+        font-weight: 600;
+    }}
 
-@keyframes float {
-    from { transform: translateY(110vh) rotate(0deg); }
-    to { transform: translateY(-15vh) rotate(360deg); }
-}
+    div.stButton > button:hover {{
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(37,99,235,0.5);
+    }}
+    </style>
 
-</style>
-
-<div class="floating-parasite" style="left:5%">🦠</div>
-<div class="floating-parasite" style="left:25%;animation-delay:3s">🧬</div>
-<div class="floating-parasite" style="left:55%;animation-delay:6s">🔬</div>
-<div class="floating-parasite" style="left:80%;animation-delay:1s">🩸</div>
-""", unsafe_allow_html=True)
+    <div class="floating-parasite" style="left:5%">🦠</div>
+    <div class="floating-parasite" style="left:25%;animation-delay:3s">🧬</div>
+    <div class="floating-parasite" style="left:55%;animation-delay:6s">🔬</div>
+    <div class="floating-parasite" style="left:80%;animation-delay:1s">🩸</div>
+    """, unsafe_allow_html=True)
 
 
+# تفعيل CSS
 apply_css()
-
 # --- 5. الوظائف (Functions) ---
 
 def speak(text):
@@ -600,6 +575,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
