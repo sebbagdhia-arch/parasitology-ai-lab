@@ -390,21 +390,9 @@ if "current_page" not in st.session_state:
 # ========================
 with st.sidebar:
 
-    # 🔹 شعار مجهر متحرك في الأعلى فقط
-    st.markdown("""
-    <div style="text-align:center; margin-bottom:15px;">
-        <img src='https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif' 
-             style='width:100px; animation: float 3s ease-in-out infinite;'>
-    </div>
-    <style>
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-15px); }
-      100% { transform: translateY(0px); }
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
+    # 🔹 صورة ثابتة للمجهر في الأعلى
+    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100)  # ضع هنا رابط الصورة التي تريدها
+    
     # 🔹 عنوان المشروع
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
@@ -425,13 +413,7 @@ with st.sidebar:
         st.session_state.dark_mode = dark
         st.rerun()
 
-    # 🔹 زر About Project
-    st.markdown("### ℹ️ About Project")
-    if st.button("Open Info"):
-        st.info("هنا يمكنك وضع معلومات المشروع لاحقًا...")
-
-    # 🔹 زر Logout
-    st.markdown("---")
+    # 🔹 Logout Button
     if st.button("🔴 Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
@@ -659,6 +641,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
