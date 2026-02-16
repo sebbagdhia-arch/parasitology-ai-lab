@@ -254,11 +254,24 @@ div.stButton > button:hover {{
 }}
 
 /* Sidebar */
-section[data-testid="stSidebar"] {{
+section[data-testid="stSidebar"] {
     background-color: #020617;
-    color: white;
-}}
+}
 
+/* كتابة و عناصر Sidebar */
+section[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+/* مدخلات Sidebar */
+section[data-testid="stSidebar"] input,
+section[data-testid="stSidebar"] textarea,
+section[data-testid="stSidebar"] select {
+    background-color: #020617 !important;
+    color: white !important;
+    border: 1px solid #334155;  
+}
 </style>
 
 <div class="floating-parasite" style="left:5%">🦠</div>
@@ -566,6 +579,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
