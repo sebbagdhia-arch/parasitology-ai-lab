@@ -432,3 +432,24 @@ elif menu == "⚙️ Réglages":
     if st.button("🔴 Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
+# --- إضافة في آخر الملف: تذييل الصفحة ---
+st.markdown("---") # خط فاصل
+col_f1, col_f2 = st.columns([3, 1])
+
+with col_f1:
+    st.markdown(f"""
+        <p style='font-size: 14px; opacity: 0.6;'>
+            📍 INFSP Ouargla | Laboratoire de Parasitologie Numérique <br>
+            © 2026 - Développé par <b>Dhia & Mohamed</b>
+        </p>
+    """, unsafe_allow_html=True)
+
+with col_f2:
+    # عرض الوقت الحالي تلقائياً
+    now = datetime.now().strftime("%H:%M")
+    st.markdown(f"🕒 **Update: {now}**")
+
+# إضافة زر "الاحتفال" في الأسفل (يظهر عند النجاح)
+if st.button("🎉 Célébrer la réussite !"):
+    st.balloons()
+    st.snow()
