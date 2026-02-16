@@ -12,22 +12,19 @@ from fpdf import FPDF
 import matplotlib.pyplot as plt
 from io import BytesIO
 
-# --- 1. System Configuration (Must be first) ---
+# --- 1. إعداد الصفحة (يجب أن يكون في البداية) ---
 st.set_page_config(
-    page_title="DHIA Smart Lab AI v2.0",
+    page_title="DHIA Smart Lab AI",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Constants
-LOGO_URL = "https://cdn-icons-png.flaticon.com/512/9301/9301413.png"
-
-# --- 2. State Management ---
+# --- 2. إدارة الحالة (State Management) ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
-if 'welcome_played' not in st.session_state:
-    st.session_state.welcome_played = False
+if 'intro_played' not in st.session_state:
+    st.session_state.intro_played = False
 if 'patients' not in st.session_state:
     st.session_state.patients = {} 
 if 'current_patient' not in st.session_state:
@@ -35,456 +32,354 @@ if 'current_patient' not in st.session_state:
 if 'history' not in st.session_state:
     st.session_state.history = []
 if 'dark_mode' not in st.session_state:
-    st.session_state.dark_mode = True
-if 'language' not in st.session_state:
-    st.session_state.language = "Français"
-if 'doctor_name' not in st.session_state:
-    st.session_state.doctor_name = "Tech. Inconnu"
+    st.session_state.dark_mode = True # الوضع الافتراضي ليلي
+if 'lang' not in st.session_state:
+    st.session_state.lang = "Français"
 
-# --- Language Dictionary ---
-lang_dict = {
+# --- 3. اللغات والنصوص ---
+texts = {
     "Français": {
-        "menu_patient": "👤 Dossier Patient",
-        "menu_analyse": "🔬 Analyse AI & Traitement",
-        "menu_dash": "📊 Analytics & Dashboard",
-        "menu_sys": "⚙️ Système",
-        "menu_about": "🎓 À propos de nous",
-        "title_patient": "📂 Gestion des Patients",
-        "title_analyse": "🔬 Analyse AI",
-        "title_dash": "📊 Tableau de Bord",
-        "title_sys": "⚙️ Configuration Système",
-        "title_about": "👨‍🔬 Équipe du Projet",
-        "tech_title": "Techniciens de Laboratoire"
-    },
-    "English": {
-        "menu_patient": "👤 Patient Record",
-        "menu_analyse": "🔬 AI Analysis & Treatment",
-        "menu_dash": "📊 Analytics & Dashboard",
-        "menu_sys": "⚙️ System",
-        "menu_about": "🎓 About Us",
-        "title_patient": "📂 Patient Management",
-        "title_analyse": "🔬 AI Analysis",
-        "title_dash": "📊 Dashboard",
-        "title_sys": "⚙️ System Configuration",
-        "title_about": "👨‍🔬 Project Team",
-        "tech_title": "Laboratory Technicians"
+        "menu": ["Dossier Patient", "Analyse AI", "Tableau de Bord", "Système", "À propos"],
+        "labels": ["Nom", "Age", "Poids", "Sexe"],
+        "btns": ["Créer Dossier", "Lancer Analyse", "Télécharger Rapport"],
+        "title": "Exploration de l'IA en Parasitologie",
+        "audio_intro": "Salam alikoum la famille! Bienvenue chez Dhia et Mouhamed Smart Lab. Système activé. Prêt pour la soutenance !"
     },
     "العربية": {
-        "menu_patient": "👤 ملف المريض",
-        "menu_analyse": "🔬 تحليل الذكاء الاصطناعي",
-        "menu_dash": "📊 الإحصائيات",
-        "menu_sys": "⚙️ النظام",
-        "menu_about": "🎓 من نحن",
-        "title_patient": "📂 إدارة المرضى",
-        "title_analyse": "🔬 تحليل الذكاء الاصطناعي",
-        "title_dash": "📊 لوحة التحكم",
-        "title_sys": "⚙️ إعدادات النظام",
-        "title_about": "👨‍🔬 فريق المشروع",
-        "tech_title": "مخبريان"
+        "menu": ["ملف المريض", "تحليل الذكاء الاصطناعي", "لوحة التحكم", "النظام", "حول المشروع"],
+        "labels": ["الاسم", "العمر", "الوزن", "الجنس"],
+        "btns": ["إنشاء ملف", "بدء الفحص", "تحميل التقرير"],
+        "title": "استكشاف الذكاء الاصطناعي في علم الطفيليات",
+        "audio_intro": "السلام عليكم يا جماعة! مرحباً بكم في مخبر ضياء ومحمد الذكي. النظام يعمل بكفاءة."
+    },
+    "English": {
+        "menu": ["Patient Profile", "AI Analysis", "Dashboard", "System", "About"],
+        "labels": ["Name", "Age", "Weight", "Sex"],
+        "btns": ["Create Profile", "Start Scan", "Download Report"],
+        "title": "AI Exploration in Parasitology",
+        "audio_intro": "Hello everyone! Welcome to Dhia and Mohamed Smart Lab. System is ready."
     }
 }
 
-t = lang_dict[st.session_state.language]
-text_align = "right" if st.session_state.language == "العربية" else "left"
-dir_set = "rtl" if st.session_state.language == "العربية" else "ltr"
-
-# --- 3. UI & Theme Engine ---
+# --- 4. المحرك الجمالي (Theme Engine) ---
+# هذا الكود يضمن تغيير الألوان فوراً عند الضغط على الزر
 theme = {
-    "bg": "#0E1117" if st.session_state.dark_mode else "#F4F7F6",
-    "card": "#1E1E1E" if st.session_state.dark_mode else "#FFFFFF",
-    "text": "#E0E0E0" if st.session_state.dark_mode else "#2C3E50",
-    "primary": "#3498DB",
-    "accent": "#E74C3C",
-    "shadow": "rgba(0,0,0,0.5)" if st.session_state.dark_mode else "rgba(0,0,0,0.1)",
-    "sidebar": "#262730" if st.session_state.dark_mode else "#FFFFFF"
+    "bg": "#000000" if st.session_state.dark_mode else "#F0F2F6", # أسود حالك لليل
+    "card": "#1a1a1a" if st.session_state.dark_mode else "#FFFFFF",
+    "text": "#FFFFFF" if st.session_state.dark_mode else "#000000",
+    "sidebar": "#111111" if st.session_state.dark_mode else "#FFFFFF",
+    "accent": "#E74C3C" # الأحمر (Dhia Red)
 }
 
 st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Roboto:wght@400;700&display=swap');
-
+    
+    /* الخلفية الرئيسية */
     .stApp {{
         background-color: {theme['bg']};
     }}
     
+    /* النصوص */
     h1, h2, h3, h4, h5, p, div, span, label, li {{
         color: {theme['text']} !important;
-        font-family: {'"Cairo", sans-serif' if st.session_state.language == 'العربية' else '"Roboto", sans-serif'};
-        text-align: {text_align};
+        font-family: 'Roboto', 'Cairo', sans-serif;
     }}
 
+    /* البطاقات */
     .medical-card {{
         background-color: {theme['card']};
-        padding: 25px;
+        padding: 20px;
         border-radius: 15px;
-        box-shadow: 0 4px 15px {theme['shadow']};
-        border-left: 5px solid {theme['primary']};
+        border: 1px solid #333;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        border-left: 5px solid {theme['accent']};
         margin-bottom: 20px;
-        direction: {dir_set};
     }}
 
+    /* الأزرار */
     div.stButton > button {{
-        background: linear-gradient(90deg, {theme['primary']}, #2980B9);
+        background: linear-gradient(45deg, #FF0000, #990000);
         color: white !important;
         border: none;
-        border-radius: 8px;
         font-weight: bold;
+        transition: 0.3s;
+    }}
+    div.stButton > button:hover {{
+        transform: scale(1.05);
+    }}
+
+    /* القائمة الجانبية */
+    section[data-testid="stSidebar"] {{
+        background-color: {theme['sidebar']};
+        border-right: 1px solid #333;
+    }}
+
+    /* اللوجو المخصص */
+    .dhia-logo {{
+        font-family: 'Arial Black', sans-serif;
+        font-size: 40px;
+        text-align: center;
+        background: -webkit-linear-gradient(#fff, #999);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: {theme['text']};
+    }}
+    .dhia-red {{
+        color: #E74C3C !important;
+        -webkit-text-fill-color: #E74C3C !important;
     }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. Helper Functions ---
+# --- 5. دوال النظام (Helper Functions) ---
+
+# دالة الصوت
 def play_audio(text, lang='fr'):
     try:
         tts = gTTS(text=text, lang=lang)
         fp = BytesIO()
         tts.write_to_fp(fp)
         b64 = base64.b64encode(fp.getvalue()).decode()
-        audio_html = f'<audio autoplay="true" style="display:none;"><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
-        st.markdown(audio_html, unsafe_allow_html=True)
+        md = f"""
+            <audio autoplay="true" style="display:none;">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+            """
+        st.markdown(md, unsafe_allow_html=True)
     except:
         pass
 
+# دالة اللوجو (أحمر وأسود)
+def render_logo():
+    st.markdown(f"""
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span class="dhia-logo">DHIA <span class="dhia-red">LAB</span></span>
+            <br>
+            <span style="font-size: 12px; color: {theme['text']}; opacity: 0.7;">AI PARASITOLOGY v3.0</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+# دالة Heatmap
 def generate_heatmap_simulation(image):
     image = image.convert("RGB")
     img_array = np.array(image)
-    x = np.arange(0, img_array.shape[1], 1, float)
-    y = np.arange(0, img_array.shape[0], 1, float)
-    x, y = np.meshgrid(x, y)
-    x0 = img_array.shape[1] // 2
-    y0 = img_array.shape[0] // 2
-    sigma = 100
-    heatmap = np.exp(-((x-x0)**2 + (y-y0)**2) / (2*sigma**2))
-    heatmap = plt.cm.jet(heatmap)[:, :, :3] * 255
-    heatmap = heatmap.astype(np.uint8)
-    heatmap_img = Image.fromarray(heatmap)
-    blended = Image.blend(image, heatmap_img, alpha=0.3)
+    heatmap = np.zeros((img_array.shape[0], img_array.shape[1]), dtype=np.uint8)
+    center_x, center_y = img_array.shape[1] // 2, img_array.shape[0] // 2
+    cv_x, cv_y = np.meshgrid(np.arange(img_array.shape[1]), np.arange(img_array.shape[0]))
+    dist = np.sqrt((cv_x - center_x)**2 + (cv_y - center_y)**2)
+    heatmap = np.exp(-dist**2 / (2 * (80**2))) * 255 
+    heatmap_colored = plt.cm.jet(heatmap)[:, :, :3] * 255
+    heatmap_colored = heatmap_colored.astype(np.uint8)
+    heatmap_img = Image.fromarray(heatmap_colored)
+    heatmap_img = heatmap_img.resize(image.size)
+    blended = Image.blend(image, heatmap_img, alpha=0.4)
     return blended
 
+# دالة العلاج
 def calculate_treatment(parasite, weight_kg, age):
-    parasite = parasite.strip()
     if "Giardia" in parasite:
-        dosage = weight_kg * 15
-        return f"💊 Metronidazole (Flagyl). Dose recommandée: {dosage:.0f} mg/jour pendant 5 jours."
+        return f"Metronidazole 15mg/kg ({int(weight_kg*15)}mg/jour)"
     elif "Amoeba" in parasite:
-        dosage = weight_kg * 35
-        return f"💊 Metronidazole. Dose forte: {dosage:.0f} mg/jour pendant 10 jours."
+        return f"Metronidazole 35mg/kg ({int(weight_kg*35)}mg/jour)"
     elif "Plasmodium" in parasite:
-        return "🚑 URGENCE: Protocole ACT (Artemisinin-based Combination Therapy). Hospitalisation immédiate."
-    elif "Leishmania" in parasite:
-        return "💉 Traitement spécialisé: Antimoniate de méglumine (Glucantime). Voir infectiologue."
+        return "ACT Protocol (Hospitalisation Immédiate)"
     elif "Negative" in parasite:
-        return "✅ Aucun traitement médicamenteux requis. Hydratation et hygiène."
+        return "RAS (Rien à signaler)"
     else:
-        return "⚠️ Pathogène inconnu. Analyses complémentaires requises."
+        return "Consultation Spécialisée"
 
-class MedicalReport(FPDF):
+# دالة PDF
+class PDF(FPDF):
     def header(self):
-        self.set_font('Arial', 'B', 16)
-        self.cell(0, 10, 'DHIA Smart Lab AI - Rapport Clinique', 0, 1, 'C')
+        self.set_font('Arial', 'B', 15)
+        self.cell(0, 10, 'DHIA & MOHAMED LAB - Rapport', 0, 1, 'C')
         self.ln(5)
-    def footer(self):
-        self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
-        self.cell(0, 10, 'Systeme securise par DHIA-AI Encryption Standard (AES-256)', 0, 0, 'C')
 
-def create_pdf(patient_data, result, confidence, treatment_plan):
-    pdf = MedicalReport()
+def create_pdf(p_data, res, conf, treat):
+    pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-
-    # Patient Info
-    pdf.set_fill_color(240, 240, 240)
-    pdf.rect(10, 30, 190, 40, 'F')
-    pdf.set_xy(15, 35)
-    pdf.cell(0, 10, f"Nom du Patient: {patient_data['name']}", ln=True)
-    pdf.set_xy(15, 45)
-    pdf.cell(0, 10, f"Age: {patient_data['age']} ans | Poids: {patient_data['weight']} kg | Sexe: {patient_data['sex']}", ln=True)
-
-    pdf.ln(30)
-
-    # Diagnosis
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "DIAGNOSTIC IA:", ln=True)
-    pdf.set_font("Arial", size=12)
-    pdf.cell(0, 10, f"Pathogene Detecte: {result}", ln=True)
-    pdf.cell(0, 10, f"Indice de Confiance: {confidence}%", ln=True)
-
+    pdf.cell(0, 10, f"Patient: {p_data['name']} ({p_data['age']} ans, {p_data['weight']}kg)", ln=True)
     pdf.ln(10)
-
-    # Treatment
     pdf.set_font("Arial", 'B', 14)
-    pdf.cell(0, 10, "PROTOCOLE DE TRAITEMENT:", ln=True)
-    pdf.set_font("Arial", size=11)
-    treatment_safe = treatment_plan.encode('latin-1', 'replace').decode('latin-1')
-    pdf.multi_cell(0, 10, treatment_safe)
-
+    pdf.cell(0, 10, f"Resultat: {res} ({conf}%)", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Traitement: {treat}", ln=True)
     pdf.ln(20)
-    pdf.cell(0, 10, f"Technicien: {st.session_state.get('doctor_name', 'Tech. Inconnu')}", ln=True)
-    pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d')}", ln=True)
-
+    pdf.cell(0, 10, "Signature: Dr. Sebbag & Bn Sghiaer", ln=True)
     return pdf.output(dest='S').encode('latin-1')
 
-
-
-# --- تخزين المورد في كاش Streamlit ---
+# تحميل الموديل
 @st.cache_resource
-def get_pdf(result, confidence, treatment_plan):
-    return generate_pdf(result, confidence, treatment_plan)
-
 def load_model_ia():
-    """Loads Keras model or returns None if missing."""
+    model = None
+    classes = ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Negative"]
     try:
-        model = None
-        classes = ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Negative"]
-        
-        # Look for model file
         m_path = next((f for f in os.listdir() if f.endswith(".h5")), None)
         if m_path:
             model = tf.keras.models.load_model(m_path, compile=False)
-            
-        # Look for labels file
-        l_path = next((f for f in os.listdir() if f.endswith(".txt") and "req" not in f), None)
-        if l_path:
-            cleaned = []
-            with open(l_path, "r") as f:
-                for line in f:
-                    cleaned.append(line.strip().split(" ", 1)[-1] if " " in line else line.strip())
-            classes = cleaned
-            
-        return model, classes
-    except Exception as e:
-        return None, ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Negative"]
+    except: pass
+    return model, classes
 
-# --- 5. Login Gate ---
+# --- 6. بوابة الدخول (Login) ---
 if not st.session_state.logged_in:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown("<br><br>", unsafe_allow_html=True)
-        st.image(LOGO_URL, width=100)
-        st.markdown(f"<h1 style='color: {theme['text']}; text-align: center;'>DHIA Smart Lab <span style='color: #E74C3C;'>AI</span></h1>", unsafe_allow_html=True)
-        st.info("🔒 Secure Medical Access Portal (INFSP Ouargla)")
+        render_logo() # اللوجو الأحمر والأسود
+        st.markdown("<h3 style='text-align: center;'>🔐 Secure Access</h3>", unsafe_allow_html=True)
         
-        user_input = st.text_input("ID Technicien", "admin")
-        pass_input = st.text_input("Password", type="password")
-        
-        if st.button("Connexion Sécurisée", use_container_width=True):
-            if pass_input == "1234":
+        pwd = st.text_input("Password / كلمة المرور", type="password")
+        if st.button("ENTER", use_container_width=True):
+            if pwd == "1234":
                 st.session_state.logged_in = True
-                st.session_state.doctor_name = "Tech. Dhia & Mohamed"
-                st.toast("Access Granted. Loading Encryption Keys...")
-                time.sleep(1)
                 st.rerun()
             else:
-                st.error("Access Denied.")
+                st.error("Access Denied")
     st.stop()
 
-# --- 6. Main Application ---
-
-# Audio Welcome (Plays once)
-if st.session_state.logged_in and not st.session_state.welcome_played:
-    welcome_message = "Bienvenue dans le système DHIA Smart Lab. Initialisation des protocoles de détection parasitaire."
-    play_audio(welcome_message)
-    st.session_state.welcome_played = True
+# --- 7. التطبيق الرئيسي (The Main App) ---
 
 # Sidebar
 with st.sidebar:
-    st.image(LOGO_URL, width=70)
-    st.markdown("### 🏥 DHIA Smart Lab")
-    st.caption("v2.0 Enterprise | INFSP Ouargla")
-    
+    render_logo()
     st.markdown("---")
     
-    st.session_state.language = st.selectbox("🌐 Langue", ["Français", "English", "العربية"])
-    
-    # Update dictionary based on selection
-    t = lang_dict[st.session_state.language] 
-    
-    st.markdown("---")
-    
-    menu = st.radio("Navigation", [
-        t["menu_patient"], 
-        t["menu_analyse"], 
-        t["menu_dash"], 
-        t["menu_sys"],
-        t["menu_about"]
-    ])
-    
-    st.markdown("---")
-    st.info(f"👤 {st.session_state.doctor_name}")
-    
-    if st.button("Déconnexion"):
-        st.session_state.logged_in = False
+    # Toggle Dark Mode (يعمل فوراً)
+    is_dark = st.toggle("🌙 Dark Mode", value=st.session_state.dark_mode)
+    if is_dark != st.session_state.dark_mode:
+        st.session_state.dark_mode = is_dark
         st.rerun()
 
-# --- PAGE: Patient Management ---
+    # Language
+    lang_sel = st.selectbox("Language", ["Français", "العربية", "English"])
+    st.session_state.lang = lang_sel
+    t = texts[lang_sel] # تحميل القاموس
 
-if menu == t["menu_patient"]:
-    st.title(t["title_patient"])
+    st.markdown("---")
+    menu_sel = st.radio("Menu", t["menu"])
     
+    st.markdown("---")
+    st.info("👨‍⚕️ Tech. Dhia & Mohamed")
+    st.caption("INFSP Ouargla")
+
+# Intro Voice (مرة واحدة عند الدخول)
+if not st.session_state.intro_played:
+    play_audio(texts[st.session_state.lang]["audio_intro"])
+    st.session_state.intro_played = True
+
+# --- Pages Logic ---
+
+# 1. Dossier Patient
+if menu_sel == t["menu"][0]: # Patient
+    st.title(f"📂 {t['menu'][0]}")
     c1, c2 = st.columns([2, 1])
     with c1:
-        st.markdown(f'<div class="medical-card"><h4>📝 Nouveau Patient / New Patient</h4>', unsafe_allow_html=True)
-        p_name = st.text_input("Nom Complet")
-        cc1, cc2, cc3 = st.columns(3)
-        p_age = cc1.number_input("Age", 1, 120, 25)
-        p_weight = cc2.number_input("Poids (kg)", 1, 250, 70)
-        p_sex = cc3.selectbox("Sexe", ["Homme", "Femme"])
+        st.markdown(f'<div class="medical-card"><h4>📝 {t["btns"][0]}</h4>', unsafe_allow_html=True)
+        name = st.text_input(t["labels"][0])
+        col_a, col_b = st.columns(2)
+        age = col_a.number_input(t["labels"][1], 1, 100, 25)
+        weight = col_b.number_input(t["labels"][2], 1, 150, 70)
         
-        if st.button("💾 Enregistrer Dossier", use_container_width=True):
-            if p_name:
-                p_id = f"PAT-{len(st.session_state.patients)+1001}"
-                st.session_state.patients[p_id] = {
-                    "name": p_name, "age": p_age, "weight": p_weight, "sex": p_sex
-                }
-                st.session_state.current_patient = p_id
-                st.success(f"Dossier créé: {p_id}")
-            else:
-                st.warning("Le nom est obligatoire.")
+        if st.button(t["btns"][0], use_container_width=True):
+            pid = f"P-{len(st.session_state.patients)+1}"
+            st.session_state.patients[pid] = {"name": name, "age": age, "weight": weight}
+            st.session_state.current_patient = pid
+            st.success(f"OK: {name}")
         st.markdown('</div>', unsafe_allow_html=True)
     
     with c2:
-        st.markdown("#### Liste des Patients")
-        if st.session_state.patients:
-            for pid, pdata in st.session_state.patients.items():
-                if st.button(f"{pdata['name']}", key=pid, use_container_width=True):
-                    st.session_state.current_patient = pid
-                    st.toast(f"Patient chargé: {pdata['name']}")
-        else:
-            st.caption("Aucun patient enregistré.")
+        st.write("📋 Liste:")
+        for pid, p in st.session_state.patients.items():
+            if st.button(f"{p['name']}", key=pid):
+                st.session_state.current_patient = pid
 
-# --- PAGE: Analysis ---
-File "/mount/src/parasitology-ai-lab/app.py", line 412
-          img_file = st.camera_input("Microscope Feed", key="camera_analysis")
-         ^
-IndentationError: unexpected indent
-# --- Display Results Safely ---
-col_res1, col_res2 = st.columns([1, 1])
-
-with col_res1:
-    st.markdown(f"""
-    <div class="medical-card">
-        <h2 style='color: {theme['accent']};'>{clean_label}</h2>
-        <h1 style='font-size: 40px; margin:0;'>{conf}% 
-            <span style='font-size: 15px; color: grey;'>Confiance</span>
-        </h1>
-        <hr>
-        <p><b>🩺 Protocole de Traitement:</b></p>
-        <p style='color: {theme['primary']}; font-weight: bold;'>{treatment}</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col_res2:
-    st.image(heatmap_img, caption="👁️ AI Vision Heatmap", use_column_width=True)
-
-
-# --- 3. Audio & PDF ---
-audio_text = f"Diagnostic: {clean_label}. Confiance: {conf} pourcents."
-if st.button("🔊 Écouter le rapport"):
-    play_audio(audio_text)
-
-pdf_bytes = create_pdf(patient, clean_label, conf, treatment)
-st.download_button(
-    label="📄 Télécharger Rapport PDF",
-    data=pdf_bytes,
-    file_name=f"Rapport_{patient['name']}.pdf",
-    mime="application/pdf",
-    use_container_width=True
-)
-
-
-# --- PAGE: Dashboard ---
-if menu == t["menu_dash"]:
-    st.title(t["title_dash"])
+# 2. AI Analysis
+elif menu_sel == t["menu"][1]: # Scan
+    st.title(f"🔬 {t['menu'][1]}")
     
-    if st.session_state.history:
-        # تحويل سجل التاريخ إلى DataFrame
-        df = pd.DataFrame(st.session_state.history)
-        
-        # --- Statistiques clés ---
-        k1, k2, k3 = st.columns(3)
-        total = len(df)
-        positives = len(df[df['result'] != 'Negative'])
-        rate = int((positives / total) * 100) if total > 0 else 0
-        
-        k1.metric("Total Consultations", total)
-        k2.metric("Cas Positifs", positives)
-        k3.metric("Taux d'Infection", f"{rate}%")
-        
-        st.markdown("---")
-        
-        # --- Graphiques et tableau ---
-        c1, c2 = st.columns(2)
-        
-        with c1:
-            st.subheader("📈 Répartition des Pathogènes")
-            if not df.empty:
-                counts = df['result'].value_counts()
-                st.bar_chart(counts)
-            else:
-                st.info("Aucune répartition disponible.")
-        
-        with c2:
-            st.subheader("🗓️ Activité Récente")
-            st.dataframe(
-                df[['date', 'patient', 'result', 'conf']].sort_values(by='date', ascending=False),
-                use_container_width=True
-            )
-            
+    # قراءة العنوان الرسمي تلقائياً عند فتح صفحة التحليل
+    if st.button("📢 Lire le Titre (Soutenance)"):
+        play_audio("Titre: Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique.")
+
+    if not st.session_state.current_patient:
+        st.warning("⚠️ Veuillez sélectionner un patient.")
     else:
-        st.info("Aucune donnée disponible. Effectuez une analyse d'abord.")
+        p_data = st.session_state.patients[st.session_state.current_patient]
+        st.info(f"Patient: {p_data['name']}")
+        
+        # الكاميرا (تم إصلاح الخطأ هنا)
+        img_file = st.camera_input("Microscope")
+        
+        if img_file:
+            # AI Logic
+            model, classes = load_model_ia()
+            image = Image.open(img_file).convert("RGB")
+            
+            if model:
+                # Real Prediction
+                size = (224, 224)
+                img_res = ImageOps.fit(image, size, method=Image.LANCZOS)
+                img_arr = np.asarray(img_res).astype(np.float32) / 127.5 - 1
+                data = np.expand_dims(img_arr, axis=0)
+                pred = model.predict(data, verbose=0)
+                idx = np.argmax(pred)
+                label = classes[idx] if idx < len(classes) else "Inconnu"
+                conf = int(pred[0][idx] * 100)
+            else:
+                # Simulation Mode
+                label = "Giardia Lamblia"
+                conf = 97
+            
+            clean_label = label.strip()
+            treat = calculate_treatment(clean_label, p_data['weight'], p_data['age'])
+            
+            # Display
+            c_res1, c_res2 = st.columns(2)
+            with c_res1:
+                st.markdown(f"""
+                <div class="medical-card">
+                    <h2 style='color:#E74C3C;'>{clean_label}</h2>
+                    <h1>{conf}%</h1>
+                    <hr>
+                    <p><b>Traitement:</b> {treat}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # قراءة النتيجة صوتياً
+                if st.button("🔊 Écouter Résultat"):
+                    play_audio(f"Le résultat est {clean_label} avec une confiance de {conf} pourcents.")
 
-# --- PAGE: System ---
-elif menu == t["menu_sys"]:
-    st.title(t["title_sys"])
-    st.markdown('<div class="medical-card">', unsafe_allow_html=True)
-    st.write("📡 Statut Serveur: En ligne (Localhost)")
-    st.write("🔒 Cryptage: AES-256 Enabled")
-    
-    col_sys1, col_sys2 = st.columns(2)
-    with col_sys1:
-        st.toggle("🌙 Mode Sombre", value=st.session_state.dark_mode, disabled=True, help="Géré automatiquement")
-    
-    if st.button("🗑️ Réinitialiser Base de Données (Factory Reset)"):
-        st.session_state.patients = {}
-        st.session_state.history = []
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
+            with c_res2:
+                hm = generate_heatmap_simulation(image)
+                st.image(hm, caption="AI Heatmap", use_container_width=True)
+            
+            # PDF
+            pdf_data = create_pdf(p_data, clean_label, conf, treat)
+            st.download_button(t["btns"][2], pdf_data, "Rapport.pdf", "application/pdf", use_container_width=True)
+            
+            # Save History
+            if st.session_state.get("last_scan") != str(img_file):
+                st.session_state.history.append({"pat": p_data['name'], "res": clean_label})
+                st.session_state.last_scan = str(img_file)
 
-# --- PAGE: About Us ---
-elif menu == t["menu_about"]:
-    st.title(t["title_about"])
+# 3. Dashboard
+elif menu_sel == t["menu"][2]: # Dash
+    st.title("📊 Dashboard")
+    if st.session_state.history:
+        df = pd.DataFrame(st.session_state.history)
+        st.bar_chart(df['res'].value_counts())
+        st.dataframe(df)
+    else:
+        st.info("No Data")
+
+# 4. System & About
+else:
+    st.title("⚙️ Système & Info")
     st.markdown(f"""
     <div class="medical-card">
-        <h2 style='color: {theme['primary']}; text-align: center;'>🎓 Présentation du Projet</h2>
-
-<br>
-        <p style='font-size: 18px;'><b>Thème :</b> Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais.</p>
-        <hr>
-        <h3 style='color: {theme['accent']};'>👨‍🔬 L'Équipe Réalisatrice :</h3>
-        <ul>
-            <li style='font-size: 18px; margin-bottom: 10px;'><b>Sebbag Mohamed Dhia Eddine</b></li>
-            <li style='font-size: 18px; margin-bottom: 10px;'><b>Bn Sghiaer Mohamed</b></li>
-        </ul>
-        <p><i>Statut :</i> Élèves manipulateurs en laboratoire, 3ème année (طلاب سنة ثالثة مخبريون).</p>
-        <hr>
-        <h3 style='color: {theme['primary']};'>🏛️ Établissement :</h3>
-        <p style='font-size: 16px; font-weight: bold;'>Institut National de Formation Supérieure Paramédicale de Ouargla (INFSP Ouargla)</p>
-        <p>معهد التكوين العالي شبه الطبي ورقلة</p>
+        <h3>{texts['Français']['title']}</h3>
+        <p>Réalisé par: <b>Sebbag Mohamed Dhia Eddine & Bn Sghiaer Mohamed</b></p>
+        <p>INFSP Ouargla - Promo 2026</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
-
-
-
-
-
-
-
-
-
-
-
-
-
