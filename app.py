@@ -453,69 +453,61 @@ with col_f2:
 if st.button("🎉 Célébrer la réussite !"):
     st.balloons()
     st.snow()
-# --- إضافة في آخر الملف لتصحيح الألوان والوضوح ---
+# --- كود التصحيح النهائي (ألوان + خلفية + وضع ليلي) ---
 
+# 1. التأكد من حالة الوضع الليلي
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = True
+
+# 2. تحديد الألوان بناءً على اختيارك
 if st.session_state.dark_mode:
-    # ألوان الوضع الليلي (Dark Mode) - أسود، أحمر، وأبيض ناصع للكتيبة
-    main_bg = "#000000"
-    card_bg = "#121212"
-    text_primary = "#FFFFFF"  # أبيض ناصع للعنوان
-    text_secondary = "#E0E0E0" # رمادي فاتح جداً للشرح
-    accent_color = "#FF4B4B"  # أحمر فاقع للوضوح
+    bg_main = "#000000"  # أسود ملكي
+    txt_color = "#FFFFFF" # أبيض ناصع
+    card_color = "#151515" # رمادي غامق جدا للبطاقات
+    accent = "#FF0000"    # أحمر (Logo Color)
 else:
-    # ألوان الوضع النهاري (Light Mode) - أبيض، أزرق، وأسود فاحم للكتيبة
-    main_bg = "#FFFFFF"
-    card_bg = "#F8F9FA"
-    text_primary = "#000000"  # أسود فاحم للعنوان
-    text_secondary = "#333333" # رمادي غامق جداً للشرح
-    accent_color = "#1E88E5"  # أزرق ملكي
+    bg_main = "#FFFFFF"  # أبيض
+    txt_color = "#000000" # أسود
+    card_color = "#F0F2F6" # رمادي فاتح
+    accent = "#007BFF"    # أزرق
 
+# 3. حقن الكود لإجبار المتصفح على التغيير
 st.markdown(f"""
     <style>
-    /* تصحيح لون الخلفية الكلية */
+    /* إجبار الخلفية الكلية */
     .stApp {{
-        background-color: {main_bg} !important;
+        background-color: {bg_main} !important;
     }}
 
-    /* تصحيح وضوح النصوص */
-    h1, h2, h3, h4, h5, h6, p, label, span, li, .stMarkdown {{
-        color: {text_primary} !important;
-        font-weight: 500 !important;
-        text-shadow: 0px 0px 1px rgba(0,0,0,0.1); /* زيادة حدة الخط */
+    /* إجبار لون الخط في كل مكان */
+    h1, h2, h3, h4, h5, p, li, span, label, .stMarkdown, .stText {{
+        color: {txt_color} !important;
     }}
 
-    /* تصحيح شكل البطاقات (Cards) لتصبح واضحة */
-    .medical-card, div[data-testid="stVerticalBlock"] > div {{
-        background-color: {card_bg} !important;
-        border: 1px solid {accent_color}33 !important;
-        border-radius: 12px;
-        padding: 15px;
-    }}
-
-    /* تصحيح ألوان المدخلات (Input Fields) لكي تظهر الكتابة داخلها */
-    input, textarea, select {{
-        color: {text_primary} !important;
-        background-color: {card_bg} !important;
-        border: 1px solid {accent_color} !important;
-    }}
-
-    /* جعل الأزرار واضحة جداً */
-    .stButton > button {{
-        background-color: {accent_color} !important;
-        color: white !important;
-        border-radius: 8px !important;
-        border: none !important;
-        width: 100%;
-        font-size: 18px !important;
-        height: 50px;
-    }}
-
-    /* تصحيح لون القائمة الجانبية */
+    /* تحسين القائمة الجانبية */
     section[data-testid="stSidebar"] {{
-        background-color: {card_bg} !important;
-        border-right: 2px solid {accent_color} !important;
+        background-color: {card_color} !important;
+        border-right: 2px solid {accent} !important;
+    }}
+
+    /* جعل البطاقات واضحة */
+    .medical-card, .stAlert, div[data-testid="stVerticalBlock"] > div {{
+        background-color: {card_color} !important;
+        color: {txt_color} !important;
+        border: 1px solid {accent}44 !important;
+    }}
+
+    /* تصحيح الكتابة داخل خانات الإدخال */
+    input, select, textarea {{
+        color: {txt_color} !important;
+        background-color: {bg_main} !important;
     }}
     </style>
 """, unsafe_allow_html=True)
 
-st.success("✅ تم تحديث الألوان وتحسين وضوح النصوص بنجاح!")
+# 4. إضافة زر تبديل "سريع" في الأسفل للتجربة
+if st.button("🔄 تبديل الوضع (ليلي/نهاري) فوراً"):
+    st.session_state.dark_mode = not st.session_state.dark_mode
+    st.rerun()
+
+st.info(f"الوضع الحالي: {'ليلي 🌙' if st.session_state.dark_mode else 'نهاري ☀️'}")
