@@ -253,6 +253,8 @@ div.stButton > button:hover {{
     box-shadow: 0 5px 15px rgba(37,99,235,0.5);
 }}
 
+st.markdown("""
+<style>
 /* Sidebar */
 section[data-testid="stSidebar"] {
     background-color: #020617;
@@ -278,7 +280,6 @@ section[data-testid="stSidebar"] select {
 <div class="floating-parasite" style="left:25%;animation-delay:3s">🧬</div>
 <div class="floating-parasite" style="left:55%;animation-delay:6s">🔬</div>
 <div class="floating-parasite" style="left:80%;animation-delay:1s">🩸</div>
-
 """, unsafe_allow_html=True)
 
 apply_css()
@@ -579,6 +580,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
