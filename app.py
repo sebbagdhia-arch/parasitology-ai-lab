@@ -409,7 +409,7 @@ elif menu == t["menu_analyse"]:
 if st.session_state.current_patient:
     patient = st.session_state.patients[st.session_state.current_patient]
 
-    img_file = st.camera_input("Microscope Feed")
+  img_file = st.camera_input("Microscope Feed", key="camera_analysis")
     
     if img_file:
         # بعد معالجة الصورة ونتيجة الـ AI
@@ -547,6 +547,7 @@ elif menu == t["menu_about"]:
     """, unsafe_allow_html=True)
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+
 
 
 
