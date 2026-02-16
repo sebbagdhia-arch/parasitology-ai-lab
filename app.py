@@ -175,98 +175,98 @@ parasite_db = {
 def apply_css():
 
     if st.session_state.dark_mode:
-        # وضع ليلي 🌙
-        bg_color = "#0f172a"       # أزرق داكن
-        text_color = "#e5e7eb"     # أبيض ناعم
+        bg_color = "#0f172a"
+        text_color = "#e5e7eb"
         card_bg = "#1e293b"
         pattern_color = "rgba(255,255,255,0.08)"
-
     else:
-        # وضع نهاري ☀
-        bg_color = "#f8fafc"       # أبيض مائل للرمادي
-        text_color = "#0f172a"     # أزرق غامق
+        bg_color = "#f8fafc"
+        text_color = "#0f172a"
         card_bg = "#ffffff"
         pattern_color = "rgba(15,23,42,0.08)"
 
 
     st.markdown(f"""
-    <style>
+<style>
 
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
-    html, body, [class*="css"], p, span, label, div {
+html, body, [class*="css"], p, span, label, div {{
     font-family: 'Poppins', sans-serif;
     color: {text_color} !important;
-}
+}}
 
-    /* خلفية واضحة */
-    .stApp {{
-        background-color: {bg_color};
-        background-image:
-        radial-gradient({pattern_color} 1px, transparent 1px);
-        background-size: 35px 35px;
+h1, h2, h3, h4, h5, h6 {{
+    color: {text_color} !important;
+}}
+
+/* الخلفية */
+.stApp {{
+    background-color: {bg_color};
+    background-image:
+    radial-gradient({pattern_color} 1px, transparent 1px);
+    background-size: 35px 35px;
+}}
+
+/* العناصر العائمة */
+.floating-parasite {{
+    position: fixed;
+    opacity: 0.25;
+    z-index: 0;
+    animation: float 18s linear infinite;
+    font-size: 48px;
+    pointer-events: none;
+}}
+
+@keyframes float {{
+    from {{
+        transform: translateY(110vh) rotate(0deg);
     }}
-
-    /* العناصر العائمة */
-    .floating-parasite {{
-        position: fixed;
-        opacity: 0.25;   /* زيدناها */
-        z-index: 0;
-        animation: float 18s linear infinite;
-        font-size: 48px;
-        pointer-events: none;
+    to {{
+        transform: translateY(-15vh) rotate(360deg);
     }}
+}}
 
-    @keyframes float {{
-        from {{
-            transform: translateY(110vh) rotate(0deg);
-        }}
-        to {{
-            transform: translateY(-15vh) rotate(360deg);
-        }}
-    }}
+/* البطاقات */
+.medical-card {{
+    background-color: {card_bg};
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    border-left: 6px solid #2563eb;
+    margin-bottom: 18px;
+    position: relative;
+    z-index: 2;
+}}
 
-    /* البطاقات */
-    .medical-card {{
-        background-color: {card_bg};
-        border-radius: 18px;
-        padding: 22px;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        border-left: 6px solid #2563eb;
-        margin-bottom: 18px;
-        position: relative;
-        z-index: 2;
-    }}
+/* الأزرار */
+div.stButton > button {{
+    background: linear-gradient(90deg,#2563eb,#1e40af);
+    color: white !important;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-weight: 600;
+}}
 
-    /* الأزرار */
-    div.stButton > button {{
-        background: linear-gradient(90deg,#2563eb,#1e40af);
-        color: white !important;
-        border-radius: 10px;
-        padding: 10px 22px;
-        font-weight: 600;
-    }}
+div.stButton > button:hover {{
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(37,99,235,0.5);
+}}
 
-    div.stButton > button:hover {{
-        transform: scale(1.05);
-        box-shadow: 0 5px 15px rgba(37,99,235,0.5);
-    }}
+/* Sidebar */
+section[data-testid="stSidebar"] {{
+    background-color: #020617;
+    color: white;
+}}
 
-    /* Sidebar */
-    section[data-testid="stSidebar"] {{
-        background-color: #020617;
-        color: white;
-    }}
+</style>
 
-    </style>
+<div class="floating-parasite" style="left:5%">🦠</div>
+<div class="floating-parasite" style="left:25%;animation-delay:3s">🧬</div>
+<div class="floating-parasite" style="left:55%;animation-delay:6s">🔬</div>
+<div class="floating-parasite" style="left:80%;animation-delay:1s">🩸</div>
 
-    <!-- عناصر خلفية -->
-    <div class="floating-parasite" style="left:5%">🦠</div>
-    <div class="floating-parasite" style="left:25%;animation-delay:3s">🧬</div>
-    <div class="floating-parasite" style="left:55%;animation-delay:6s">🔬</div>
-    <div class="floating-parasite" style="left:80%;animation-delay:1s">🩸</div>
-
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 apply_css()
 
@@ -566,6 +566,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
