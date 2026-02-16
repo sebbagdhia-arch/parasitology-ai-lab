@@ -375,19 +375,77 @@ if not st.session_state.logged_in:
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 # Sidebar
+import streamlit as st
+
+# ========================
+# --- 1. إعداد الحالة ---
+# ========================
+if "dark_mode" not in st.session_state:
+    st.session_state.dark_mode = False
+if "language" not in st.session_state:
+    st.session_state.language = "EN"
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "home"
+
+# ========================
+# --- 2. الشريط الجانبي ---
+# ========================
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100) # صورة رمزية
-    st.markdown("## 🧬 DHIA LAB AI")
-    st.markdown("*Where Science Meets Intelligence*")
+
+    # 🔹 شعار مجهر متحرك للأعلى والأسفل
+    st.markdown("""
+    <div style="text-align:center; margin-bottom:15px;">
+        <img src='https://media.giphy.com/media/26AHONQ79FdWZhAI0/giphy.gif' 
+             style='width:100px; animation: float 3s ease-in-out infinite;'>
+    </div>
+    <style>
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-15px); }
+      100% { transform: translateY(0px); }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 🔹 عنوان المشروع
+    st.markdown("## 🧬 DM SMART LAB")
+    st.markdown("*Where Science Meets Intelligence*" if st.session_state.language=="EN" 
+                else "*Là où la science rencontre l'intelligence*" if st.session_state.language=="FR" 
+                else "*حيث تلتقي العلوم بالذكاء*")
     st.markdown("---")
-    menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"])
+
+    # 🔹 اختيار اللغة
+    st.markdown("### 🌐 Language / Langue / اللغة")
+    lang = st.radio("Select Language", ["EN", "FR", "AR"], index=["EN","FR","AR"].index(st.session_state.language))
+    if lang != st.session_state.language:
+        st.session_state.language = lang
+        st.rerun()
+
+    # 🔹 قائمة التنقل بنفس الرموز الأصلية
+    st.markdown("### 📌 Navigation")
+    menu = st.radio(
+        "Navigation", 
+        ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"],
+        index=["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"].index(
+            next((m for m in ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"] if st.session_state.current_page in m), "🏠 Accueil (Unlock)")
+        )
+    )
+    st.session_state.current_page = menu
     st.markdown("---")
-    # Dark Mode Toggle
+
+    # 🔹 Dark Mode Toggle
     dark = st.toggle("🌙 Mode Nuit", value=st.session_state.dark_mode)
     if dark != st.session_state.dark_mode:
         st.session_state.dark_mode = dark
         st.rerun()
-        
+
+    # 🔹 زر About Project
+    st.markdown("### ℹ️ About Project")
+    if st.button("Open Info"):
+        st.info("هنا يمكنك وضع معلومات المشروع لاحقًا...")
+
+    # 🔹 زر Logout
+    st.markdown("---")
     if st.button("🔴 Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
@@ -614,6 +672,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
