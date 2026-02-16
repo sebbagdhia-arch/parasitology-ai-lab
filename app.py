@@ -19,63 +19,101 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# لوقو متحرك بالأحمر والأبيض
+# لوقو متحرك احترافي
 st.markdown("""
 <style>
 
+/* خلفية متحركة */
+body {
+    background: linear-gradient(270deg, #ff0000, #ffffff, #ff0000);
+    background-size: 600% 600%;
+    animation: bgMove 10s ease infinite;
+}
+
+@keyframes bgMove {
+    0% {background-position:0% 50%;}
+    50% {background-position:100% 50%;}
+    100% {background-position:0% 50%;}
+}
+
+/* حاوية اللوقو */
 .logo-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 120px;
+    height: 180px;
+    perspective: 1000px;
 }
 
+/* اللوقو */
 .logo {
-    font-size: 60px;
+    font-size: 80px;
     font-weight: bold;
     font-family: Arial, sans-serif;
-    position: relative;
+    display: flex;
+    gap: 20px;
+    transform-style: preserve-3d;
+    animation: rotate3D 4s infinite linear;
 }
 
+/* دوران 3D */
+@keyframes rotate3D {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+}
+
+/* الحرف الأول */
 .letter1 {
     color: red;
-    position: relative;
-    animation: swap1 2s infinite;
+    text-shadow: 0 0 15px red;
+    animation: swap1 2s infinite, glow 1.5s infinite alternate;
 }
 
+/* الحرف الثاني */
 .letter2 {
     color: white;
     background: red;
-    padding: 5px 12px;
-    border-radius: 8px;
-    margin-left: 10px;
-    position: relative;
-    animation: swap2 2s infinite;
+    padding: 8px 18px;
+    border-radius: 12px;
+    box-shadow: 0 0 20px red;
+    animation: swap2 2s infinite, glow 1.5s infinite alternate;
 }
 
-/* حركة التبادل */
+/* تبادل المكان */
 @keyframes swap1 {
-    0% { left: 0px; }
-    50% { left: 80px; }
-    100% { left: 0px; }
+    0% { transform: translateX(0); }
+    50% { transform: translateX(100px); }
+    100% { transform: translateX(0); }
 }
 
 @keyframes swap2 {
-    0% { left: 0px; }
-    50% { left: -80px; }
-    100% { left: 0px; }
+    0% { transform: translateX(0); }
+    50% { transform: translateX(-100px); }
+    100% { transform: translateX(0); }
+}
+
+/* وميض */
+@keyframes glow {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
 }
 
 </style>
 
+<!-- صوت -->
+<audio id="logoSound" autoplay loop>
+  <source src="https://www.soundjay.com/buttons/sounds/button-16.mp3" type="audio/mpeg">
+</audio>
+
+<!-- اللوقو -->
 <div class="logo-container">
     <div class="logo">
         <span class="letter1">D</span>
         <span class="letter2">M</span>
     </div>
 </div>
-""", unsafe_allow_html=True)
 
+""", unsafe_allow_html=True)
 
 # --- 2. إدارة الحالة (Session State Management) ---
 # التأكد من أن المتغيرات موجودة لعدم حدوث أخطاء
@@ -508,5 +546,6 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
