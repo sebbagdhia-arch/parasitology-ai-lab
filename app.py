@@ -194,10 +194,10 @@ def apply_css():
 
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
-    html, body, [class*="css"] {{
-        font-family: 'Poppins', sans-serif;
-        color: {text_color} !important;
-    }}
+    html, body, [class*="css"], p, span, label, div {
+    font-family: 'Poppins', sans-serif;
+    color: {text_color} !important;
+}
 
     /* خلفية واضحة */
     .stApp {{
@@ -566,6 +566,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
