@@ -10,13 +10,73 @@ import pandas as pd
 from datetime import datetime
 from fpdf import FPDF
 
-# --- 1. إعداد الصفحة (Configuration) ---
+import streamlit as st
+
+# إعداد الصفحة
 st.set_page_config(
-    page_title="DHIA Smart Lab AI",
+    page_title="DM Smart Lab AI",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# لوقو متحرك بالأحمر والأبيض
+st.markdown("""
+<style>
+
+.logo-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 120px;
+}
+
+.logo {
+    font-size: 60px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    position: relative;
+}
+
+.letter1 {
+    color: red;
+    position: relative;
+    animation: swap1 2s infinite;
+}
+
+.letter2 {
+    color: white;
+    background: red;
+    padding: 5px 12px;
+    border-radius: 8px;
+    margin-left: 10px;
+    position: relative;
+    animation: swap2 2s infinite;
+}
+
+/* حركة التبادل */
+@keyframes swap1 {
+    0% { left: 0px; }
+    50% { left: 80px; }
+    100% { left: 0px; }
+}
+
+@keyframes swap2 {
+    0% { left: 0px; }
+    50% { left: -80px; }
+    100% { left: 0px; }
+}
+
+</style>
+
+<div class="logo-container">
+    <div class="logo">
+        <span class="letter1">D</span>
+        <span class="letter2">M</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
 
 # --- 2. إدارة الحالة (Session State Management) ---
 # التأكد من أن المتغيرات موجودة لعدم حدوث أخطاء
@@ -449,3 +509,4 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
