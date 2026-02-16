@@ -253,7 +253,10 @@ div.stButton > button:hover {{
     box-shadow: 0 5px 15px rgba(37,99,235,0.5);
 }}
 
-st.markdown("""
+import streamlit as st
+
+def apply_css():
+    st.markdown("""
 <style>
 /* Sidebar */
 section[data-testid="stSidebar"] {
@@ -274,6 +277,22 @@ section[data-testid="stSidebar"] select {
     color: white !important;
     border: 1px solid #334155;
 }
+
+/* العناصر العائمة */
+.floating-parasite {
+    position: fixed;
+    opacity: 0.25;
+    z-index: 0;
+    animation: float 18s linear infinite;
+    font-size: 48px;
+    pointer-events: none;
+}
+
+@keyframes float {
+    from { transform: translateY(110vh) rotate(0deg); }
+    to { transform: translateY(-15vh) rotate(360deg); }
+}
+
 </style>
 
 <div class="floating-parasite" style="left:5%">🦠</div>
@@ -581,6 +600,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
