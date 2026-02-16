@@ -453,3 +453,69 @@ with col_f2:
 if st.button("🎉 Célébrer la réussite !"):
     st.balloons()
     st.snow()
+# --- إضافة في آخر الملف لتصحيح الألوان والوضوح ---
+
+if st.session_state.dark_mode:
+    # ألوان الوضع الليلي (Dark Mode) - أسود، أحمر، وأبيض ناصع للكتيبة
+    main_bg = "#000000"
+    card_bg = "#121212"
+    text_primary = "#FFFFFF"  # أبيض ناصع للعنوان
+    text_secondary = "#E0E0E0" # رمادي فاتح جداً للشرح
+    accent_color = "#FF4B4B"  # أحمر فاقع للوضوح
+else:
+    # ألوان الوضع النهاري (Light Mode) - أبيض، أزرق، وأسود فاحم للكتيبة
+    main_bg = "#FFFFFF"
+    card_bg = "#F8F9FA"
+    text_primary = "#000000"  # أسود فاحم للعنوان
+    text_secondary = "#333333" # رمادي غامق جداً للشرح
+    accent_color = "#1E88E5"  # أزرق ملكي
+
+st.markdown(f"""
+    <style>
+    /* تصحيح لون الخلفية الكلية */
+    .stApp {{
+        background-color: {main_bg} !important;
+    }}
+
+    /* تصحيح وضوح النصوص */
+    h1, h2, h3, h4, h5, h6, p, label, span, li, .stMarkdown {{
+        color: {text_primary} !important;
+        font-weight: 500 !important;
+        text-shadow: 0px 0px 1px rgba(0,0,0,0.1); /* زيادة حدة الخط */
+    }}
+
+    /* تصحيح شكل البطاقات (Cards) لتصبح واضحة */
+    .medical-card, div[data-testid="stVerticalBlock"] > div {{
+        background-color: {card_bg} !important;
+        border: 1px solid {accent_color}33 !important;
+        border-radius: 12px;
+        padding: 15px;
+    }}
+
+    /* تصحيح ألوان المدخلات (Input Fields) لكي تظهر الكتابة داخلها */
+    input, textarea, select {{
+        color: {text_primary} !important;
+        background-color: {card_bg} !important;
+        border: 1px solid {accent_color} !important;
+    }}
+
+    /* جعل الأزرار واضحة جداً */
+    .stButton > button {{
+        background-color: {accent_color} !important;
+        color: white !important;
+        border-radius: 8px !important;
+        border: none !important;
+        width: 100%;
+        font-size: 18px !important;
+        height: 50px;
+    }}
+
+    /* تصحيح لون القائمة الجانبية */
+    section[data-testid="stSidebar"] {{
+        background-color: {card_bg} !important;
+        border-right: 2px solid {accent_color} !important;
+    }}
+    </style>
+""", unsafe_allow_html=True)
+
+st.success("✅ تم تحديث الألوان وتحسين وضوح النصوص بنجاح!")
