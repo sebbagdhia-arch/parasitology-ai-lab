@@ -524,21 +524,61 @@ elif menu == "🔬 Scan Intelligent":
                     })
                     st.toast("✅ Données sauvegardées avec succès !", icon="💾")
 
-# الصفحة 3: لوحة التحكم (Dashboard)
+# --- الصفحة 3: لوحة التحكم (Dashboard) ---
 elif menu == "📊 Dashboard":
     st.title("📊 Tableau de Bord Clinique")
-    
-    col1, col2, col3 = st.columns(3)
+
+    # --- مؤشرات الأداء الرئيسية ---
     total = len(st.session_state.history)
-    col1.metric("Total Analyses", total)
-    col2.metric("Précision Moyenne", "94.5%")
-    col3.metric("État du Système", "Opérationnel", "Online")
-    
-    st.markdown("### 📈 Statistiques Récentes")
     if total > 0:
         df = pd.DataFrame(st.session_state.history)
-        st.bar_chart(df["Parasite"].value_counts())
-        st.dataframe(df, use_container_width=True)
+        successful = df[df["Status"] == "Succès"].shape[0] if "Status" in df.columns else total
+        failed = df[df["Status"] == "Échec"].shape[0] if "Status" in df.columns else 0
+        most_common = df["Parasite"].value_counts().idxmax() if "Parasite" in df.columns else "N/A"
+    else:
+        successful = failed = 0
+        most_common = "N/A"
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Analyses", total)
+    col2.metric("Analyses Réussies", successful)
+    col3.metric("Analyses Échouées", failed)
+    col4.metric("Parasite Fréquent", most_common)
+
+    # --- حالة النظام ---
+    st.subheader("État du Système")
+    st.success("Opérationnel ✅")
+
+    # --- إحصاءات متقدمة ---
+    st.markdown("### 📈 Statistiques Récentes")
+    if total > 0:
+        # فلتر حسب الطفيلي
+        parasite_filter = st.selectbox(
+            "Filtrer par type de parasite:",
+            options=["Tous"] + df["Parasite"].unique().tolist()
+        )
+        filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
+
+        # رسم بياني عمودي لتوزيع الطفيليات
+        st.bar_chart(filtered_df["Parasite"].value_counts())
+
+        # رسم خطي للتحليلات حسب التاريخ (إذا العمود موجود)
+        if "Date" in df.columns:
+            filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
+            counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
+            st.line_chart(counts_by_date)
+
+        # عرض الجدول الكامل
+        st.dataframe(filtered_df, use_container_width=True)
+
+        # زر لتصدير البيانات
+        csv = filtered_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="⬇️ Télécharger les données CSV",
+            data=csv,
+            file_name='analyses.csv',
+            mime='text/csv'
+        )
     else:
         st.info("Aucune donnée disponible. Commencez un scan.")
 
@@ -575,6 +615,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
