@@ -374,46 +374,19 @@ if not st.session_state.logged_in:
     st.stop()
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
-# Sidebar
-import streamlit as st
-
-# ========================
-# --- 1. حالة الشريط ---
-# ========================
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = False
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "🏠 Accueil (Unlock)"
-
-# ========================
-# --- 2. الشريط الجانبي ---
-# ========================
 with st.sidebar:
-
-    # 🔹 صورة ثابتة للمجهر في الأعلى
-    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100)  # ضع هنا رابط الصورة التي تريدها
-    
-    # 🔹 عنوان المشروع
-    st.markdown("## 🧬 DM SMART LAB")
+    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100) # صورة رمزية
+    st.markdown("## 🧬 DHIA LAB AI")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
-
-    # 🔹 قائمة التنقل الأصلية
-    menu = st.radio(
-        "Navigation",
-        ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"],
-        index=["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"].index(st.session_state.current_page)
-    )
-    st.session_state.current_page = menu
+    menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"])
     st.markdown("---")
-
-    # 🔹 Dark Mode Toggle
+    # Dark Mode Toggle
     dark = st.toggle("🌙 Mode Nuit", value=st.session_state.dark_mode)
     if dark != st.session_state.dark_mode:
         st.session_state.dark_mode = dark
         st.rerun()
-
-    # 🔹 Logout Button
+        
     if st.button("🔴 Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
@@ -641,6 +614,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
