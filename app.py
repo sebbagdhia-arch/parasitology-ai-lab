@@ -272,7 +272,7 @@ section[data-testid="stSidebar"] textarea,
 section[data-testid="stSidebar"] select {
     background-color: #020617 !important;
     color: white !important;
-    border: 1px solid #334155;  
+    border: 1px solid #334155;
 }
 </style>
 
@@ -281,6 +281,7 @@ section[data-testid="stSidebar"] select {
 <div class="floating-parasite" style="left:55%;animation-delay:6s">🔬</div>
 <div class="floating-parasite" style="left:80%;animation-delay:1s">🩸</div>
 """, unsafe_allow_html=True)
+
 
 apply_css()
 
@@ -580,6 +581,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
