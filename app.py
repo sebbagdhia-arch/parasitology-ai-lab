@@ -235,9 +235,8 @@ with st.sidebar:
     menu = st.radio("Menu Principal", 
         ["👤 Dossier Patient", "🔬 Analyse AI & Traitement", "📊 Analytics & Dashboard", "⚙️ Système"])
 
-if st.session_state.doctor_name:
+    st.markdown("---")
     st.success(f"👨‍⚕️ {st.session_state.doctor_name}")
-
 
 # صفحة 1: تسجيل المرضى (Patient Profile)
 if menu == "👤 Dossier Patient":
@@ -399,4 +398,3 @@ elif menu == "⚙️ Système":
         st.session_state.history = []
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
-
