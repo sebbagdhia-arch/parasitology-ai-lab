@@ -550,7 +550,7 @@ elif menu == "ℹ️ À Propos":
     <div class='medical-card'>
         <h2 style='color:#2E86C1;'>🧬 DM SMART LAB</h2>
         <p><b>Une solution innovante pour le diagnostic parasitologique assisté par ordinateur.</b></p>
-        <p>Ce projet vise à utiliser l'intelligence artificielle pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites intestinaux.</p>
+        <p>Ce projet vise à utiliser l'intelligence artificielle pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites .</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -575,6 +575,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
