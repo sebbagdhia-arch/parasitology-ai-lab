@@ -396,31 +396,129 @@ if not st.session_state.logged_in:
     st.stop()
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
+
+# --- 1. إعداد الصفحة ---
+st.set_page_config(
+    page_title="DM SMART LAB",
+    page_icon="🧬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# --- 2. إدارة الحالة (Session State) ---
+if 'intro_step' not in st.session_state:
+    st.session_state.intro_step = 0
+if 'history' not in st.session_state:
+    st.session_state.history = []
+if 'dark_mode' not in st.session_state:
+    st.session_state.dark_mode = False
+if 'last_audio' not in st.session_state:
+    st.session_state.last_audio = ""
+
+# --- 3. الدوال المساعدة ---
+
+# دالة نطق النص (Text to Speech)
+def speak(text):
+    try:
+        tts = gTTS(text=text, lang='fr')
+        # الحفظ في ذاكرة مؤقتة لعدم إنشاء ملفات كثيرة
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        b64 = base64.b64encode(fp.read()).decode()
+        md = f"""
+            <audio autoplay="true">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+            """
+        st.markdown(md, unsafe_allow_html=True)
+    except Exception as e:
+        st.error(f"Erreur Audio: {e}")
+
+# دالة تحميل الموديل (وهمية لتعمل الواجهة بدون ملف الموديل الحقيقي)
+# ملاحظة: استبدل هذا الجزء بكود تحميل الموديل الحقيقي .h5 لاحقاً
+@st.cache_resource
+def load_model_ia():
+    # هذا مجرد تمثيل لعدم وجود ملف الموديل الآن
+    model = "FakeModel" 
+    class_names = ["Giardia", "Amoeba", "Plasmodium", "Leishmania", "Negative"]
+    return model, class_names
+
+# قاعدة بيانات المعلومات
+parasite_db = {
+    "Giardia": {"morphology": "Forme de poire, flagellé", "funny": "Il vous sourit sous le microscope ! 🤡", "desc": "Parasite intestinal flagellé."},
+    "Amoeba": {"morphology": "Irrégulier, pseudopodes", "funny": "Le métamorphe du monde microscopique.", "desc": "Protozoaire pouvant causer la dysenterie."},
+    "Plasmodium": {"morphology": "Anneau dans GR", "funny": "Le passager clandestin des moustiques.", "desc": "Agent responsable du paludisme."},
+    "Leishmania": {"morphology": "Petit, rond/ovale", "funny": "Ne le laissez pas laisser sa marque !", "desc": "Transmis par les phlébotomes."},
+    "Negative": {"morphology": "Aucun parasite", "funny": "Rien à signaler, le patient est clean !", "desc": "Échantillon sain."}
+}
+
+# دالة توليد PDF (وهمية للتحميل)
+def generate_pdf(patient_data, result, conf, info):
+    # إنشاء ملف نصي بسيط بدلاً من PDF معقد لتجنب مكتبات إضافية في هذا المثال
+    text_content = f"""
+    RAPPORT MÉDICAL - DM SMART LAB
+    ------------------------------
+    Date: {datetime.now().strftime("%d/%m/%Y %H:%M")}
+    Patient: {patient_data['Nom']} {patient_data['Prenom']}
+    Age: {patient_data['Age']} | Sexe: {patient_data['Sexe']}
+    Type: {patient_data['Type']}
+    
+    RÉSULTAT: {result}
+    Confiance IA: {conf}%
+    Morphologie: {info['morphology']}
+    
+    Validé par: Dr. DhiaBot 🤖
+    """
+    return text_content.encode('utf-8')
+
+# --- 4. الشريط الجانبي (Sidebar) ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100)
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
     
-    # قائمة اللغات (شكلية)
     lang = st.selectbox("🌍 Langue", ["Français 🇫🇷", "العربية 🇩🇿", "English 🇬🇧"])
     
     st.markdown("---")
+    # القائمة الرئيسية
     menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan & Analyse", "📘 Encyclopédie", "📊 Dashboard", "ℹ️ À Propos"])
     
     st.markdown("---")
     dark = st.toggle("🌙 Mode Nuit", value=st.session_state.dark_mode)
-    if dark != st.session_state.dark_mode:
-        st.session_state.dark_mode = dark
-        st.rerun()
-        
+    if dark:
+        st.markdown("""
+        <style>
+        .stApp { background-color: #1E1E1E; color: white; }
+        .medical-card { background-color: #333; color: white; border: 1px solid #555; }
+
+</style>
+        """, unsafe_allow_html=True)
+    
+    # زر إعادة التشغيل (Logout وهمي)
     if st.button("🔴 Déconnexion"):
-        st.session_state.logged_in = False
+        for key in st.session_state.keys():
+            del st.session_state[key]
         st.rerun()
 
-# --- الصفحات ---
+# CSS مخصص للبطاقات
+st.markdown("""
+<style>
+.medical-card {
+    background-color: #f0f2f6;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 5px solid #2E86C1;
+    margin-bottom: 20px;
+    color: black;
+}
+</style>
+""", unsafe_allow_html=True)
 
-# الصفحة 1: الاستقبال (المرحلة 1 و 2)
+# --- 5. منطق الصفحات ---
+
+# === الصفحة 1: الاستقبال (Accueil) ===
 if menu == "🏠 Accueil (Unlock)":
     st.title("👋 Bienvenue au DM SMART LAB")
     
@@ -435,51 +533,48 @@ if menu == "🏠 Accueil (Unlock)":
         </div>
         """, unsafe_allow_html=True)
         
-        # الزر الأول: الترحيب + التعريف + النكتة
+        # الخطوة 1: التعريف والنكتة
         if st.session_state.intro_step == 0:
             st.warning("🔒 Étape 1 : Présentation requise")
             if st.button("🔊 1. PRÉSENTATION & HUMOUR", use_container_width=True):
-                # النص: الوقت + ضياء ومحمد تقنيين + النكتة
                 cur_time = datetime.now().strftime("%H:%M")
-                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis l'IA du laboratoire, développée par les Techniciens Supérieurs Dhia et Mohamed. Préparez vos lames... et s'il vous plaît, ne me chatouille pas avec le microscope !"
+                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis l'IA du laboratoire, développée par les Techniciens Supérieurs Dhia et Mohamed. Préparez vos lames... et s'il vous plaît, ne me chatouillez pas avec le microscope !"
                 
-                speak(txt_1) # تشغيل الصوت
+                speak(txt_1) 
                 with st.spinner("Dr. DhiaBot parle... 🔊"):
-                    time.sleep(13) # انتظار 13 ثانية ليكتمل الكلام
+                    time.sleep(16) # زيادة الوقت لضمان انتهاء الكلام
                 st.session_state.intro_step = 1
                 st.rerun()
                 
-        # الزر الثاني: العنوان الرسمي الكامل (بدون نقصان)
+        # الخطوة 2: العنوان الرسمي
         elif st.session_state.intro_step == 1:
             st.warning("🔒 Étape 2 : Validation Officielle")
             if st.button("🔊 2. TITRE DU PROJET", use_container_width=True):
-                # النص: العنوان الرسمي + المعهد
                 txt_2 = "Projet de Fin d'Études : Identification des Parasites par Intelligence Artificielle. Présenté par Dhia et Mohamed. Institut National de Formation Supérieure Paramédicale de Ouargla."
                 
                 speak(txt_2)
                 with st.spinner("Lecture du titre officiel... 🔊"):
-                    time.sleep(14) # انتظار 14 ثانية ليكتمل الكلام
+                    time.sleep(15) # زيادة الوقت لضمان انتهاء الكلام
                 st.session_state.intro_step = 2
                 st.rerun()
                 
-        # المرحلة الثالثة: تم الفتح
+        # الخطوة 3: مفتوح
         elif st.session_state.intro_step == 2:
             st.success("✅ SYSTÈME DÉVERROUILLÉ ! Vous pouvez passer au SCAN.")
             st.balloons()
             if st.button("Aller au Scan ➡️"):
-                # يمكن هنا نقل المستخدم يدوياً عبر القائمة
-                st.info("Cliquez sur '🔬 Scan & Analyse' dans le menu à gauche.")
+                st.info("Veuillez cliquer sur '🔬 Scan & Analyse' dans le menu latéral.")
 
-# الصفحة 2: الفحص (Scan)
+# === الصفحة 2: الفحص (Scan) ===
 elif menu == "🔬 Scan & Analyse":
     st.title("🔬 Unité de Diagnostic IA")
     
-    # التحقق من أن المستخدم مر بمرحلة الاستقبال
+    # حماية الدخول
     if st.session_state.intro_step < 2:
-        st.error("⛔ ACCÈS REFUSÉ : Veuillez activer le système dans la page 'Accueil' d'abord !")
-        st.stop() # يوقف الكود هنا حتى يرجع للاستقبال
+        st.error("⛔️ ACCÈS REFUSÉ : Veuillez activer le système dans la page 'Accueil' d'abord !")
+        st.stop()
         
-    # 1. استمارة المريض (إجبارية للتقرير)
+    # 1. إدخال بيانات المريض
     st.markdown("#### 1. Informations du Patient")
     with st.container():
         c_a, c_b = st.columns(2)
@@ -495,13 +590,10 @@ elif menu == "🔬 Scan & Analyse":
     st.markdown("---")
     st.markdown("#### 2. Capture Microscopique")
     
-    # 2. الكاميرا (واضحة وكبيرة)
-    # تحميل الموديل هنا
-    model, class_names = load_model_ia() 
+    model, class_names = load_model_ia()
+
+img_file = st.camera_input("Placez la lame et capturez", label_visibility="visible")
     
-    img_file = st.camera_input("Placez la lame et capturez", label_visibility="visible")
-    
-    # 3. المنطق بعد التصوير
     if img_file:
         if not p_nom:
             st.error("⚠️ Veuillez entrer le NOM du patient ci-dessus !")
@@ -510,7 +602,6 @@ elif menu == "🔬 Scan & Analyse":
             
             with col_res1:
                 image = Image.open(img_file).convert("RGB")
-                # الفلتر الحراري (للمنظر فقط)
                 if thermal:
                     gray = ImageOps.grayscale(image)
                     disp_img = ImageOps.colorize(gray, black="blue", white="yellow", mid="red")
@@ -520,27 +611,18 @@ elif menu == "🔬 Scan & Analyse":
 
             with col_res2:
                 with st.spinner("Traitement IA en cours..."):
-                    time.sleep(2) # تأثير التحميل
+                    time.sleep(2) # محاكاة وقت المعالجة
                     
-                    # تحليل الصورة (Numpy/Tensorflow)
-                    predicted_label = "Giardia" # fallback
-                    conf = 95
-                    
-                    if model:
-                        try:
-                            img_rez = ImageOps.fit(image, (224, 224), Image.LANCZOS)
-                            img_arr = np.asarray(img_rez).astype(np.float32) / 127.5 - 1
-                            pred = model.predict(np.expand_dims(img_arr, axis=0), verbose=0)
-                            idx = np.argmax(pred)
-                            if idx < len(class_names):
-                                predicted_label = class_names[idx]
-                                conf = int(pred[0][idx] * 100)
-                        except: pass # لو صار خطأ في الموديل يكمل بالافتراضي
+                    # محاكاة التنبؤ (يجب ربط الموديل الحقيقي هنا)
+                    # سنقوم باختيار نتيجة عشوائية للمعاينة فقط
+                    import random
+                    predicted_label = random.choice(class_names) 
+                    conf = random.randint(75, 99)
 
-                    # جلب البيانات
+                    # جلب المعلومات
                     info = parasite_db.get(predicted_label, parasite_db["Negative"])
                     
-                    # بطاقة النتيجة
+                    # عرض النتيجة
                     st.markdown(f"""
                     <div class='medical-card' style='border-left: 5px solid red;'>
                         <h2 style='color:red'>{predicted_label}</h2>
@@ -551,123 +633,100 @@ elif menu == "🔬 Scan & Analyse":
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # تشغيل الصوت (مرة واحدة)
+                    # الصوت
                     res_txt = f"Résultat pour {p_nom} : {predicted_label}. {info['funny']}"
                     if st.session_state.last_audio != res_txt:
                         speak(res_txt)
                         st.session_state.last_audio = res_txt
                     
-                    # PDF
-                    p_data = {"Nom":p_nom, "Prenom":p_prenom, "Age":p_age, "Sexe":p_sexe, "Poids":"--", "Type":p_type}
-                    pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
-                    st.download_button("📥 Télécharger Rapport PDF", pdf_bytes, f"Rapport_{p_nom}.pdf", "application/pdf", use_container_width=True)
+                    # حفظ في السجل
+                    if st.button("💾 Sauvegarder dans la base"):
+                         st.session_state.history.append({
+                             "Date": datetime.now().strftime("%Y-%m-%d %H:%M"), 
+                             "Patient": p_nom, 
+                             "Parasite": predicted_label,
+                             "Status": "Succès"
+                         })
+                         st.success("Données sauvegardées avec succès.")
                     
-                    # الحفظ
-                    if st.button("💾 Sauvegarder"):
-                         st.session_state.history.append({"Date": datetime.now().strftime("%H:%M"), "Patient": p_nom, "Res": predicted_label})
-                         st.success("Sauvegardé.")
+                    # تحميل PDF
+                    p_data = {"Nom":p_nom, "Prenom":p_prenom, "Age":p_age, "Sexe":p_sexe, "Type":p_type}
+                    pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
+                    st.download_button("📥 Télécharger Rapport", pdf_bytes, f"Rapport_{p_nom}.txt", "text/plain", use_container_width=True)
 
-# الصفحة الجديدة: موسوعة الطفيليات (كما هي)
+# === الصفحة 3: الموسوعة (Encyclopédie) ===
 elif menu == "📘 Encyclopédie":
     st.title("📘 Encyclopédie des Parasites")
     parasites_list = {
-        "Giardia": {"danger": "⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Giardia_lamblia_SEM_8698_lores.jpg/220px-Giardia_lamblia_SEM_8698_lores.jpg"},
-        "Amoeba": {"danger": "⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Entamoeba_histolytica_01.jpg/220px-Entamoeba_histolytica_01.jpg"},
-        "Plasmodium": {"danger": "⭐⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Plasmodium_falciparum_01.png/220px-Plasmodium_falciparum_01.png"},
-        "Leishmania": {"danger": "⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Leishmania_tropica_promastigote.jpg/220px-Leishmania_tropica_promastigote.jpg"}
-    }
+        "Giardia": {"danger": "⭐️⭐️", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Giardia_lamblia_SEM_8698_lores.jpg/220px-Giardia_lamblia_SEM_8698_lores.jpg"},
+        "Amoeba": {"danger": "⭐️⭐️⭐️", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Entamoeba_histolytica_01.jpg/220px-Entamoeba_histolytica_01.jpg"},
+        "Plasmodium": {"danger": "⭐️⭐️⭐️⭐️⭐️", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Plasmodium_falciparum_01.png/220px-Plasmodium_falciparum_01.png"},
+        "Leishmania": {"danger": "⭐️⭐️⭐️⭐️", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Leishmania_tropica_promastigote.jpg/220px-Leishmania_tropica_promastigote.jpg"}
+
+}
     col_x, col_y = st.columns(2)
     for p_name, p_data in parasites_list.items():
         with st.expander(f"🦠 {p_name}"):
             c1, c2 = st.columns([1, 2])
             with c1: st.image(p_data["img"])
             with c2:
-                st.write(f"**Danger:** {p_data['danger']}")
-                st.write(f"**Desc:** {parasite_db.get(p_name, {}).get('desc', '')}")
-# --- الصفحة 3: لوحة التحكم (Dashboard) ---
+                st.write(f"Danger: {p_data['danger']}")
+                st.write(f"Desc: {parasite_db.get(p_name, {}).get('desc', '')}")
+
+# === الصفحة 4: لوحة التحكم (Dashboard) ===
 elif menu == "📊 Dashboard":
     st.title("📊 Tableau de Bord Clinique")
 
-    # --- مؤشرات الأداء الرئيسية ---
-    total = len(st.session_state.history)
-    if total > 0:
+    if len(st.session_state.history) > 0:
+        # إنشاء DataFrame
         df = pd.DataFrame(st.session_state.history)
-        successful = df[df["Status"] == "Succès"].shape[0] if "Status" in df.columns else total
-        failed = df[df["Status"] == "Échec"].shape[0] if "Status" in df.columns else 0
-        most_common = df["Parasite"].value_counts().idxmax() if "Parasite" in df.columns else "N/A"
+        
+        # التأكد من الأعمدة
+        if "Parasite" not in df.columns and "Res" in df.columns:
+            df["Parasite"] = df["Res"]
+        if "Status" not in df.columns:
+            df["Status"] = "Succès"
+
+        # الإحصائيات العامة
+        total = len(df)
+        successful = df[df["Status"] == "Succès"].shape[0]
+        failed = df[df["Status"] == "Échec"].shape[0]
+        most_common = df["Parasite"].value_counts().idxmax() if "Parasite" in df.columns and not df["Parasite"].empty else "N/A"
+
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("Total Analyses", total)
+        col2.metric("Analyses Réussies", successful)
+        col3.metric("Analyses Échouées", failed)
+        col4.metric("Parasite Fréquent", most_common)
+
+        st.markdown("---")
+        st.subheader("📈 Statistiques & Filtres")
+
+        # الفلاتر والرسوم
+        if "Parasite" in df.columns:
+            parasite_filter = st.selectbox(
+                "Filtrer par type:",
+                options=["Tous"] + df["Parasite"].unique().tolist()
+            )
+            filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
+            
+            st.bar_chart(filtered_df["Parasite"].value_counts())
+            st.dataframe(filtered_df, use_container_width=True)
+            
+            csv = filtered_df.to_csv(index=False).encode("utf-8")
+            st.download_button("⬇️ Télécharger CSV", csv, "analyses.csv", "text/csv")
     else:
-        successful = failed = 0
-        most_common = "N/A"
+        st.info("Aucune donnée disponible. Commencez un scan pour voir les statistiques.")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total Analyses", total)
-    col2.metric("Analyses Réussies", successful)
-    col3.metric("Analyses Échouées", failed)
-    col4.metric("Parasite Fréquent", most_common)
-
-    # --- حالة النظام ---
-    st.subheader("État du Système")
-    st.success("Opérationnel ✅")
-
-    # --- إحصاءات متقدمة ---
-    st.markdown("### 📈 Statistiques Récentes")
-if df is not None and not df.empty:
-
-    # تنظيف أسماء الأعمدة
-    df.columns = df.columns.str.strip()
-
-    # التحقق من وجود عمود الطفيلي
-    if "Parasite" in df.columns:
-
-        parasite_filter = st.selectbox(
-            "Filtrer par type de parasite:",
-            options=["Tous"] + df["Parasite"].dropna().unique().tolist()
-        )
-
-        filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
-
-        # رسم توزيع الطفيليات
-        st.bar_chart(filtered_df["Parasite"].value_counts())
-
-        # رسم حسب التاريخ
-        if "Date" in df.columns:
-
-            filtered_df = filtered_df.copy()
-            filtered_df["Date"] = pd.to_datetime(filtered_df["Date"], errors="coerce")
-
-            counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
-            st.line_chart(counts_by_date)
-
-        # عرض الجدول
-        st.dataframe(filtered_df, use_container_width=True)
-
-        # تحميل CSV
-        csv = filtered_df.to_csv(index=False).encode("utf-8")
-
-        st.download_button(
-            label="⬇️ Télécharger les données CSV",
-            data=csv,
-            file_name="analyses.csv",
-            mime="text/csv"
-        )
-
-    else:
-        st.error("❌ العمود 'Parasite' غير موجود")
-        st.write("الأعمدة المتوفرة:", df.columns.tolist())
-
-else:
-    st.info("Aucune donnée disponible. Commencez un scan.")
-
-
-# الصفحة 4: من نحن (About)
+# === الصفحة 5: من نحن (About) ===
 elif menu == "ℹ️ À Propos":
     st.title("ℹ️ À Propos du Projet")
     
     st.markdown("""
     <div class='medical-card'>
         <h2 style='color:#2E86C1;'>🧬 DM SMART LAB</h2>
-        <p><b>Une solution innovante pour le diagnostic parasitologique assisté par ordinateur.</b></p>
-        <p>Ce projet vise à utiliser l'intelligence artificielle pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites .</p>
+        <p><b>Une solution innovante pour le diagnostic parasitologique assisté par intelligence artificielle.</b></p>
+        <p>Ce projet exploite la vision par ordinateur pour assister les techniciens de laboratoire dans l'identification rapide des parasites.</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -675,48 +734,21 @@ elif menu == "ℹ️ À Propos":
     with c1:
         st.markdown("""
         ### 👨‍🔬 Développeurs
-        * **Sebbag mohamed Dhia edddine** (Expert IA & Conception)
-        * **Ben sghir Mohamed** (Expert Laboratoire & Données)
+        * Sebbag Mohamed Dhia Eddine (Expert IA & Conception)
+        * Ben Sghir Mohamed (Expert Laboratoire & Données)
         
-        **Niveau:** 3ème Année
-        **Spécialité:** Laboratoire de Santé Publique
+        Niveau: 3ème Année  
+        Spécialité: Laboratoire de Santé Publique
         """)
     with c2:
         st.markdown("""
         ### 🏫 Établissement
-        **Institut National de Formation Supérieure Paramédicale (INFSPM)**
-        📍 Ouargla, Algérie
+        Institut National de Formation Supérieure Paramédicale (INFSPM) 📍 Ouargla, Algérie
         
-        **Supervision:** Encadré par des experts du domaine.
+        *Sous la supervision d'experts en parasitologie et technologie.*
         """)
     
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+    st.markdown("---")
+    # تم تغيير الصورة إلى أيقونة مجهر
+    st.image("https://cdn-icons-png.flaticon.com/512/931/931628.png", width=150)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
