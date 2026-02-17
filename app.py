@@ -628,65 +628,64 @@ elif img_file and p_nom:
                 use_container_width=True
             )
 
-    with col_res2:
-  with st.spinner("Traitement IA en cours..."):
+ with col_res2:
+    with st.spinner("Traitement IA en cours..."):
 
-    pass  # ضع هنا كود المعالجة لاحقًا
+        pass  # ضع هنا كود المعالجة لاحقًا
 
-    time.sleep(2)  # محاكاة وقت المعالجة
+        time.sleep(2)  # محاكاة وقت المعالجة
 
-    # محاكاة التنبؤ (يجب ربط الموديل الحقيقي هنا)
-    # اختيار نتيجة عشوائية للمعاينة فقط
-    import random
-    predicted_label = random.choice(class_names)
-    conf = random.randint(75, 99)
+        # محاكاة التنبؤ (يجب ربط الموديل الحقيقي هنا)
+        import random
+        predicted_label = random.choice(class_names)
+        conf = random.randint(75, 99)
 
-    # جلب المعلومات من قاعدة البيانات
-    info = parasite_db.get(predicted_label, parasite_db["Negative"])
+        # جلب المعلومات من قاعدة البيانات
+        info = parasite_db.get(predicted_label, parasite_db["Negative"])
 
-    # عرض النتيجة
-    st.markdown(f"""
-    <div class='medical-card' style='border-left: 5px solid red; padding:10px;'>
-        <h2 style='color:red'>{predicted_label}</h2>
-        <p><b>Confiance:</b> {conf}%</p>
-        <p><b>Morphologie:</b> {info['morphology']}</p>
-        <hr>
-        <p>🤡 <i>{info['funny']}</i></p>
-    </div>
-    """, unsafe_allow_html=True)
+        # عرض النتيجة
+        st.markdown(f"""
+        <div class='medical-card' style='border-left: 5px solid red; padding:10px;'>
+            <h2 style='color:red'>{predicted_label}</h2>
+            <p><b>Confiance:</b> {conf}%</p>
+            <p><b>Morphologie:</b> {info['morphology']}</p>
+            <hr>
+            <p>🤡 <i>{info['funny']}</i></p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    # الصوت
-    res_txt = f"Résultat pour {p_nom} : {predicted_label}. {info['funny']}"
-    if st.session_state.last_audio != res_txt:
-        speak(res_txt)
-        st.session_state.last_audio = res_txt
+        # الصوت
+        res_txt = f"Résultat pour {p_nom} : {predicted_label}. {info['funny']}"
+        if st.session_state.last_audio != res_txt:
+            speak(res_txt)
+            st.session_state.last_audio = res_txt
 
-    # حفظ في السجل
-    if st.button("💾 Sauvegarder dans la base"):
-        st.session_state.history.append({
-            "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "Patient": p_nom,
-            "Parasite": predicted_label,
-            "Status": "Succès"
-        })
-        st.success("Données sauvegardées avec succès.")
+        # حفظ في السجل
+        if st.button("💾 Sauvegarder dans la base"):
+            st.session_state.history.append({
+                "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "Patient": p_nom,
+                "Parasite": predicted_label,
+                "Status": "Succès"
+            })
+            st.success("Données sauvegardées avec succès.")
 
-    # تحميل PDF
-    p_data = {
-        "Nom": p_nom,
-        "Prenom": p_prenom,
-        "Age": p_age,
-        "Sexe": p_sexe,
-        "Type": p_type
-    }
-    pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
-    st.download_button(
-        "📥 Télécharger Rapport",
-        pdf_bytes,
-        f"Rapport_{p_nom}.txt",
-        "text/plain",
-        use_container_width=True
-    )
+        # تحميل PDF
+        p_data = {
+            "Nom": p_nom,
+            "Prenom": p_prenom,
+            "Age": p_age,
+            "Sexe": p_sexe,
+            "Type": p_type
+        }
+        pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
+        st.download_button(
+            "📥 Télécharger Rapport",
+            pdf_bytes,
+            f"Rapport_{p_nom}.txt",
+            "text/plain",
+            use_container_width=True
+        )
 
 # === الصفحة 3: الموسوعة (Encyclopédie) ===
 elif menu == "📘 Encyclopédie":
@@ -786,6 +785,7 @@ elif menu == "ℹ️ À Propos":
     # تم تغيير الصورة إلى أيقونة مجهر
     st.image("https://cdn-icons-png.flaticon.com/512/931/931628.png", width=150)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
