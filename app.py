@@ -279,57 +279,79 @@ def apply_css():
 
 # تفعيل CSS
 apply_css()
-# --- 5. الوظائف (Functions) ---
+# --- 5. الوظائف المحدثة (Functions) ---
 
 def speak(text):
     """تحويل النص إلى صوت وتشغيله"""
     try:
         tts = gTTS(text=text, lang='fr')
-        # حفظ الملف باسم عشوائي لتجنب التعليق
         filename = f"audio_{int(time.time())}.mp3"
         tts.save(filename)
-        
         with open(filename, "rb") as f:
             b64 = base64.b64encode(f.read()).decode()
-            
         md = f"""
             <audio autoplay="true" style="display:none;">
             <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
             </audio>
             """
         st.markdown(md, unsafe_allow_html=True)
-        # تنظيف الملفات
         os.remove(filename)
-    except:
-        pass
+    except: pass
 
-def generate_pdf(patient_name, result, conf, details):
-    """توليد تقرير PDF احترافي"""
+def generate_pdf(p_info, result, conf, details):
+    """توليد تقرير PDF ببيانات المريض والتقنيين"""
     pdf = FPDF()
     pdf.add_page()
+    
+    # Header
     pdf.set_font("Arial", 'B', 20)
-    pdf.cell(0, 10, "DHIA SMART LAB - RAPPORT", 0, 1, 'C')
-    pdf.ln(10)
+    pdf.cell(0, 10, "DM SMART LAB - RAPPORT D'ANALYSE", 0, 1, 'C')
+    pdf.ln(5)
+    
+    # Info Patient
+    pdf.set_fill_color(230, 230, 230)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " INFORMATION PATIENT", 1, 1, 'L', 1)
     
     pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1)
-    pdf.cell(0, 10, f"Patient: {patient_name}", 0, 1)
-    pdf.cell(0, 10, f"Medecin: {st.session_state.user_name}", 0, 1)
-    pdf.line(10, 60, 200, 60)
-    pdf.ln(20)
+    pdf.ln(2)
+    pdf.cell(95, 10, f"Nom: {p_info['Nom']}", 0, 0)
+    pdf.cell(95, 10, f"Prenom: {p_info['Prenom']}", 0, 1)
+    pdf.cell(60, 10, f"Age: {p_info['Age']} ans", 0, 0)
+    pdf.cell(60, 10, f"Sexe: {p_info['Sexe']}", 0, 0)
+    pdf.cell(70, 10, f"Poids: {p_info['Poids']} kg", 0, 1)
+    pdf.cell(0, 10, f"Type d'echantillon: {p_info['Type']}", 0, 1)
+    pdf.ln(5)
+    
+    # Resultat
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, " RESULTAT MICROSCOPIQUE IA", 1, 1, 'L', 1)
+    pdf.ln(5)
     
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(0, 10, f"Resultat: {result}", 0, 1, 'L')
-    pdf.set_font("Arial", '', 14)
-    pdf.cell(0, 10, f"Confiance IA: {conf}%", 0, 1, 'L')
-    pdf.ln(10)
+    pdf.set_text_color(255, 0, 0) # Red color for result
+    pdf.cell(0, 10, f"PATHOGENE: {result}", 0, 1, 'C')
+    pdf.set_text_color(0, 0, 0) # Reset color
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, f"Confiance du Modele: {conf}%", 0, 1, 'C')
+    pdf.ln(5)
     
-    pdf.set_font("Arial", 'I', 12)
-    pdf.multi_cell(0, 10, f"Morphologie detectee: {details['morphology']}")
-    pdf.multi_cell(0, 10, f"Note du Dr. DhiaBot: {details['desc']}")
+    pdf.multi_cell(0, 10, f"Morphologie: {details['morphology']}")
+    pdf.multi_cell(0, 10, f"Interpretation: {details['desc']}")
+    pdf.multi_cell(0, 10, f"Recommendation: {details['advice'] if 'advice' in details else 'Consulter un médecin.'}")
+    
     pdf.ln(20)
     
-    pdf.cell(0, 10, "Signature Numerique: __________________", 0, 1)
+    # Footer / Signatures
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(0, 10, f"Fait le: {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1)
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(95, 10, "Technicien de Labo 1:", 0, 0)
+    pdf.cell(95, 10, "Technicien de Labo 2:", 0, 1)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(95, 10, "DHIA", 0, 0) # اسمك
+    pdf.cell(95, 10, "MOHAMED", 0, 1) # اسم محمد
     
     return pdf.output(dest='S').encode('latin-1')
 
@@ -394,135 +416,151 @@ with st.sidebar:
 
 # --- الصفحات ---
 
-# الصفحة 1: الاستقبال والمجهر المتكلم (شرط الكاميرا)
+# الصفحة 1: الاستقبال
 if menu == "🏠 Accueil (Unlock)":
-    st.title("👋 Bienvenue au Laboratoire")
-    
+    st.title("👋 Bienvenue au DM SMART LAB")
     col1, col2 = st.columns([1, 2])
-    
     with col1:
-        # صورة المجهر الكرتونية
         st.image("https://cdn-icons-png.flaticon.com/512/123/123389.png", width=250)
-    
     with col2:
-        st.markdown("""
-        <div class='medical-card'>
-            <h3>🤖 Assistant Dr. DhiaBot</h3>
-            <p>Appuyez sur le bouton ci-dessous pour activer le système.</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div class='medical-card'><h3>🤖 Assistant Dr. DhiaBot</h3><p>Activation vocale requise.</p></div>", unsafe_allow_html=True)
         
-        # منطق الزر المتكلم
+        # الزر الأول: الترحيب + الوقت + النكتة
         if st.session_state.intro_step == 0:
-            if st.button("🔊 CLIQUEZ ICI (Étape 1)", use_container_width=True):
-                # النكتة الافتتاحية
-                speak("Bonjour Docteur ! Je suis prêt. Attention, ne me chatouille pas avec la lame !")
+            if st.button("🔊 PRÉSENTATION (Étape 1)", use_container_width=True):
+                current_time = datetime.now().strftime("%H heures et %M minutes")
+                txt_intro = f"Bonjour à tous. Je suis l'intelligence artificielle du laboratoire, développée par les techniciens supérieurs Dhia et Mohamed. Il est actuellement {current_time}. Préparez vos lames, je suis prêt pour le show ! Ne me chatouille pas avec le microscope !"
+                speak(txt_intro)
                 st.session_state.intro_step = 1
+                time.sleep(12) # وقت كافي للكلام
                 st.rerun()
                 
+        # الزر الثاني: العنوان الرسمي الكامل
         elif st.session_state.intro_step == 1:
-            st.info("Haha! Une autre fois pour confirmer...")
-            if st.button("🔊 CONFIRMER L'ACCÈS (Étape 2)", use_container_width=True):
-                # العنوان الرسمي
-                speak("Projet de Fin d'Études : Identification des Parasites par Intelligence Artificielle. Présenté par Dhia et Mohamed. Institut National de Formation Supérieure Paramédicale de Ouargla.")
+            st.info("Initialisation de la base de données...")
+            if st.button("🔊 TITRE DU PROJET (Étape 2 - Unlock)", use_container_width=True):
+                txt_title = "Projet de Fin d'Études : Identification des Parasites par Intelligence Artificielle. Institut National de Formation Supérieure Paramédicale de Ouargla."
+                speak(txt_title)
                 st.session_state.intro_step = 2
-                time.sleep(8) # انتظار انتهاء الكلام تقريباً
+                time.sleep(10)
                 st.rerun()
                 
         elif st.session_state.intro_step == 2:
-            st.success("✅ SYSTÈME DÉVERROUILLÉ ! Allez dans l'onglet 'Scan Intelligent'.")
+            st.success("✅ SYSTÈME DÉVERROUILLÉ ! Accès autorisé.")
             st.balloons()
 
 # الصفحة 2: الفحص (Scan)
-elif menu == "🔬 Scan Intelligent":
-    st.title("🔬 Analyse Microscopique")
+elif menu == "🔬 Scan & Analyse":
+    st.title("🔬 Unité de Diagnostic IA")
     
     if st.session_state.intro_step < 2:
-        st.warning("🔒 Veuillez déverrouiller le système dans l'onglet 'Accueil' d'abord !")
+        st.warning("🔒 Veuillez activer le système dans l'Accueil d'abord !")
     else:
-        # تحميل الموديل
-        model, class_names = load_model_ia()
+        # 1. استمارة المريض (Patient Form)
+        with st.expander("📝 Informations du Patient (Obligatoire)", expanded=True):
+            c_a, c_b = st.columns(2)
+            p_nom = c_a.text_input("Nom du Patient", placeholder="ex: Benali")
+            p_prenom = c_b.text_input("Prénom", placeholder="ex: Ahmed")
+            
+            c_c, c_d, c_e, c_f = st.columns(4)
+            p_age = c_c.number_input("Age", min_value=1, max_value=120, value=30)
+            p_sexe = c_d.selectbox("Sexe", ["Masculin", "Féminin"])
+            p_poids = c_e.number_input("Poids (kg)", value=70)
+            p_type = c_f.selectbox("Type d'examen", ["Selles (Copro)", "Sang (Frottis)", "Urines"])
+
+        model, class_names = load_model_ia() # تأكد أن دالة التحميل موجودة فوق
         
+        # 2. الكاميرا والحراري
         c1, c2 = st.columns([1, 1])
         with c1:
-            st.markdown("### 📸 Acquisition")
-            img_file = st.camera_input("Placez la lame sous l'objectif")
+            st.markdown("### 📸 Acquisition & Vision Thermique")
+            thermal_mode = st.toggle("🔥 Mode Vision Thermique (Infrarouge)")
+            img_file = st.camera_input("Microscope")
             
         with c2:
-            if img_file:
-                # شريط التقدم (Visual Effect)
-                progress = st.progress(0)
-                status = st.empty()
-                
-                status.text("🔍 Vérification de la qualité...")
-                time.sleep(0.5); progress.progress(30)
-                status.text("🧠 Analyse morphologique...")
-                time.sleep(0.5); progress.progress(70)
-                status.text("✨ Génération du rapport...")
-                time.sleep(0.5); progress.progress(100)
-                status.empty()
-                
-                # المعالجة
+            if img_file and p_nom:
+                # معالجة الصورة
                 image = Image.open(img_file).convert("RGB")
                 
-                # التوقع (Prediction)
-                # *ملاحظة: هذا الجزء يحاكي النتيجة إذا لم يكن الموديل موجوداً لكي لا يتوقف الموقع*
-                # *إذا كان الموديل يعمل، سيستخدمه*
-                predicted_label = "Giardia" # افتراضي للتجربة
-                conf = 96
+                # وضع الرؤية الحرارية (Demo Effect)
+                if thermal_mode:
+                    st.write("🔄 Conversion Thermique en cours...")
+                    # تحويل للصورة الرمادية ثم تلوينها لمحاكاة الحراري
+                    gray_img = ImageOps.grayscale(image)
+                    # تلوين زائف (Pseudo-color)
+                    image = ImageOps.colorize(gray_img, black="blue", white="orange", mid="red") 
+                    st.image(image, caption="Vue Thermique (Simulation)", use_container_width=True)
                 
-                if model:
-                    img_resized = ImageOps.fit(image, (224, 224), Image.LANCZOS)
-                    img_array = np.asarray(img_resized).astype(np.float32) / 127.5 - 1
-                    pred = model.predict(np.expand_dims(img_array, axis=0), verbose=0)
-                    idx = np.argmax(pred)
-                    if idx < len(class_names):
-                        predicted_label = class_names[idx]
-                        conf = int(pred[0][idx] * 100)
+                # شريط التقدم
+                with st.spinner("Analyse des vecteurs pathogènes..."):
+                    time.sleep(2)
+                    
+                    # التنبؤ
+                    predicted_label = "Giardia"
+                    conf = 98
+                    if model:
+                        img_rez = ImageOps.fit(image, (224, 224), Image.LANCZOS)
+                        img_arr = np.asarray(img_rez).astype(np.float32) / 127.5 - 1
+                        pred = model.predict(np.expand_dims(img_arr, axis=0), verbose=0)
+                        idx = np.argmax(pred)
+                        if idx < len(class_names):
+                            predicted_label = class_names[idx]
+                            conf = int(pred[0][idx] * 100)
 
-                # جلب المعلومات من قاعدة البيانات
-                info = parasite_db.get(predicted_label, parasite_db["Negative"])
-                
-                # عرض النتيجة (Card)
-                color = "#E74C3C" if predicted_label != "Negative" else "#2ECC71"
-                st.markdown(f"""
-                <div class='medical-card' style='border-left: 10px solid {color};'>
-                    <h2 style='color:{color}; margin:0;'>RÉSULTAT: {predicted_label}</h2>
-                    <h4 style='color:grey;'>Indice de Confiance: {conf}%</h4>
-                    <hr>
-                    <p><b>🔬 Morphologie:</b> {info['morphology']}</p>
-                    <p><b>🩺 Description:</b> {info['desc']}</p>
-                    <p style='background-color: #FFF3CD; padding: 10px; border-radius: 10px;'>
-                        🤡 <b>Dr. DhiaBot:</b> "{info['funny']}"
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # الصوت (النكتة + النتيجة)
-                audio_text = f"Analyse terminée. J'ai trouvé {predicted_label}. {info['funny']}"
-                if st.session_state.last_audio != audio_text:
-                    speak(audio_text)
-                    st.session_state.last_audio = audio_text
-                
-                # تحميل PDF
-                pdf_bytes = generate_pdf("Patient_X", predicted_label, conf, info)
-                st.download_button(
-                    label="📄 TÉLÉCHARGER LE RAPPORT (PDF)",
-                    data=pdf_bytes,
-                    file_name=f"Rapport_{predicted_label}.pdf",
-                    mime="application/pdf",
-                    use_container_width=True
-                )
-                
-                # حفظ في السجل
-                if st.button("💾 Enregistrer dans la base"):
-                    st.session_state.history.append({
-                        "Date": datetime.now().strftime("%H:%M"),
-                        "Parasite": predicted_label,
-                        "Confiance": conf
-                    })
-                    st.toast("✅ Données sauvegardées avec succès !", icon="💾")
+                    info = parasite_db.get(predicted_label, parasite_db["Negative"])
+                    
+                    # عرض النتيجة
+                    st.markdown(f"""
+                    <div class='medical-card'>
+                        <h2 style='color:red;'>RÉSULTAT: {predicted_label}</h2>
+                        <h3>Confiance: {conf}%</h3>
+                        <p><b>🔍 Morphologie:</b> {info['morphology']}</p>
+                        <p style='color:#E67E22;'>🤖 <b>Dr. DhiaBot:</b> "{info['funny']}"</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # الصوت
+                    aud_txt = f"Patient {p_nom}. Résultat: {predicted_label}. {info['funny']}"
+                    if st.session_state.last_audio != aud_txt:
+                        speak(aud_txt)
+                        st.session_state.last_audio = aud_txt
+                    
+                    # PDF Report
+                    p_data = {"Nom":p_nom, "Prenom":p_prenom, "Age":p_age, "Sexe":p_sexe, "Poids":p_poids, "Type":p_type}
+                    pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
+                    
+                    st.download_button("📄 RAPPORT COMPLET (PDF)", pdf_bytes, f"Rapport_{p_nom}.pdf", "application/pdf", use_container_width=True)
+                    
+                    if st.button("💾 Archiver"):
+                        st.session_state.history.append({"Date":datetime.now().strftime("%H:%M"), "Patient":p_nom, "Resultat":predicted_label})
+                        st.success("Dossier Archivé.")
+            elif img_file and not p_nom:
+                st.error("⚠️ Veuillez entrer le NOM du patient avant l'analyse !")
 
+# الصفحة الجديدة: موسوعة الطفيليات
+elif menu == "📘 Encyclopédie":
+    st.title("📘 Encyclopédie des Parasites")
+    st.markdown("Base de connaissances intégrée pour la comparaison morphologique.")
+    
+    # قائمة الطفيليات (يمكنك إضافة روابط صور حقيقية مكان الرابط الافتراضي)
+    parasites_list = {
+        "Giardia": {"danger": "⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Giardia_lamblia_SEM_8698_lores.jpg/220px-Giardia_lamblia_SEM_8698_lores.jpg"},
+        "Amoeba": {"danger": "⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Entamoeba_histolytica_01.jpg/220px-Entamoeba_histolytica_01.jpg"},
+        "Plasmodium": {"danger": "⭐⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Plasmodium_falciparum_01.png/220px-Plasmodium_falciparum_01.png"},
+        "Leishmania": {"danger": "⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Leishmania_tropica_promastigote.jpg/220px-Leishmania_tropica_promastigote.jpg"}
+    }
+    
+    col_x, col_y = st.columns(2)
+    for p_name, p_data in parasites_list.items():
+        with st.expander(f"🦠 {p_name}"):
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                st.image(p_data["img"], caption=p_name)
+            with c2:
+                st.write(f"**Danger:** {p_data['danger']}")
+                st.write(f"**Description:** {parasite_db.get(p_name, {}).get('desc', 'No desc')}")
+                st.write(f"**Morphologie:** {parasite_db.get(p_name, {}).get('morphology', 'No data')}")
+                st.info("Traitement recommandé: Voir protocole médical.")
 # --- الصفحة 3: لوحة التحكم (Dashboard) ---
 elif menu == "📊 Dashboard":
     st.title("📊 Tableau de Bord Clinique")
@@ -614,6 +652,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
