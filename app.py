@@ -612,35 +612,49 @@ elif menu == "📊 Dashboard":
     # --- إحصاءات متقدمة ---
     st.markdown("### 📈 Statistiques Récentes")
     if total > 0:
-        # فلتر حسب الطفيلي
-        parasite_filter = st.selectbox(
-            "Filtrer par type de parasite:",
-            options=["Tous"] + df["Parasite"].unique().tolist()
-        )
-        filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
+# تنظيف أسماء الأعمدة من الفراغات
+df.columns = df.columns.str.strip()
 
-        # رسم بياني عمودي لتوزيع الطفيليات
-        st.bar_chart(filtered_df["Parasite"].value_counts())
+# التحقق من وجود عمود الطفيلي
+if "Parasite" in df.columns:
 
-        # رسم خطي للتحليلات حسب التاريخ (إذا العمود موجود)
-        if "Date" in df.columns:
-            filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
-            counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
-            st.line_chart(counts_by_date)
+    # فلتر حسب الطفيلي
+    parasite_filter = st.selectbox(
+        "Filtrer par type de parasite:",
+        options=["Tous"] + df["Parasite"].dropna().unique().tolist()
+    )
 
-        # عرض الجدول الكامل
-        st.dataframe(filtered_df, use_container_width=True)
+    filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
 
-        # زر لتصدير البيانات
-        csv = filtered_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="⬇️ Télécharger les données CSV",
-            data=csv,
-            file_name='analyses.csv',
-            mime='text/csv'
-        )
-    else:
-        st.info("Aucune donnée disponible. Commencez un scan.")
+    # رسم بياني عمودي لتوزيع الطفيليات
+    st.bar_chart(filtered_df["Parasite"].value_counts())
+
+    # رسم خطي حسب التاريخ (إذا موجود)
+    if "Date" in df.columns:
+
+        filtered_df = filtered_df.copy()  # لتفادي Warning
+        filtered_df["Date"] = pd.to_datetime(filtered_df["Date"], errors="coerce")
+
+        counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
+        st.line_chart(counts_by_date)
+
+    # عرض الجدول
+    st.dataframe(filtered_df, use_container_width=True)
+
+    # تصدير CSV
+    csv = filtered_df.to_csv(index=False).encode('utf-8')
+
+    st.download_button(
+        label="⬇️ Télécharger les données CSV",
+        data=csv,
+        file_name="analyses.csv",
+        mime="text/csv"
+    )
+
+else:
+    st.error("❌ العمود 'Parasite' غير موجود في البيانات")
+    st.write("الأعمدة المتوفرة:", df.columns.tolist())
+
 
 # الصفحة 4: من نحن (About)
 elif menu == "ℹ️ À Propos":
@@ -675,6 +689,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
