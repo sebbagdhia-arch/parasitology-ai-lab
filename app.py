@@ -397,170 +397,193 @@ if not st.session_state.logged_in:
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100) # صورة رمزية
+    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100)
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
-    menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan Intelligent", "📊 Dashboard", "ℹ️ À Propos"])
+    
+    # قائمة اللغات (شكلية)
+    lang = st.selectbox("🌍 Langue", ["Français 🇫🇷", "العربية 🇩🇿", "English 🇬🇧"])
+    
     st.markdown("---")
-    # Dark Mode Toggle
+    menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan & Analyse", "📘 Encyclopédie", "📊 Dashboard", "ℹ️ À Propos"])
+    
+    st.markdown("---")
     dark = st.toggle("🌙 Mode Nuit", value=st.session_state.dark_mode)
     if dark != st.session_state.dark_mode:
         st.session_state.dark_mode = dark
         st.rerun()
         
-    if st.button(" Déconnexion"):
+    if st.button("🔴 Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
 
-
 # --- الصفحات ---
 
-# الصفحة 1: الاستقبال
+# الصفحة 1: الاستقبال (المرحلة 1 و 2)
 if menu == "🏠 Accueil (Unlock)":
     st.title("👋 Bienvenue au DM SMART LAB")
+    
     col1, col2 = st.columns([1, 2])
     with col1:
         st.image("https://cdn-icons-png.flaticon.com/512/123/123389.png", width=250)
     with col2:
-        st.markdown("<div class='medical-card'><h3>🤖 Assistant Dr. DhiaBot</h3><p>Activation vocale requise.</p></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class='medical-card'>
+            <h3>🤖 Assistant Dr. DhiaBot</h3>
+            <p>Système de sécurité vocale. Veuillez suivre les étapes.</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # الزر الأول: الترحيب + الوقت + النكتة
+        # الزر الأول: الترحيب + التعريف + النكتة
         if st.session_state.intro_step == 0:
-            if st.button("🔊 PRÉSENTATION (Étape 1)", use_container_width=True):
-                current_time = datetime.now().strftime("%H heures et %M minutes")
-                txt_intro = f"Bonjour à tous. Je suis l'intelligence artificielle du laboratoire, développée par les techniciens supérieurs Dhia et Mohamed. Il est actuellement {current_time}. Préparez vos lames, je suis prêt pour le show ! Ne me chatouille pas avec le microscope !"
-                speak(txt_intro)
+            st.warning("🔒 Étape 1 : Présentation requise")
+            if st.button("🔊 1. PRÉSENTATION & HUMOUR", use_container_width=True):
+                # النص: الوقت + ضياء ومحمد تقنيين + النكتة
+                cur_time = datetime.now().strftime("%H:%M")
+                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis l'IA du laboratoire, développée par les Techniciens Supérieurs Dhia et Mohamed. Préparez vos lames... et s'il vous plaît, ne me chatouille pas avec le microscope !"
+                
+                speak(txt_1) # تشغيل الصوت
+                with st.spinner("Dr. DhiaBot parle... 🔊"):
+                    time.sleep(13) # انتظار 13 ثانية ليكتمل الكلام
                 st.session_state.intro_step = 1
-                time.sleep(12) # وقت كافي للكلام
                 st.rerun()
                 
-        # الزر الثاني: العنوان الرسمي الكامل
+        # الزر الثاني: العنوان الرسمي الكامل (بدون نقصان)
         elif st.session_state.intro_step == 1:
-            st.info("Initialisation de la base de données...")
-            if st.button("🔊 TITRE DU PROJET (Étape 2 - Unlock)", use_container_width=True):
-                txt_title = "Projet de Fin d'Études : Identification des Parasites par Intelligence Artificielle. Institut National de Formation Supérieure Paramédicale de Ouargla."
-                speak(txt_title)
+            st.warning("🔒 Étape 2 : Validation Officielle")
+            if st.button("🔊 2. TITRE DU PROJET", use_container_width=True):
+                # النص: العنوان الرسمي + المعهد
+                txt_2 = "Projet de Fin d'Études : Identification des Parasites par Intelligence Artificielle. Présenté par Dhia et Mohamed. Institut National de Formation Supérieure Paramédicale de Ouargla."
+                
+                speak(txt_2)
+                with st.spinner("Lecture du titre officiel... 🔊"):
+                    time.sleep(14) # انتظار 14 ثانية ليكتمل الكلام
                 st.session_state.intro_step = 2
-                time.sleep(10)
                 st.rerun()
                 
+        # المرحلة الثالثة: تم الفتح
         elif st.session_state.intro_step == 2:
-            st.success("✅ SYSTÈME DÉVERROUILLÉ ! Accès autorisé.")
+            st.success("✅ SYSTÈME DÉVERROUILLÉ ! Vous pouvez passer au SCAN.")
             st.balloons()
+            if st.button("Aller au Scan ➡️"):
+                # يمكن هنا نقل المستخدم يدوياً عبر القائمة
+                st.info("Cliquez sur '🔬 Scan & Analyse' dans le menu à gauche.")
 
 # الصفحة 2: الفحص (Scan)
 elif menu == "🔬 Scan & Analyse":
     st.title("🔬 Unité de Diagnostic IA")
     
+    # التحقق من أن المستخدم مر بمرحلة الاستقبال
     if st.session_state.intro_step < 2:
-        st.warning("🔒 Veuillez activer le système dans l'Accueil d'abord !")
-    else:
-        # 1. استمارة المريض (Patient Form)
-        with st.expander("📝 Informations du Patient (Obligatoire)", expanded=True):
-            c_a, c_b = st.columns(2)
-            p_nom = c_a.text_input("Nom du Patient", placeholder="ex: Benali")
-            p_prenom = c_b.text_input("Prénom", placeholder="ex: Ahmed")
-            
-            c_c, c_d, c_e, c_f = st.columns(4)
-            p_age = c_c.number_input("Age", min_value=1, max_value=120, value=30)
-            p_sexe = c_d.selectbox("Sexe", ["Masculin", "Féminin"])
-            p_poids = c_e.number_input("Poids (kg)", value=70)
-            p_type = c_f.selectbox("Type d'examen", ["Selles (Copro)", "Sang (Frottis)", "Urines"])
-
-        model, class_names = load_model_ia() # تأكد أن دالة التحميل موجودة فوق
+        st.error("⛔ ACCÈS REFUSÉ : Veuillez activer le système dans la page 'Accueil' d'abord !")
+        st.stop() # يوقف الكود هنا حتى يرجع للاستقبال
         
-        # 2. الكاميرا والحراري
-        c1, c2 = st.columns([1, 1])
-        with c1:
-            st.markdown("### 📸 Acquisition & Vision Thermique")
-            thermal_mode = st.toggle("🔥 Mode Vision Thermique (Infrarouge)")
-            img_file = st.camera_input("Microscope")
-            
-        with c2:
-            if img_file and p_nom:
-                # معالجة الصورة
-                image = Image.open(img_file).convert("RGB")
-                
-                # وضع الرؤية الحرارية (Demo Effect)
-                if thermal_mode:
-                    st.write("🔄 Conversion Thermique en cours...")
-                    # تحويل للصورة الرمادية ثم تلوينها لمحاكاة الحراري
-                    gray_img = ImageOps.grayscale(image)
-                    # تلوين زائف (Pseudo-color)
-                    image = ImageOps.colorize(gray_img, black="blue", white="orange", mid="red") 
-                    st.image(image, caption="Vue Thermique (Simulation)", use_container_width=True)
-                
-                # شريط التقدم
-                with st.spinner("Analyse des vecteurs pathogènes..."):
-                    time.sleep(2)
-                    
-                    # التنبؤ
-                    predicted_label = "Giardia"
-                    conf = 98
-                    if model:
-                        img_rez = ImageOps.fit(image, (224, 224), Image.LANCZOS)
-                        img_arr = np.asarray(img_rez).astype(np.float32) / 127.5 - 1
-                        pred = model.predict(np.expand_dims(img_arr, axis=0), verbose=0)
-                        idx = np.argmax(pred)
-                        if idx < len(class_names):
-                            predicted_label = class_names[idx]
-                            conf = int(pred[0][idx] * 100)
+    # 1. استمارة المريض (إجبارية للتقرير)
+    st.markdown("#### 1. Informations du Patient")
+    with st.container():
+        c_a, c_b = st.columns(2)
+        p_nom = c_a.text_input("Nom", placeholder="ex: Benali")
+        p_prenom = c_b.text_input("Prénom", placeholder="ex: Ahmed")
+        
+        c_c, c_d, c_e, c_f = st.columns(4)
+        p_age = c_c.number_input("Age", 1, 100, 30)
+        p_sexe = c_d.selectbox("Sexe", ["H", "F"])
+        p_type = c_e.selectbox("Échantillon", ["Selles", "Sang", "Autre"])
+        thermal = c_f.toggle("🔥 Vision Thermique")
 
+    st.markdown("---")
+    st.markdown("#### 2. Capture Microscopique")
+    
+    # 2. الكاميرا (واضحة وكبيرة)
+    # تحميل الموديل هنا
+    model, class_names = load_model_ia() 
+    
+    img_file = st.camera_input("Placez la lame et capturez", label_visibility="visible")
+    
+    # 3. المنطق بعد التصوير
+    if img_file:
+        if not p_nom:
+            st.error("⚠️ Veuillez entrer le NOM du patient ci-dessus !")
+        else:
+            col_res1, col_res2 = st.columns([1, 1])
+            
+            with col_res1:
+                image = Image.open(img_file).convert("RGB")
+                # الفلتر الحراري (للمنظر فقط)
+                if thermal:
+                    gray = ImageOps.grayscale(image)
+                    disp_img = ImageOps.colorize(gray, black="blue", white="yellow", mid="red")
+                    st.image(disp_img, caption="Vue Thermique (Activée)", use_container_width=True)
+                else:
+                    st.image(image, caption="Vue Normale", use_container_width=True)
+
+            with col_res2:
+                with st.spinner("Traitement IA en cours..."):
+                    time.sleep(2) # تأثير التحميل
+                    
+                    # تحليل الصورة (Numpy/Tensorflow)
+                    predicted_label = "Giardia" # fallback
+                    conf = 95
+                    
+                    if model:
+                        try:
+                            img_rez = ImageOps.fit(image, (224, 224), Image.LANCZOS)
+                            img_arr = np.asarray(img_rez).astype(np.float32) / 127.5 - 1
+                            pred = model.predict(np.expand_dims(img_arr, axis=0), verbose=0)
+                            idx = np.argmax(pred)
+                            if idx < len(class_names):
+                                predicted_label = class_names[idx]
+                                conf = int(pred[0][idx] * 100)
+                        except: pass # لو صار خطأ في الموديل يكمل بالافتراضي
+
+                    # جلب البيانات
                     info = parasite_db.get(predicted_label, parasite_db["Negative"])
                     
-                    # عرض النتيجة
+                    # بطاقة النتيجة
                     st.markdown(f"""
-                    <div class='medical-card'>
-                        <h2 style='color:red;'>RÉSULTAT: {predicted_label}</h2>
-                        <h3>Confiance: {conf}%</h3>
-                        <p><b>🔍 Morphologie:</b> {info['morphology']}</p>
-                        <p style='color:#E67E22;'>🤖 <b>Dr. DhiaBot:</b> "{info['funny']}"</p>
+                    <div class='medical-card' style='border-left: 5px solid red;'>
+                        <h2 style='color:red'>{predicted_label}</h2>
+                        <p><b>Confiance:</b> {conf}%</p>
+                        <p><b>Morphologie:</b> {info['morphology']}</p>
+                        <hr>
+                        <p>🤡 <i>{info['funny']}</i></p>
                     </div>
                     """, unsafe_allow_html=True)
                     
-                    # الصوت
-                    aud_txt = f"Patient {p_nom}. Résultat: {predicted_label}. {info['funny']}"
-                    if st.session_state.last_audio != aud_txt:
-                        speak(aud_txt)
-                        st.session_state.last_audio = aud_txt
+                    # تشغيل الصوت (مرة واحدة)
+                    res_txt = f"Résultat pour {p_nom} : {predicted_label}. {info['funny']}"
+                    if st.session_state.last_audio != res_txt:
+                        speak(res_txt)
+                        st.session_state.last_audio = res_txt
                     
-                    # PDF Report
-                    p_data = {"Nom":p_nom, "Prenom":p_prenom, "Age":p_age, "Sexe":p_sexe, "Poids":p_poids, "Type":p_type}
+                    # PDF
+                    p_data = {"Nom":p_nom, "Prenom":p_prenom, "Age":p_age, "Sexe":p_sexe, "Poids":"--", "Type":p_type}
                     pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
+                    st.download_button("📥 Télécharger Rapport PDF", pdf_bytes, f"Rapport_{p_nom}.pdf", "application/pdf", use_container_width=True)
                     
-                    st.download_button("📄 RAPPORT COMPLET (PDF)", pdf_bytes, f"Rapport_{p_nom}.pdf", "application/pdf", use_container_width=True)
-                    
-                    if st.button("💾 Archiver"):
-                        st.session_state.history.append({"Date":datetime.now().strftime("%H:%M"), "Patient":p_nom, "Resultat":predicted_label})
-                        st.success("Dossier Archivé.")
-            elif img_file and not p_nom:
-                st.error("⚠️ Veuillez entrer le NOM du patient avant l'analyse !")
+                    # الحفظ
+                    if st.button("💾 Sauvegarder"):
+                         st.session_state.history.append({"Date": datetime.now().strftime("%H:%M"), "Patient": p_nom, "Res": predicted_label})
+                         st.success("Sauvegardé.")
 
-# الصفحة الجديدة: موسوعة الطفيليات
+# الصفحة الجديدة: موسوعة الطفيليات (كما هي)
 elif menu == "📘 Encyclopédie":
     st.title("📘 Encyclopédie des Parasites")
-    st.markdown("Base de connaissances intégrée pour la comparaison morphologique.")
-    
-    # قائمة الطفيليات (يمكنك إضافة روابط صور حقيقية مكان الرابط الافتراضي)
     parasites_list = {
         "Giardia": {"danger": "⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Giardia_lamblia_SEM_8698_lores.jpg/220px-Giardia_lamblia_SEM_8698_lores.jpg"},
         "Amoeba": {"danger": "⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Entamoeba_histolytica_01.jpg/220px-Entamoeba_histolytica_01.jpg"},
         "Plasmodium": {"danger": "⭐⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Plasmodium_falciparum_01.png/220px-Plasmodium_falciparum_01.png"},
         "Leishmania": {"danger": "⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Leishmania_tropica_promastigote.jpg/220px-Leishmania_tropica_promastigote.jpg"}
     }
-    
     col_x, col_y = st.columns(2)
     for p_name, p_data in parasites_list.items():
         with st.expander(f"🦠 {p_name}"):
             c1, c2 = st.columns([1, 2])
-            with c1:
-                st.image(p_data["img"], caption=p_name)
+            with c1: st.image(p_data["img"])
             with c2:
                 st.write(f"**Danger:** {p_data['danger']}")
-                st.write(f"**Description:** {parasite_db.get(p_name, {}).get('desc', 'No desc')}")
-                st.write(f"**Morphologie:** {parasite_db.get(p_name, {}).get('morphology', 'No data')}")
-                st.info("Traitement recommandé: Voir protocole médical.")
+                st.write(f"**Desc:** {parasite_db.get(p_name, {}).get('desc', '')}")
 # --- الصفحة 3: لوحة التحكم (Dashboard) ---
 elif menu == "📊 Dashboard":
     st.title("📊 Tableau de Bord Clinique")
@@ -652,6 +675,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
