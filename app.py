@@ -595,6 +595,7 @@ elif menu == "🔬 Scan & Analyse":
 img_file = st.camera_input("Placez la lame et capturez", label_visibility="visible")
     
     if img_file:
+        
         if not p_nom:
             st.error("⚠️ Veuillez entrer le NOM du patient ci-dessus !")
         else:
@@ -752,3 +753,4 @@ elif menu == "ℹ️ À Propos":
     # تم تغيير الصورة إلى أيقونة مجهر
     st.image("https://cdn-icons-png.flaticon.com/512/931/931628.png", width=150)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
