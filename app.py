@@ -586,19 +586,95 @@ elif menu == "📘 Encyclopédie":
                 st.write(f"**Desc:** {parasite_db.get(p_name, {}).get('desc', '')}")
 
 # الصفحة 3: Dashboard
-elif menu == "📊 Dashboard":
-    st.title("📊 Statistiques")
-    if st.session_state.history:
-        st.dataframe(pd.DataFrame(st.session_state.history), use_container_width=True)
+elif  menu == "📊 Dashboard":
+    st.title("📊 Tableau de Bord Clinique")
+
+    # --- مؤشرات الأداء الرئيسية ---
+    total = len(st.session_state.history)
+    if total > 0:
+        df = pd.DataFrame(st.session_state.history)
+        successful = df[df["Status"] == "Succès"].shape[0] if "Status" in df.columns else total
+        failed = df[df["Status"] == "Échec"].shape[0] if "Status" in df.columns else 0
+        most_common = df["Parasite"].value_counts().idxmax() if "Parasite" in df.columns else "N/A"
     else:
-        st.info("Aucune donnée.")
+        successful = failed = 0
+        most_common = "N/A"
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Analyses", total)
+    col2.metric("Analyses Réussies", successful)
+    col3.metric("Analyses Échouées", failed)
+    col4.metric("Parasite Fréquent", most_common)
+
+    # --- حالة النظام ---
+    st.subheader("État du Système")
+    st.success("Opérationnel ✅")
+
+    # --- إحصاءات متقدمة ---
+    st.markdown("### 📈 Statistiques Récentes")
+    if total > 0:
+        # فلتر حسب الطفيلي
+        parasite_filter = st.selectbox(
+            "Filtrer par type de parasite:",
+            options=["Tous"] + df["Parasite"].unique().tolist()
+        )
+        filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
+
+        # رسم بياني عمودي لتوزيع الطفيليات
+        st.bar_chart(filtered_df["Parasite"].value_counts())
+
+        # رسم خطي للتحليلات حسب التاريخ (إذا العمود موجود)
+        if "Date" in df.columns:
+            filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
+            counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
+            st.line_chart(counts_by_date)
+
+        # عرض الجدول الكامل
+        st.dataframe(filtered_df, use_container_width=True)
+
+        # زر لتصدير البيانات
+        csv = filtered_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="⬇️ Télécharger les données CSV",
+            data=csv,
+            file_name='analyses.csv',
+            mime='text/csv'
+        )
+    else:
+        st.info("Aucune donnée disponible. Commencez un scan.")
+
 
 # الصفحة 4: About
 elif menu == "ℹ️ À Propos":
-    st.title("ℹ️ À Propos")
+    st.title("ℹ️ À Propos du Projet")
+    
     st.markdown("""
-    ### 🧬 DM SMART LAB
-    **Institut National de Formation Supérieure Paramédicale de Ouargla**
-    * 👨‍🔬 **Dhia** (Technicien Supérieur)
-    * 👨‍🔬 **Mohamed** (Technicien Supérieur)
-    """)
+    <div class='medical-card'>
+        <h2 style='color:#2E86C1;'>🧬 DM SMART LAB</h2>
+        <p><b>Une solution innovante pour le diagnostic parasitologique assisté par ordinateur.</b></p>
+        <p>Ce projet vise à utiliser l'intelligence artificielle pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites .</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("""
+        ### 👨‍🔬 Développeurs
+        * **Sebbag mohamed Dhia edddine** (Expert IA & Conception)
+        * **Ben sghir Mohamed** (Expert Laboratoire & Données)
+        
+        **Niveau:** 3ème Année
+        **Spécialité:** Laboratoire de Santé Publique
+        """)
+    with c2:
+        st.markdown("""
+        ### 🏫 Établissement
+        **Institut National de Formation Supérieure Paramédicale (INFSPM)**
+        📍 Ouargla, Algérie
+        
+        **Supervision:** Encadré par des experts du domaine.
+        """)
+    
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+    st.caption("Fait avec ❤️ à Ouargla, 2026")
+
