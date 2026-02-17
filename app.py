@@ -592,25 +592,46 @@ elif menu == "🔬 Scan & Analyse":
     
     model, class_names = load_model_ia()
 
-img_file = st.camera_input("Placez la lame et capturez", label_visibility="visible")
-    
-    if img_file and not p_nom:
+img_file = st.camera_input(
+    "Placez la lame et capturez",
+    label_visibility="visible"
+)
 
-            st.error("⚠️ Veuillez entrer le NOM du patient ci-dessus !")
+if img_file and not p_nom:
+
+    st.error("⚠️ Veuillez entrer le NOM du patient ci-dessus !")
+
+elif img_file and p_nom:
+
+    col_res1, col_res2 = st.columns([1, 1])
+
+    with col_res1:
+        image = Image.open(img_file).convert("RGB")
+
+        if thermal:
+            gray = ImageOps.grayscale(image)
+            disp_img = ImageOps.colorize(
+                gray,
+                black="blue",
+                white="yellow",
+                mid="red"
+            )
+            st.image(
+                disp_img,
+                caption="Vue Thermique (Activée)",
+                use_container_width=True
+            )
         else:
-            col_res1, col_res2 = st.columns([1, 1])
-            
-            with col_res1:
-                image = Image.open(img_file).convert("RGB")
-                if thermal:
-                    gray = ImageOps.grayscale(image)
-                    disp_img = ImageOps.colorize(gray, black="blue", white="yellow", mid="red")
-                    st.image(disp_img, caption="Vue Thermique (Activée)", use_container_width=True)
-                else:
-                    st.image(image, caption="Vue Normale", use_container_width=True)
+            st.image(
+                image,
+                caption="Vue Normale",
+                use_container_width=True
+            )
 
-            with col_res2:
-                with st.spinner("Traitement IA en cours..."):
+    with col_res2:
+        with st.spinner("Traitement IA en cours..."):
+            pass  # ضع هنا كود المعالجة لاحقًا
+
                     time.sleep(2) # محاكاة وقت المعالجة
                     
                     # محاكاة التنبؤ (يجب ربط الموديل الحقيقي هنا)
@@ -752,5 +773,6 @@ elif menu == "ℹ️ À Propos":
     # تم تغيير الصورة إلى أيقونة مجهر
     st.image("https://cdn-icons-png.flaticon.com/512/931/931628.png", width=150)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
