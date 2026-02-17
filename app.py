@@ -611,8 +611,7 @@ elif menu == "📊 Dashboard":
 
     # --- إحصاءات متقدمة ---
     st.markdown("### 📈 Statistiques Récentes")
-    if total > 0:
-if not df.empty:
+if df is not None and not df.empty:
 
     # تنظيف أسماء الأعمدة
     df.columns = df.columns.str.strip()
@@ -693,6 +692,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
