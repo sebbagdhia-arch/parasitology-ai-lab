@@ -647,38 +647,42 @@ if menu == "📊 Dashboard":
 # الصفحة 4: About
 elif menu == "ℹ️ À Propos":
     st.title("ℹ️ À Propos du Projet")
+    
+    # كل HTML داخل st.markdown وبين علامات اقتباس ثلاثية
     st.markdown("""
-    هنا يمكنك كتابة معلومات حول المشروع...
-    """)
-
     <div class='medical-card'>
-        <h2 style='color:#2E86C1;'>🧬 DM SMART LAB</h2>
+        <h2 style='color:#2E86C1;'>DM SMART LAB</h2>
         <p><b>Une solution innovante pour le diagnostic parasitologique assisté par ordinateur.</b></p>
-        <p>Ce projet vise à utiliser l'intelligence artificielle pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites .</p>
+        <p>Ce projet vise à utiliser l'intelligence artificielle pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites.</p>
     </div>
     """, unsafe_allow_html=True)
     
+    # معلومات عن المطورين والمؤسسة
     c1, c2 = st.columns(2)
     with c1:
         st.markdown("""
         ### 👨‍🔬 Développeurs
-        * **Sebbag mohamed Dhia edddine** (Expert IA & Conception)
-        * **Ben sghir Mohamed** (Expert Laboratoire & Données)
+        * **Sebbag Mohamed Dhia Eddine** (Expert IA & Conception)
+        * **Ben Sghir Mohamed** (Expert Laboratoire & Données)
         
-        **Niveau:** 3ème Année
+        **Niveau:** 3ème Année  
         **Spécialité:** Laboratoire de Santé Publique
         """)
     with c2:
         st.markdown("""
         ### 🏫 Établissement
-        **Institut National de Formation Supérieure Paramédicale (INFSPM)**
+        **Institut National de Formation Supérieure Paramédicale (INFSPM)**  
         📍 Ouargla, Algérie
         
         **Supervision:** Encadré par des experts du domaine.
         """)
     
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
+    st.image(
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png",
+        width=100
+    )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
