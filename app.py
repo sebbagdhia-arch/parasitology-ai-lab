@@ -415,7 +415,7 @@ if not st.session_state.logged_in:
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 with st.sidebar:
-    st.image("images/b44c83ee-f5d4-4365-9f8f-4703d81bf4c2.png", width=100)
+    st.image("", width=100)
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
@@ -712,6 +712,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
