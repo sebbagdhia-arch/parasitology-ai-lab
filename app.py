@@ -347,11 +347,11 @@ def generate_pdf(p_info, result, conf, details):
     pdf.cell(0, 10, f"Fait le: {datetime.now().strftime('%Y-%m-%d %H:%M')}", 0, 1)
     pdf.ln(5)
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(95, 10, "Technicien de Labo 1:", 0, 0)
-    pdf.cell(95, 10, "Technicien de Labo 2:", 0, 1)
+    pdf.cell(95, 10, "Technicien de Labo 40 :", 0, 0)
+    pdf.cell(95, 10, "Technicien de Labo 05 :", 0, 1)
     pdf.set_font("Arial", '', 12)
-    pdf.cell(95, 10, "DHIA", 0, 0) # اسمك
-    pdf.cell(95, 10, "MOHAMED", 0, 1) # اسم محمد
+    pdf.cell(95, 10, "Sebbag mohamed dhia eddine", 0, 0) # اسمك
+    pdf.cell(95, 10, "Ben sghir mohamed", 0, 1) # اسم محمد
     
     return pdf.output(dest='S').encode('latin-1')
 
@@ -360,7 +360,7 @@ def load_model_ia():
     # محاكاة تحميل الموديل لضمان عمل الكود
     # استبدل هذا الجزء بكود التحميل الحقيقي الخاص بك إذا كان الملف موجوداً
     model = None
-    classes = ["Giardia", "Amoeba", "Leishmania", "Plasmodium", "Trypanosoma", "Schistosoma", "Negative"]
+    classes = ["Amoeba", "Giardia", "Leishmania", "Plasmodium", "Trypanosoma", "Schistosoma", "Negative"]
     
     # محاولة تحميل الموديل الحقيقي
     try:
@@ -441,11 +441,11 @@ if menu == "🏠 Accueil (Unlock)":
             if st.button("🔊 1. PRÉSENTATION & HUMOUR", use_container_width=True):
                 # النص: الوقت + ضياء ومحمد تقنيين + النكتة
                 cur_time = datetime.now().strftime("%H:%M")
-                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis l'IA du laboratoire, développée par les Techniciens Supérieurs Dhia et Mohamed. Préparez vos lames... et s'il vous plaît, ne me chatouille pas avec le microscope !"
+                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis DM Smart lab ia, développée par les Techniciens Supérieurs Sebbad Dhia et ben sghir Mohamed. Préparez vos lames et s'il vous plaît, ne me chatouille pas avec le microscope ...!"
                 
                 speak(txt_1) # تشغيل الصوت
-                with st.spinner("Dr. DhiaBot parle... 🔊"):
-                    time.sleep(13) # انتظار 13 ثانية ليكتمل الكلام
+                with st.spinner("DM Smart lab ia parle... 🔊"):
+                    time.sleep(14) # انتظار 13 ثانية ليكتمل الكلام
                 st.session_state.intro_step = 1
                 st.rerun()
                 
@@ -454,7 +454,7 @@ if menu == "🏠 Accueil (Unlock)":
             st.warning("🔒 Étape 2 : Validation Officielle")
             if st.button("🔊 2. TITRE DU PROJET", use_container_width=True):
                 # النص: العنوان الرسمي + المعهد
-                txt_2 = "Projet de Fin d'Études : Identification des Parasites par Intelligence Artificielle. Présenté par Dhia et Mohamed. Institut National de Formation Supérieure Paramédicale de Ouargla."
+                txt_2 = "Projet de Fin d'Études : Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais. Présenté par Dhia et Mohamed. Institut National de Formation Supérieure Paramédicale de Ouargla."
                 
                 speak(txt_2)
                 with st.spinner("Lecture du titre officiel... 🔊"):
@@ -490,6 +490,7 @@ elif menu == "🔬 Scan & Analyse":
         p_age = c_c.number_input("Age", 1, 100, 30)
         p_sexe = c_d.selectbox("Sexe", ["H", "F"])
         p_type = c_e.selectbox("Échantillon", ["Selles", "Sang", "Autre"])
+        p_pois = c_c.number_input("pois", 1, 100, 30)
         thermal = c_f.toggle("🔥 Vision Thermique")
 
     st.markdown("---")
@@ -682,6 +683,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
