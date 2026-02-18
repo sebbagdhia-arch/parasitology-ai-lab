@@ -565,12 +565,13 @@ elif menu == "🔬 Scan & Analyse":
                     
                     # الحفظ
                     if st.button("💾 Sauvegarder"):
-    st.session_state.history.append({
-        "Date": datetime.now().strftime("%H:%M"), 
-        "Patient": p_nom, 
-        "Res": predicted_label
-    })
-    st.success("Sauvegardé.")
+                    st.session_state.history.append({
+                       "Date": datetime.now().strftime("%H:%M"), 
+                       "Patient": p_nom, 
+                       "Res": predicted_label
+                     })
+                     st.success("Sauvegardé.")
+
 # الصفحة الجديدة: موسوعة الطفيليات (كما هي)
 elif menu == "📘 Encyclopédie":
     st.title("📘 Encyclopédie des Parasites")
@@ -686,6 +687,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
