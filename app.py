@@ -586,7 +586,7 @@ elif menu == "📘 Encyclopédie":
                 st.write(f"**Desc:** {parasite_db.get(p_name, {}).get('desc', '')}")
 
 # الصفحة 3: Dashboard
-elif  menu == "📊 Dashboard":
+if menu == "📊 Dashboard":
     st.title("📊 Tableau de Bord Clinique")
 
     # --- مؤشرات الأداء الرئيسية ---
@@ -607,53 +607,50 @@ elif  menu == "📊 Dashboard":
     col4.metric("Parasite Fréquent", most_common)
 
     # --- حالة النظام ---
-st.subheader("État du Système")
-st.success("Opérationnel ✅")
+    st.subheader("État du Système")
+    st.success("Opérationnel ✅")
 
-# --- إحصاءات متقدمة ---
-st.markdown("### 📈 Statistiques Récentes")
+    # --- إحصاءات متقدمة ---
+    st.markdown("### 📈 Statistiques Récentes")
 
-# التأكد من وجود بيانات
-if 'df' in locals() and not df.empty:
-    if "Parasite" in df.columns:
-        # فلتر حسب الطفيلي
-        parasite_filter = st.selectbox(
-            "Filtrer par type de parasite:",
-            options=["Tous"] + df["Parasite"].unique().tolist()
-        )
-        filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
+    # التأكد من وجود بيانات
+    if 'df' in locals() and not df.empty:
+        if "Parasite" in df.columns:
+            parasite_filter = st.selectbox(
+                "Filtrer par type de parasite:",
+                options=["Tous"] + df["Parasite"].unique().tolist()
+            )
+            filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
 
-        # رسم بياني عمودي لتوزيع الطفيليات
-        st.bar_chart(filtered_df["Parasite"].value_counts())
+            st.bar_chart(filtered_df["Parasite"].value_counts())
 
-        # رسم خطي حسب التاريخ
-        if "Date" in df.columns:
-            filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
-            counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
-            st.line_chart(counts_by_date)
+            if "Date" in df.columns:
+                filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
+                counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
+                st.line_chart(counts_by_date)
 
-        # عرض الجدول الكامل
-        st.dataframe(filtered_df, use_container_width=True)
+            st.dataframe(filtered_df, use_container_width=True)
 
-        # زر لتصدير CSV
-        csv = filtered_df.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            label="⬇️ Télécharger les données CSV",
-            data=csv,
-            file_name='analyses.csv',
-            mime='text/csv'
-        )
+            csv = filtered_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="⬇️ Télécharger les données CSV",
+                data=csv,
+                file_name='analyses.csv',
+                mime='text/csv'
+            )
+        else:
+            st.warning("⚠️ العمود 'Parasite' غير موجود في البيانات.")
     else:
-        st.warning("⚠️ العمود 'Parasite' غير موجود في البيانات.")
-else:
-    st.info("Aucune donnée disponible. Commencez un scan.")
+        st.info("Aucune donnée disponible. Commencez un scan.")
 
 
 # الصفحة 4: About
 elif menu == "ℹ️ À Propos":
     st.title("ℹ️ À Propos du Projet")
-    
     st.markdown("""
+    هنا يمكنك كتابة معلومات حول المشروع...
+    """)
+
     <div class='medical-card'>
         <h2 style='color:#2E86C1;'>🧬 DM SMART LAB</h2>
         <p><b>Une solution innovante pour le diagnostic parasitologique assisté par ordinateur.</b></p>
@@ -682,6 +679,7 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
