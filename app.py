@@ -607,49 +607,44 @@ elif  menu == "📊 Dashboard":
     col4.metric("Parasite Fréquent", most_common)
 
     # --- حالة النظام ---
-    st.subheader("État du Système")
-    st.success("Opérationnel ✅")
+st.subheader("État du Système")
+st.success("Opérationnel ✅")
 
-    # --- إحصاءات متقدمة ---
-    st.markdown("### 📈 Statistiques Récentes")
-    if total > 0:
-        # --- 1. تحميل البيانات ---
-# تأكد أن df موجود
-# مثال: تحميل CSV
-try:
-    df = pd.read_csv("data.csv")  # عدل باسم ملفك
-except FileNotFoundError:
-    df = pd.DataFrame()  # جدول فارغ إذا الملف غير موجود
+# --- إحصاءات متقدمة ---
+st.markdown("### 📈 Statistiques Récentes")
 
-# --- 2. فلترة البيانات ---
-if not df.empty and "Parasite" in df.columns:
-    # فلتر حسب الطفيلي
-    parasite_filter = st.selectbox(
-        "Filtrer par type de parasite:",
-        options=["Tous"] + df["Parasite"].unique().tolist()
-    )
-    filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
+# التأكد من وجود بيانات
+if 'df' in locals() and not df.empty:
+    if "Parasite" in df.columns:
+        # فلتر حسب الطفيلي
+        parasite_filter = st.selectbox(
+            "Filtrer par type de parasite:",
+            options=["Tous"] + df["Parasite"].unique().tolist()
+        )
+        filtered_df = df if parasite_filter == "Tous" else df[df["Parasite"] == parasite_filter]
 
-    # رسم بياني عمودي لتوزيع الطفيليات
-    st.bar_chart(filtered_df["Parasite"].value_counts())
+        # رسم بياني عمودي لتوزيع الطفيليات
+        st.bar_chart(filtered_df["Parasite"].value_counts())
 
-    # رسم خطي حسب التاريخ
-    if "Date" in df.columns:
-        filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
-        counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
-        st.line_chart(counts_by_date)
+        # رسم خطي حسب التاريخ
+        if "Date" in df.columns:
+            filtered_df["Date"] = pd.to_datetime(filtered_df["Date"])
+            counts_by_date = filtered_df.groupby(filtered_df["Date"].dt.date).size()
+            st.line_chart(counts_by_date)
 
-    # عرض الجدول
-    st.dataframe(filtered_df, use_container_width=True)
+        # عرض الجدول الكامل
+        st.dataframe(filtered_df, use_container_width=True)
 
-    # زر لتصدير CSV
-    csv = filtered_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="⬇️ Télécharger les données CSV",
-        data=csv,
-        file_name='analyses.csv',
-        mime='text/csv'
-    )
+        # زر لتصدير CSV
+        csv = filtered_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="⬇️ Télécharger les données CSV",
+            data=csv,
+            file_name='analyses.csv',
+            mime='text/csv'
+        )
+    else:
+        st.warning("⚠️ العمود 'Parasite' غير موجود في البيانات.")
 else:
     st.info("Aucune donnée disponible. Commencez un scan.")
 
@@ -687,5 +682,6 @@ elif menu == "ℹ️ À Propos":
     
     st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=100)
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
