@@ -397,7 +397,7 @@ if not st.session_state.logged_in:
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/3050/3050525.png", width=100)
+    st.image("https://icon-icons.com/icon/microscope/60642?utm_source=chatgpt.com", width=100)
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
@@ -414,7 +414,7 @@ with st.sidebar:
         st.session_state.dark_mode = dark
         st.rerun()
         
-    if st.button("🔴 Déconnexion"):
+    if st.button(" Déconnexion"):
         st.session_state.logged_in = False
         st.rerun()
 
@@ -430,7 +430,7 @@ if menu == "🏠 Accueil (Unlock)":
     with col2:
         st.markdown("""
         <div class='medical-card'>
-            <h3>🤖 Assistant Dr. DhiaBot</h3>
+            <h3>🤖  DM SMART LAB IA Bot</h3>
             <p>Système de sécurité vocale. Veuillez suivre les étapes.</p>
         </div>
         """, unsafe_allow_html=True)
@@ -441,11 +441,11 @@ if menu == "🏠 Accueil (Unlock)":
             if st.button("🔊 1. PRÉSENTATION & HUMOUR", use_container_width=True):
                 # النص: الوقت + ضياء ومحمد تقنيين + النكتة
                 cur_time = datetime.now().strftime("%H:%M")
-                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis DM Smart lab ia, développée par les Techniciens Supérieurs Sebbad Dhia et ben sghir Mohamed. Préparez vos lames et s'il vous plaît, ne me chatouille pas avec le microscope ...!"
+                txt_1 = f"Bonjour ! Il est {cur_time}. Je suis DM Smart lab ia, développée par les Techniciens Supérieurs Sebbad mohamed Dhia et Ben Seguir Mohamed. Préparez vos lames et s'il vous plaît, ne me chatouille pas avec le microscope ...!"
                 
                 speak(txt_1) # تشغيل الصوت
                 with st.spinner("DM Smart lab ia parle... 🔊"):
-                    time.sleep(14) # انتظار 13 ثانية ليكتمل الكلام
+                    time.sleep(20) # انتظار 20 ثانية ليكتمل الكلام
                 st.session_state.intro_step = 1
                 st.rerun()
                 
@@ -458,7 +458,7 @@ if menu == "🏠 Accueil (Unlock)":
                 
                 speak(txt_2)
                 with st.spinner("Lecture du titre officiel... 🔊"):
-                    time.sleep(14) # انتظار 14 ثانية ليكتمل الكلام
+                    time.sleep(20) # انتظار 20 ثانية ليكتمل الكلام
                 st.session_state.intro_step = 2
                 st.rerun()
                 
@@ -669,7 +669,7 @@ elif menu == "ℹ️ À Propos":
         st.markdown("""
         ### 👨‍🔬 Développeurs
         * **Sebbag Mohamed Dhia Eddine** (Expert IA & Conception)
-        * **Ben Sghir Mohamed** (Expert Laboratoire & Données)
+        * **Ben Seguir Mohamed** (Expert Laboratoire & Données)
         
         **Niveau:** 3ème Année  
         **Spécialité:** Laboratoire de Santé Publique
@@ -688,6 +688,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
