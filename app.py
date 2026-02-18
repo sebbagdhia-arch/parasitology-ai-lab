@@ -563,14 +563,15 @@ elif menu == "🔬 Scan & Analyse":
                     pdf_bytes = generate_pdf(p_data, predicted_label, conf, info)
                     st.download_button("📥 Télécharger Rapport PDF", pdf_bytes, f"Rapport_{p_nom}.pdf", "application/pdf", use_container_width=True)
                     
-                    # الحفظ
-                    if st.button("💾 Sauvegarder"):
-                        st.session_state.history.append({
-                            "Date": datetime.now().strftime("%H:%M"), 
-                            "Patient": p_nom, 
-                            "Res": predicted_label
-                       })
-                       st.success("Sauvegardé.")
+                # الحفظ
+                if st.button("💾 Sauvegarder"):
+                    st.session_state.history.append({
+                        "Date": datetime.now().strftime("%H:%M"), 
+                        "Patient": p_nom, 
+                        "Res": predicted_label,
+                        "Parasite": predicted_label  # مهم للفلترة والرسم
+                    })
+                    st.success("Sauvegardé.")
 
 # الصفحة الجديدة: موسوعة الطفيليات (كما هي)
 elif menu == "📘 Encyclopédie":
@@ -687,6 +688,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
