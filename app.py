@@ -171,24 +171,6 @@ parasite_db = {
 }
 
 # --- 4. التصميم السحري (CSS Magic) ---
-# --- خريطة النصوص لكل لغة ---
-texts = {
-    "Français 🇫🇷": {
-        "title": "Bienvenue dans mon application",
-        "greet": "Bonjour!",
-        "button": "Cliquez ici"
-    },
-    "العربية 🇩🇿": {
-        "title": "مرحبا بك في تطبيقي",
-        "greet": "أهلا!",
-        "button": "اضغط هنا"
-    },
-    "English 🇬🇧": {
-        "title": "Welcome to my app",
-        "greet": "Hello!",
-        "button": "Click here"
-    }
-}
 # هذا الكود هو المسؤول عن الخلفية المتحركة وشكل المستشفى
 def apply_css():
     # إعدادات الألوان بناءً على الوضع الليلي أو النهاري
@@ -415,19 +397,13 @@ if not st.session_state.logged_in:
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 with st.sidebar:
-    st.image("", width=100)
+    st.image("/mnt/data/b44c83ee-f5d4-4365-9f8f-4703d81bf4c2.png", width=100)
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
     
     # قائمة اللغات (شكلية)
     lang = st.selectbox("🌍 Langue", ["Français 🇫🇷", "العربية 🇩🇿", "English 🇬🇧"])
-    # --- 4. عرض النصوص حسب اللغة المختارة ---
-    st.title(texts[lang]["title"])
-    st.write(texts[lang]["greet"])
-
-    if st.button(texts[lang]["button"]):
-        st.success("✅ Action réalisée!")
     
     st.markdown("---")
     menu = st.radio("Navigation", ["🏠 Accueil (Unlock)", "🔬 Scan & Analyse", "📘 Encyclopédie", "📊 Dashboard", "ℹ️ À Propos"])
@@ -712,17 +688,3 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
