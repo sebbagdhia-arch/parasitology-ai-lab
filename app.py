@@ -397,7 +397,7 @@ if not st.session_state.logged_in:
 
 # --- 7. التطبيق الرئيسي (بعد الدخول) ---
 with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/123/123389.png", width=100)
+    st.image("https://cdn-icons-png.flaticon.com/512/930/930263.png", width=100)
     st.markdown("## 🧬 DM SMART LAB")
     st.markdown("*Where Science Meets Intelligence*")
     st.markdown("---")
@@ -688,4 +688,5 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
