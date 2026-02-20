@@ -490,7 +490,7 @@ elif menu == "🔬 Scan & Analyse":
         p_age = c_c.number_input("Age", 1, 100, 30)
         p_sexe = c_d.selectbox("Sexe", ["H", "F"])
         p_type = c_e.selectbox("Échantillon", ["Selles", "Sang", "Autre"])
-        p_pois = c_c.number_input("pois", 1, 100, 30)
+        p_poids = c_c.number_input("Poids", 1, 100, 30)
         thermal = c_f.toggle("🔥 Vision Thermique")
 
     st.markdown("---")
@@ -688,5 +688,6 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
