@@ -573,23 +573,81 @@ elif menu == "🔬 Scan & Analyse":
                     })
                     st.success("Sauvegardé.")
 
-# الصفحة الجديدة: موسوعة الطفيليات (كما هي)
-elif menu == "📘 Encyclopédie":
-    st.title("📘 Encyclopédie des Parasites")
-    parasites_list = {
-        "Giardia": {"danger": "⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Giardia_lamblia_SEM_8698_lores.jpg/220px-Giardia_lamblia_SEM_8698_lores.jpg"},
-        "Amoeba": {"danger": "⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Entamoeba_histolytica_01.jpg/220px-Entamoeba_histolytica_01.jpg"},
-        "Plasmodium": {"danger": "⭐⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Plasmodium_falciparum_01.png/220px-Plasmodium_falciparum_01.png"},
-        "Leishmania": {"danger": "⭐⭐⭐⭐", "img": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Leishmania_tropica_promastigote.jpg/220px-Leishmania_tropica_promastigote.jpg"}
+# --- 3. قاعدة المعرفة المتكاملة (DM Smart Lab Brain) ---
+parasite_db = {
+    "Amoeba (E. histolytica)": {
+        "scientific_name": "Entamoeba histolytica",
+        "morphology": "Kyste sphérique (10-15µm) à 4 noyaux ou Trophozoïte avec pseudopodes.",
+        "desc": "Parasite tissulaire provoquant la dysenterie amibienne.",
+        "funny": "Le ninja des intestins ! Il change de forme plus vite que ton humeur.",
+        "risk": "Élevé 🔴",
+        "advice": "Traitement au métronidazole requis. Hygiène stricte des mains !"
+    },
+    "Giardia": {
+        "scientific_name": "Giardia lamblia",
+        "morphology": "Trophozoïte en 'cerf-volant' avec 2 noyaux (face de hibou) et 4 paires de flagelles.",
+        "desc": "Protozoaire flagellé colonisant le duodénum.",
+        "funny": "Regarde-le ! Il te fixe avec ses lunettes de soleil. Un vrai fantôme !",
+        "risk": "Moyen 🟠",
+        "advice": "Vérifier la consommation d'eau non filtrée. Traitement antiparasitaire."
+    },
+    "Plasmodium": {
+        "scientific_name": "Plasmodium falciparum/vivax",
+        "morphology": "Forme en 'Bague à chaton' à l'intérieur des hématies (Goutte épaisse/Frottis).",
+        "desc": "Agent causal du paludisme (Malaria).",
+        "funny": "Il demande le mariage à tes globules rouges ! Une bague très dangereuse.",
+        "risk": "URGENCE MÉDICALE 🚨",
+        "advice": "Hospitalisation immédiate ! Surveillance de la parasitémie toutes les 4h."
+    },
+    "Leishmania": {
+        "scientific_name": "Leishmania infantum/tropica",
+        "morphology": "Formes amastigotes ovoïdes (2-5µm) avec noyau et kinétoplaste visibles.",
+        "desc": "Transmis par la piqûre du phlébotome.",
+        "funny": "Petit mais costaud ! Il adore squatter les macrophages.",
+        "risk": "Élevé 🔴",
+        "advice": "Traitement spécifique (Glucantime). Déclaration obligatoire."
+    },
+    "Trypanosoma": {
+        "scientific_name": "Trypanosoma brucei/cruzi",
+        "morphology": "Forme allongée en 'S' ou 'C' avec un flagelle libre et une membrane ondulante.",
+        "desc": "Parasite extracellulaire du sang.",
+        "funny": "Il court dans ton sang comme Mahrez sur l'aile droite ! Imprévisible.",
+        "risk": "Élevé 🔴",
+        "advice": "Examen du liquide céphalo-rachidien si suspicion neurologique."
+    },
+    "Schistosoma": {
+        "scientific_name": "Schistosoma haematobium",
+        "morphology": "Œuf ovoïde de grande taille avec un éperon terminal caractéristique.",
+        "desc": "Parasite des plexus veineux (Bilharziose urinaire).",
+        "funny": "L'œuf avec un dard ! Attention, il pique là où ça fait mal.",
+        "risk": "Moyen 🟠",
+        "advice": "Analyse du sédiment urinaire de 24h. Éviter les baignades en eau douce."
+    },
+    "Ascaris": {
+        "scientific_name": "Ascaris lumbricoides",
+        "morphology": "Œuf mamelonné à coque épaisse brune, ou ver adulte cylindrique (15-35cm).",
+        "desc": "Le plus grand nématode intestinal de l'homme.",
+        "funny": "Un vrai spaghetti géant dans le ventre ! Pas très appétissant.",
+        "risk": "Moyen 🟠",
+        "advice": "Déparasitage familial. Bien laver les légumes crus."
+    },
+    "Taenia": {
+        "scientific_name": "Taenia saginata/solium",
+        "morphology": "Embryophore arrondi à coque épaisse et striée radialement (œuf de Taenia).",
+        "desc": "Ver solitaire transmis par la viande mal cuite.",
+        "funny": "Le colocataire qui mange tout ton plat sans payer le loyer !",
+        "risk": "Moyen 🟠",
+        "advice": "Bien cuire la viande bovine. Vérifier la présence d'anneaux dans les selles."
+    },
+    "Negative": {
+        "scientific_name": "N/A",
+        "morphology": "Absence d'éléments parasitaires après examen macro et microscopique.",
+        "desc": "Échantillon sain ou débris alimentaires.",
+        "funny": "Rien à signaler ! Ton microscope peut aller se reposer.",
+        "risk": "Nul 🟢",
+        "advice": "Continuer une bonne hygiène alimentaire. RAS."
     }
-    col_x, col_y = st.columns(2)
-    for p_name, p_data in parasites_list.items():
-        with st.expander(f"🦠 {p_name}"):
-            c1, c2 = st.columns([1, 2])
-            with c1: st.image(p_data["img"])
-            with c2:
-                st.write(f"**Danger:** {p_data['danger']}")
-                st.write(f"**Desc:** {parasite_db.get(p_name, {}).get('desc', '')}")
+}
 
 # الصفحة 3: Dashboard
 if menu == "📊 Dashboard":
@@ -688,6 +746,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
