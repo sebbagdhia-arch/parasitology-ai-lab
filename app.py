@@ -173,83 +173,100 @@ parasite_db = {
 # --- 4. التصميم السحري (CSS Magic) ---
 # هذا الكود هو المسؤول عن الخلفية المتحركة وشكل المستشفى
 def apply_css():
-    # إعدادات الألوان (الوضع الليلي والنهاري)
-    if st.session_state.get("dark_mode", True): # جعلنا True هو الافتراضي هنا أيضاً
+    # إعدادات الألوان بناءً على الوضع الليلي أو النهاري
+    if st.session_state.get("dark_mode", False):
         bg_color = "#0f172a"
         text_color = "#e5e7eb"
         card_bg = "#1e293b"
-        pattern_color = "rgba(255,255,255,0.05)"
+        pattern_color = "rgba(255,255,255,0.08)"
         sidebar_bg = "#020617"
-        input_bg = "#334155" # لون خلفية حقول الإدخال
+        sidebar_input_border = "#334155"
     else:
         bg_color = "#f8fafc"
         text_color = "#0f172a"
         card_bg = "#ffffff"
-        pattern_color = "rgba(15,23,42,0.05)"
+        pattern_color = "rgba(15,23,42,0.08)"
         sidebar_bg = "#f0f2f6"
-        input_bg = "#ffffff"
+        sidebar_input_border = "#cbd5e1"
 
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
-    /* 1. الخط الأساسي لكل التطبيق */
-    html, body, [class*="st-"] {{
+    html, body, [class*="css"], p, span, label, div {{
         font-family: 'Poppins', sans-serif;
+        color: {text_color} !important;
     }}
 
-    /* 2. لون الخلفية العامة */
+    h1, h2, h3, h4, h5, h6 {{
+        color: {text_color} !important;
+    }}
+
+    /* الخلفية */
     .stApp {{
         background-color: {bg_color};
-        background-image: radial-gradient({pattern_color} 2px, transparent 2px);
-        background-size: 30px 30px;
+        background-image:
+        radial-gradient({pattern_color} 1px, transparent 1px);
+        background-size: 35px 35px;
     }}
 
-    /* 3. تلوين النصوص الأساسية والعناوين فقط (بدون تدمير الأيقونات والأزرار) */
-    h1, h2, h3, h4, h5, h6, p, label, .stMarkdown {{
-        color: {text_color} !important;
-    }}
-
-    /* 4. إصلاح حقول الإدخال (Inputs) والقوائم المنسدلة (Selectboxes) */
-    div[data-baseweb="input"] > div, 
-    div[data-baseweb="select"] > div,
-    textarea {{
-        background-color: {input_bg} !important;
-        border: 1px solid #475569 !important;
-    }}
-
-    /* لون الكتابة داخل حقول الإدخال */
-    input, select, textarea, div[data-baseweb="select"] span {{
-        color: {text_color} !important;
-    }}
-
-    /* 5. تصميم البطاقات الطبية (Medical Cards) */
-    .medical-card {{
-        background-color: {card_bg};
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        border-left: 5px solid #2563eb;
-        margin-bottom: 20px;
-    }}
-
-    /* 6. إصلاح القائمة الجانبية (Sidebar) */
+    /* Sidebar */
     section[data-testid="stSidebar"] {{
-        background-color: {sidebar_bg} !important;
+        background-color: {sidebar_bg};
     }}
-    
-    /* 7. الأيقونات العائمة (اللمسة الجمالية) */
-    .floating-icon {{
+
+    section[data-testid="stSidebar"] * {{
+        color: {text_color} !important;
+        font-weight: 500;
+    }}
+
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] textarea,
+    section[data-testid="stSidebar"] select {{
+        background-color: {sidebar_bg} !important;
+        color: {text_color} !important;
+        border: 1px solid {sidebar_input_border};
+    }}
+
+    /* العناصر العائمة */
+    .floating-parasite {{
         position: fixed;
-        opacity: 0.15;
+        opacity: 0.25;
         z-index: 0;
-        font-size: 50px;
-        animation: floatUp 20s linear infinite;
+        animation: float 18s linear infinite;
+        font-size: 48px;
         pointer-events: none;
     }}
-    @keyframes floatUp {{
+
+    @keyframes float {{
         from {{ transform: translateY(110vh) rotate(0deg); }}
-        to {{ transform: translateY(-10vh) rotate(360deg); }}
+        to {{ transform: translateY(-15vh) rotate(360deg); }}
+    }}
+
+    /* البطاقات */
+    .medical-card {{
+        background-color: {card_bg};
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-left: 6px solid #2563eb;
+        margin-bottom: 18px;
+        position: relative;
+        z-index: 2;
+    }}
+
+    /* الأزرار */
+    div.stButton > button {{
+        background: linear-gradient(90deg,#2563eb,#1e40af);
+        color: white !important;
+        border-radius: 10px;
+        padding: 10px 22px;
+        font-weight: 600;
+    }}
+
+    div.stButton > button:hover {{
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(37,99,235,0.5);
     }}
     </style>
 
@@ -671,6 +688,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
