@@ -574,6 +574,25 @@ elif menu == "🔬 Scan & Analyse":
                     st.success("Sauvegardé.")
 
 # --- 3. قاعدة المعرفة المتكاملة (DM Smart Lab Brain) ---
+elif menu == "📘 Encyclopédie":
+    st.title("📘 Encyclopédie des Parasites")
+    st.markdown("---")
+    
+    # تحويل قاعدة البيانات إلى أزرار تفاعلية
+    for p_key, p_info in parasite_db.items():
+        if p_key == "Negative": continue # لا نعرض "السليم" في الموسوعة
+        
+        with st.expander(f"🔬 {p_key} ({p_info['scientific_name']})"):
+            col_text, col_img = st.columns([2, 1])
+            with col_text:
+                st.markdown(f"**🔬 Morphologie:** {p_info['morphology']}")
+                st.markdown(f"**📖 Description:** {p_info['desc']}")
+                st.markdown(f"**⚠️ Risque:** {p_info['risk']}")
+                st.info(f"💡 **Conseil Médical:** {p_info['advice']}")
+                st.warning(f"🤡 **Note du Bot:** {p_info['funny']}")
+            with col_img:
+                # هنا يمكنك وضع روابط لصور حقيقية لكل طفيلي
+                st.image("https://cdn-icons-png.flaticon.com/512/3024/3024509.png", width=150)
 parasite_db = {
     "Amoeba (E. histolytica)": {
         "scientific_name": "Entamoeba histolytica",
@@ -746,6 +765,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
