@@ -574,27 +574,9 @@ elif menu == "🔬 Scan & Analyse":
                     st.success("Sauvegardé.")
 
 # --- 3. قاعدة المعرفة المتكاملة (DM Smart Lab Brain) ---
-elif menu == "📘 Encyclopédie":
-    st.title("📘 Encyclopédie des Parasites")
-    st.markdown("---")
-    
-    # تحويل قاعدة البيانات إلى أزرار تفاعلية
-    for p_key, p_info in parasite_db.items():
-        if p_key == "Negative": continue # لا نعرض "السليم" في الموسوعة
-        
-        with st.expander(f"🔬 {p_key} ({p_info['scientific_name']})"):
-            col_text, col_img = st.columns([2, 1])
-            with col_text:
-                st.markdown(f"**🔬 Morphologie:** {p_info['morphology']}")
-                st.markdown(f"**📖 Description:** {p_info['desc']}")
-                st.markdown(f"**⚠️ Risque:** {p_info['risk']}")
-                st.info(f"💡 **Conseil Médical:** {p_info['advice']}")
-                st.warning(f"🤡 **Note du Bot:** {p_info['funny']}")
-            with col_img:
-                # هنا يمكنك وضع روابط لصور حقيقية لكل طفيلي
-                st.image("https://cdn-icons-png.flaticon.com/512/3024/3024509.png", width=150)
+# 1. أولاً: تعريف قاعدة البيانات (يجب أن تكون في أعلى الكود)
 parasite_db = {
-    "Amoeba (E. histolytica)": {
+    "Amoeba": { # أبقِ الاسم بسيطاً هنا ليتطابق مع مخرجات الـ AI
         "scientific_name": "Entamoeba histolytica",
         "morphology": "Kyste sphérique (10-15µm) à 4 noyaux ou Trophozoïte avec pseudopodes.",
         "desc": "Parasite tissulaire provoquant la dysenterie amibienne.",
@@ -659,14 +641,40 @@ parasite_db = {
         "advice": "Bien cuire la viande bovine. Vérifier la présence d'anneaux dans les selles."
     },
     "Negative": {
-        "scientific_name": "N/A",
-        "morphology": "Absence d'éléments parasitaires après examen macro et microscopique.",
-        "desc": "Échantillon sain ou débris alimentaires.",
-        "funny": "Rien à signaler ! Ton microscope peut aller se reposer.",
+        "scientific_name": "Sain / Propre",
+        "morphology": "Absence d'éléments parasitaires.",
+        "desc": "Échantillon sain.",
+        "funny": "Hamdoullah ! Tout est propre.",
         "risk": "Nul 🟢",
-        "advice": "Continuer une bonne hygiène alimentaire. RAS."
+        "advice": "Rien à signaler."
     }
 }
+
+# 2. ثانياً: كود صفحة الموسوعة (المُحسن)
+elif menu == "📘 Encyclopédie":
+    st.title("📘 Encyclopédie des Parasites")
+    st.markdown("---")
+
+    # إضافة شريط بحث ذكي
+    search_query = st.text_input("🔍 Rechercher un parasite (ex: Amoeba, Plasmodium...)", "").lower()
+    
+    # تحويل قاعدة البيانات إلى عرض تفاعلي
+    for p_key, p_info in parasite_db.items():
+        if p_key == "Negative": continue 
+        
+        # فلترة النتائج بناءً على البحث
+        if search_query in p_key.lower() or search_query in p_info['scientific_name'].lower():
+            with st.expander(f"🔬 {p_key} ({p_info['scientific_name']})"):
+                col_text, col_img = st.columns([2, 1])
+                with col_text:
+                    st.markdown(f"**🔬 Morphologie:** {p_info['morphology']}")
+                    st.markdown(f"**📖 Description:** {p_info['desc']}")
+                    st.markdown(f"**⚠️ Risque:** {p_info['risk']}")
+                    st.info(f"💡 **Conseil:** {p_info['advice']}")
+                    st.warning(f"🤖 **Note du Bot:** {p_info['funny']}")
+                with col_img:
+                    # أيقونة طبية افتراضية
+                    st.image("https://cdn-icons-png.flaticon.com/512/3024/3024509.png", width=150)
 
 # الصفحة 3: Dashboard
 if menu == "📊 Dashboard":
@@ -765,6 +773,7 @@ elif menu == "ℹ️ À Propos":
         width=100
     )
     st.caption("Fait avec ❤️ à Ouargla, 2026")
+
 
 
 
