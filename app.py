@@ -1,12 +1,12 @@
 # ╔══════════════════════════════════════════════════════════════════╗
-# ║              DM SMART LAB AI v3.0 - FINAL EDITION               ║
+# ║          DM SMART LAB AI v4.0 - ULTIMATE EDITION                ║
 # ║     Diagnostic Parasitologique par Intelligence Artificielle     ║
 # ║                                                                  ║
 # ║  Développé par:                                                  ║
 # ║    • Sebbag Mohamed Dhia Eddine (Expert IA & Conception)         ║
 # ║    • Ben Sghir Mohamed (Expert Laboratoire & Données)            ║
 # ║                                                                  ║
-# ║  INFSPM - Ouargla, Algérie 🇩🇿                                  ║
+# ║  INFSPM - Ouargla, Algérie                                      ║
 # ╚══════════════════════════════════════════════════════════════════╝
 
 import streamlit as st
@@ -17,12 +17,14 @@ import os
 import base64
 import hashlib
 import random
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance
+import json
+import io
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageDraw
 from datetime import datetime, timedelta
 from fpdf import FPDF
 
 # ============================================
-#  1. إعداد الصفحة (يجب أن يكون أول أمر)
+#  1. إعداد الصفحة
 # ============================================
 st.set_page_config(
     page_title="DM Smart Lab AI",
@@ -32,14 +34,15 @@ st.set_page_config(
 )
 
 # ============================================
-#  2. الثوابت والإعدادات العامة
+#  2. الثوابت
 # ============================================
-APP_VERSION = "3.0.0"
+APP_VERSION = "4.0.0"
 APP_PASSWORD = "DM@2026secure!"
 MAX_LOGIN_ATTEMPTS = 3
 LOCKOUT_MINUTES = 5
 CONFIDENCE_THRESHOLD = 60
 MODEL_INPUT_SIZE = (224, 224)
+AUTO_LOCK_MINUTES = 15
 
 AUTHORS = {
     "dev1": {"name": "Sebbag Mohamed Dhia Eddine", "role": "Expert IA & Conception"},
@@ -60,7 +63,7 @@ PROJECT_TITLE = (
 )
 
 # ============================================
-#  3. نظام اللغات المتعددة الحقيقي
+#  3. نظام اللغات الكامل
 # ============================================
 TRANSLATIONS = {
     "fr": {
@@ -80,6 +83,8 @@ TRANSLATIONS = {
         "nav_encyclopedia": "Encyclopédie",
         "nav_dashboard": "Tableau de Bord",
         "nav_about": "À Propos",
+        "nav_quiz": "Quiz Médical",
+        "nav_chatbot": "Dr. DhiaBot",
         "home_welcome": "Bienvenue",
         "home_step1_title": "Étape 1 : Présentation du Système",
         "home_step1_desc": "Cliquez pour lancer la présentation vocale du système IA.",
@@ -99,6 +104,8 @@ TRANSLATIONS = {
         "scan_poids": "Poids (kg)",
         "scan_echantillon": "Type d'Échantillon",
         "scan_thermal": "Vision Thermique",
+        "scan_edge": "Détection de Contours",
+        "scan_enhanced": "Contraste Amélioré",
         "scan_capture": "Capture Microscopique",
         "scan_camera": "Caméra (temps réel)",
         "scan_upload": "Importer une image",
@@ -116,6 +123,8 @@ TRANSLATIONS = {
         "scan_saved": "Résultat sauvegardé avec succès !",
         "scan_new": "Nouvelle Analyse",
         "scan_all_probs": "Toutes les probabilités",
+        "scan_extra_tests": "Examens complémentaires suggérés",
+        "scan_heatmap": "Zone d'intérêt IA",
         "enc_title": "Encyclopédie des Parasites",
         "enc_search": "Rechercher un parasite...",
         "enc_no_result": "Aucun résultat trouvé.",
@@ -132,10 +141,13 @@ TRANSLATIONS = {
         "dash_confidence_chart": "Niveaux de Confiance",
         "dash_history": "Historique Complet",
         "dash_export": "Exporter en CSV",
+        "dash_export_excel": "Exporter en Excel",
+        "dash_export_json": "Exporter en JSON",
         "dash_no_data": "Aucune donnée disponible",
         "dash_no_data_desc": "Effectuez votre première analyse pour voir les statistiques.",
+        "dash_patient_compare": "Comparer les analyses d'un patient",
         "about_title": "À Propos du Projet",
-        "about_desc": "Système de Diagnostic Parasitologique Assisté par Intelligence Artificielle",
+        "about_desc": "Système de Diagnostic Parasitologique par IA",
         "about_project_desc": (
             "Ce projet innovant utilise les technologies de Deep Learning "
             "et de Vision par Ordinateur pour assister les techniciens de "
@@ -161,14 +173,6 @@ TRANSLATIONS = {
         "echantillon_urines": "Urines",
         "echantillon_lcr": "LCR",
         "echantillon_autre": "Autre",
-        "pdf_title": "RAPPORT D'ANALYSE PARASITOLOGIQUE",
-        "pdf_subtitle": "Analyse assistée par Intelligence Artificielle",
-        "pdf_patient_section": "INFORMATIONS DU PATIENT",
-        "pdf_result_section": "RÉSULTAT DE L'ANALYSE IA",
-        "pdf_advice_section": "RECOMMANDATIONS CLINIQUES",
-        "pdf_validation": "VALIDATION",
-        "pdf_technician": "Technicien de Laboratoire",
-        "pdf_disclaimer": "Ce rapport est généré par un système d'IA et doit être validé par un professionnel de santé.",
         "voice_intro": (
             "Bonjour ! Il est {time}. Je suis DM Smart Lab, "
             "intelligence artificielle développée par les Techniciens "
@@ -182,6 +186,28 @@ TRANSLATIONS = {
             "Paramédicale de Ouargla."
         ),
         "voice_result": "Résultat pour {patient} : {parasite}. {funny}",
+        "quiz_title": "Quiz Parasitologique",
+        "quiz_desc": "Testez vos connaissances en parasitologie !",
+        "quiz_question": "Question",
+        "quiz_score": "Score",
+        "quiz_correct": "Bonne réponse !",
+        "quiz_wrong": "Mauvaise réponse.",
+        "quiz_next": "Question Suivante",
+        "quiz_finish": "Résultat Final",
+        "quiz_restart": "Recommencer",
+        "chatbot_title": "Dr. DhiaBot - Assistant Médical IA",
+        "chatbot_placeholder": "Posez votre question sur les parasites...",
+        "chatbot_thinking": "Dr. DhiaBot réfléchit...",
+        "daily_tip": "Conseil du Jour",
+        "activity_log": "Journal d'Activité",
+        "pdf_title": "RAPPORT D'ANALYSE PARASITOLOGIQUE",
+        "pdf_subtitle": "Analyse assistée par Intelligence Artificielle",
+        "pdf_patient_section": "INFORMATIONS DU PATIENT",
+        "pdf_result_section": "RESULTAT DE L'ANALYSE IA",
+        "pdf_advice_section": "RECOMMANDATIONS CLINIQUES",
+        "pdf_validation": "VALIDATION",
+        "pdf_technician": "Technicien de Laboratoire",
+        "pdf_disclaimer": "Ce rapport est genere par un systeme d'IA et doit etre valide par un professionnel de sante.",
     },
     "ar": {
         "app_title": "DM SMART LAB AI",
@@ -200,17 +226,19 @@ TRANSLATIONS = {
         "nav_encyclopedia": "الموسوعة",
         "nav_dashboard": "لوحة التحكم",
         "nav_about": "حول المشروع",
+        "nav_quiz": "اختبار طبي",
+        "nav_chatbot": "المساعد الذكي",
         "home_welcome": "مرحباً",
         "home_step1_title": "الخطوة 1 : تقديم النظام",
-        "home_step1_desc": "اضغط لتشغيل العرض الصوتي لنظام الذكاء الاصطناعي.",
+        "home_step1_desc": "اضغط لتشغيل العرض الصوتي.",
         "home_step1_btn": "بدء العرض",
-        "home_step2_title": "الخطوة 2 : عنوان المشروع الرسمي",
-        "home_step2_desc": "استمع للعنوان الكامل لمذكرة التخرج.",
+        "home_step2_title": "الخطوة 2 : عنوان المشروع",
+        "home_step2_desc": "استمع للعنوان الكامل.",
         "home_step2_btn": "قراءة العنوان",
         "home_unlocked": "تم فتح النظام بنجاح !",
-        "home_go_scan": "انتقل إلى وحدة التشخيص من القائمة الجانبية.",
+        "home_go_scan": "انتقل إلى وحدة التشخيص.",
         "scan_title": "وحدة التشخيص الطفيلي",
-        "scan_blocked": "يرجى تفعيل النظام أولاً من صفحة الرئيسية.",
+        "scan_blocked": "يرجى تفعيل النظام أولاً.",
         "scan_patient_info": "بيانات المريض",
         "scan_nom": "اللقب",
         "scan_prenom": "الاسم",
@@ -219,27 +247,31 @@ TRANSLATIONS = {
         "scan_poids": "الوزن (كغ)",
         "scan_echantillon": "نوع العينة",
         "scan_thermal": "الرؤية الحرارية",
+        "scan_edge": "كشف الحواف",
+        "scan_enhanced": "تحسين التباين",
         "scan_capture": "التصوير المجهري",
-        "scan_camera": "الكاميرا (مباشر)",
+        "scan_camera": "الكاميرا",
         "scan_upload": "استيراد صورة",
         "scan_nom_required": "اسم المريض إجباري !",
-        "scan_analyzing": "جاري التحليل بالذكاء الاصطناعي...",
+        "scan_analyzing": "جاري التحليل...",
         "scan_result": "نتيجة الذكاء الاصطناعي",
         "scan_confidence": "نسبة الثقة",
         "scan_morphology": "الشكل المورفولوجي",
         "scan_risk": "مستوى الخطورة",
         "scan_advice": "النصيحة الطبية",
-        "scan_low_conf": "نسبة ثقة منخفضة. يُنصح بالتحقق اليدوي !",
-        "scan_demo_mode": "وضع العرض التوضيحي (لا يوجد موديل)",
-        "scan_download_pdf": "تحميل التقرير PDF",
+        "scan_low_conf": "نسبة ثقة منخفضة !",
+        "scan_demo_mode": "وضع العرض التوضيحي",
+        "scan_download_pdf": "تحميل التقرير",
         "scan_save": "حفظ",
-        "scan_saved": "تم الحفظ بنجاح !",
+        "scan_saved": "تم الحفظ !",
         "scan_new": "تحليل جديد",
         "scan_all_probs": "جميع الاحتمالات",
+        "scan_extra_tests": "فحوصات إضافية مقترحة",
+        "scan_heatmap": "منطقة اهتمام الذكاء",
         "enc_title": "موسوعة الطفيليات",
-        "enc_search": "ابحث عن طفيلي...",
+        "enc_search": "ابحث...",
         "enc_no_result": "لا توجد نتائج.",
-        "dash_title": "لوحة التحكم السريرية",
+        "dash_title": "لوحة التحكم",
         "dash_total": "إجمالي التحاليل",
         "dash_reliable": "موثوقة",
         "dash_check": "تحتاج مراجعة",
@@ -247,21 +279,19 @@ TRANSLATIONS = {
         "dash_system": "النظام يعمل",
         "dash_user": "المستخدم النشط",
         "dash_session": "الجلسة النشطة",
-        "dash_filter": "تصفية حسب الطفيلي",
+        "dash_filter": "تصفية",
         "dash_distribution": "توزيع الطفيليات",
         "dash_confidence_chart": "مستويات الثقة",
         "dash_history": "السجل الكامل",
         "dash_export": "تصدير CSV",
+        "dash_export_excel": "تصدير Excel",
+        "dash_export_json": "تصدير JSON",
         "dash_no_data": "لا توجد بيانات",
-        "dash_no_data_desc": "قم بإجراء أول تحليل لرؤية الإحصاءات هنا.",
+        "dash_no_data_desc": "قم بإجراء تحليل.",
+        "dash_patient_compare": "مقارنة تحاليل مريض",
         "about_title": "حول المشروع",
-        "about_desc": "نظام التشخيص الطفيلي المعتمد على الذكاء الاصطناعي",
-        "about_project_desc": (
-            "يستخدم هذا المشروع المبتكر تقنيات التعلم العميق "
-            "ورؤية الحاسوب لمساعدة تقنيي المخابر في التعرف "
-            "السريع والدقيق على الطفيليات أثناء الفحص المجهري "
-            "المباشر للبراز."
-        ),
+        "about_desc": "نظام التشخيص الطفيلي بالذكاء الاصطناعي",
+        "about_project_desc": "يستخدم هذا المشروع التعلم العميق لمساعدة تقنيي المخابر.",
         "about_team": "فريق التطوير",
         "about_institution": "المؤسسة",
         "about_objectives": "الأهداف",
@@ -280,6 +310,23 @@ TRANSLATIONS = {
         "echantillon_urines": "بول",
         "echantillon_lcr": "سائل دماغي شوكي",
         "echantillon_autre": "أخرى",
+        "voice_intro": "مرحباً! الساعة {time}. أنا DM Smart Lab. طوّرني {dev1} و{dev2}.",
+        "voice_title": "مذكرة تخرج: {title}. معهد التكوين العالي شبه الطبي بورقلة.",
+        "voice_result": "النتيجة لـ {patient}: {parasite}. {funny}",
+        "quiz_title": "اختبار طفيليات",
+        "quiz_desc": "اختبر معلوماتك!",
+        "quiz_question": "سؤال",
+        "quiz_score": "النتيجة",
+        "quiz_correct": "إجابة صحيحة!",
+        "quiz_wrong": "إجابة خاطئة.",
+        "quiz_next": "السؤال التالي",
+        "quiz_finish": "النتيجة النهائية",
+        "quiz_restart": "إعادة",
+        "chatbot_title": "المساعد الطبي الذكي",
+        "chatbot_placeholder": "اسأل عن الطفيليات...",
+        "chatbot_thinking": "المساعد يفكر...",
+        "daily_tip": "نصيحة اليوم",
+        "activity_log": "سجل النشاطات",
         "pdf_title": "تقرير التحليل الطفيلي",
         "pdf_subtitle": "تحليل بمساعدة الذكاء الاصطناعي",
         "pdf_patient_section": "بيانات المريض",
@@ -287,18 +334,7 @@ TRANSLATIONS = {
         "pdf_advice_section": "التوصيات السريرية",
         "pdf_validation": "المصادقة",
         "pdf_technician": "تقني المخبر",
-        "pdf_disclaimer": "هذا التقرير مولّد بنظام ذكاء اصطناعي ويجب مصادقته من قبل مختص صحي.",
-        "voice_intro": (
-            "مرحباً! الساعة الآن {time}. أنا DM Smart Lab، "
-            "ذكاء اصطناعي طوّره التقنيان الساميان "
-            "{dev1} و{dev2}. "
-            "حضّروا شرائحكم، ومن فضلكم لا تدغدغوني بالمجهر!"
-        ),
-        "voice_title": (
-            "مذكرة تخرج: {title}. "
-            "المعهد الوطني للتكوين العالي شبه الطبي بورقلة."
-        ),
-        "voice_result": "النتيجة لـ {patient}: {parasite}. {funny}",
+        "pdf_disclaimer": "هذا التقرير مولد بنظام ذكاء اصطناعي.",
     },
     "en": {
         "app_title": "DM SMART LAB AI",
@@ -317,17 +353,19 @@ TRANSLATIONS = {
         "nav_encyclopedia": "Encyclopedia",
         "nav_dashboard": "Dashboard",
         "nav_about": "About",
+        "nav_quiz": "Medical Quiz",
+        "nav_chatbot": "Dr. DhiaBot",
         "home_welcome": "Welcome",
         "home_step1_title": "Step 1: System Presentation",
-        "home_step1_desc": "Click to launch the AI system voice presentation.",
+        "home_step1_desc": "Click to launch voice presentation.",
         "home_step1_btn": "LAUNCH PRESENTATION",
         "home_step2_title": "Step 2: Official Project Title",
         "home_step2_desc": "Listen to the full thesis title.",
-        "home_step2_btn": "READ THE PROJECT TITLE",
-        "home_unlocked": "SYSTEM SUCCESSFULLY UNLOCKED!",
-        "home_go_scan": "Go to the diagnostic module in the sidebar menu.",
+        "home_step2_btn": "READ PROJECT TITLE",
+        "home_unlocked": "SYSTEM UNLOCKED!",
+        "home_go_scan": "Go to diagnostic module.",
         "scan_title": "Parasitological Diagnostic Unit",
-        "scan_blocked": "Please activate the system first on the Home page.",
+        "scan_blocked": "Please activate the system first.",
         "scan_patient_info": "Patient Information",
         "scan_nom": "Last Name",
         "scan_prenom": "First Name",
@@ -336,9 +374,11 @@ TRANSLATIONS = {
         "scan_poids": "Weight (kg)",
         "scan_echantillon": "Sample Type",
         "scan_thermal": "Thermal Vision",
+        "scan_edge": "Edge Detection",
+        "scan_enhanced": "Enhanced Contrast",
         "scan_capture": "Microscopic Capture",
-        "scan_camera": "Camera (real-time)",
-        "scan_upload": "Import an image",
+        "scan_camera": "Camera",
+        "scan_upload": "Upload image",
         "scan_nom_required": "Patient name is required!",
         "scan_analyzing": "AI Analysis in progress...",
         "scan_result": "AI Result",
@@ -346,45 +386,45 @@ TRANSLATIONS = {
         "scan_morphology": "Morphology",
         "scan_risk": "Risk",
         "scan_advice": "Medical Advice",
-        "scan_low_conf": "Low confidence. Manual verification recommended!",
-        "scan_demo_mode": "Demo mode (no model loaded)",
-        "scan_download_pdf": "Download PDF Report",
+        "scan_low_conf": "Low confidence!",
+        "scan_demo_mode": "Demo mode",
+        "scan_download_pdf": "Download PDF",
         "scan_save": "Save",
-        "scan_saved": "Result saved successfully!",
+        "scan_saved": "Saved!",
         "scan_new": "New Analysis",
         "scan_all_probs": "All probabilities",
+        "scan_extra_tests": "Suggested additional tests",
+        "scan_heatmap": "AI Focus Area",
         "enc_title": "Parasite Encyclopedia",
-        "enc_search": "Search for a parasite...",
-        "enc_no_result": "No results found.",
+        "enc_search": "Search...",
+        "enc_no_result": "No results.",
         "dash_title": "Clinical Dashboard",
         "dash_total": "Total Analyses",
         "dash_reliable": "Reliable",
         "dash_check": "To Verify",
         "dash_frequent": "Most Frequent",
-        "dash_system": "System Operational",
+        "dash_system": "System OK",
         "dash_user": "Active User",
         "dash_session": "Active Session",
-        "dash_filter": "Filter by parasite",
-        "dash_distribution": "Parasite Distribution",
+        "dash_filter": "Filter",
+        "dash_distribution": "Distribution",
         "dash_confidence_chart": "Confidence Levels",
         "dash_history": "Full History",
         "dash_export": "Export CSV",
-        "dash_no_data": "No data available",
-        "dash_no_data_desc": "Perform your first analysis to see statistics here.",
-        "about_title": "About the Project",
-        "about_desc": "AI-Powered Parasitological Diagnostic System",
-        "about_project_desc": (
-            "This innovative project uses Deep Learning and Computer "
-            "Vision to assist lab technicians in rapid and accurate "
-            "identification of parasites during fresh stool microscopic "
-            "examination."
-        ),
+        "dash_export_excel": "Export Excel",
+        "dash_export_json": "Export JSON",
+        "dash_no_data": "No data",
+        "dash_no_data_desc": "Perform an analysis.",
+        "dash_patient_compare": "Compare patient analyses",
+        "about_title": "About",
+        "about_desc": "AI Parasitological Diagnostic System",
+        "about_project_desc": "This project uses Deep Learning to assist lab technicians.",
         "about_team": "Development Team",
         "about_institution": "Institution",
         "about_objectives": "Objectives",
         "about_obj1": "Automate microscopic reading",
         "about_obj2": "Reduce diagnostic errors",
-        "about_obj3": "Speed up the analysis process",
+        "about_obj3": "Speed up analysis",
         "about_obj4": "Assist healthcare professionals",
         "about_tech": "Technologies Used",
         "night_mode": "Night Mode",
@@ -397,6 +437,23 @@ TRANSLATIONS = {
         "echantillon_urines": "Urine",
         "echantillon_lcr": "CSF",
         "echantillon_autre": "Other",
+        "voice_intro": "Hello! It is {time}. I am DM Smart Lab. Developed by {dev1} and {dev2}.",
+        "voice_title": "Thesis: {title}. INFSPM Ouargla.",
+        "voice_result": "Result for {patient}: {parasite}. {funny}",
+        "quiz_title": "Parasitology Quiz",
+        "quiz_desc": "Test your knowledge!",
+        "quiz_question": "Question",
+        "quiz_score": "Score",
+        "quiz_correct": "Correct!",
+        "quiz_wrong": "Wrong.",
+        "quiz_next": "Next Question",
+        "quiz_finish": "Final Result",
+        "quiz_restart": "Restart",
+        "chatbot_title": "Dr. DhiaBot - AI Medical Assistant",
+        "chatbot_placeholder": "Ask about parasites...",
+        "chatbot_thinking": "Dr. DhiaBot is thinking...",
+        "daily_tip": "Daily Tip",
+        "activity_log": "Activity Log",
         "pdf_title": "PARASITOLOGICAL ANALYSIS REPORT",
         "pdf_subtitle": "AI-Assisted Analysis",
         "pdf_patient_section": "PATIENT INFORMATION",
@@ -404,18 +461,7 @@ TRANSLATIONS = {
         "pdf_advice_section": "CLINICAL RECOMMENDATIONS",
         "pdf_validation": "VALIDATION",
         "pdf_technician": "Lab Technician",
-        "pdf_disclaimer": "This report is AI-generated and must be validated by a healthcare professional.",
-        "voice_intro": (
-            "Hello! It is {time}. I am DM Smart Lab, "
-            "artificial intelligence developed by Senior Technicians "
-            "{dev1} and {dev2}. "
-            "Prepare your slides, and please don't tickle me with the microscope!"
-        ),
-        "voice_title": (
-            "Graduation Thesis: {title}. "
-            "National Institute of Higher Paramedical Training of Ouargla."
-        ),
-        "voice_result": "Result for {patient}: {parasite}. {funny}",
+        "pdf_disclaimer": "This report is AI-generated.",
     }
 }
 
@@ -426,198 +472,479 @@ PARASITE_DB = {
     "Amoeba (E. histolytica)": {
         "scientific_name": "Entamoeba histolytica",
         "morphology": {
-            "fr": "Kyste sphérique (10-15µm) à 4 noyaux ou Trophozoïte avec pseudopodes et hématies phagocytées (forme invasive).",
-            "ar": "كيس كروي (10-15 ميكرومتر) بـ 4 نوى أو طور غاذي بأقدام كاذبة وكريات دم حمراء مبتلعة (شكل غازي).",
-            "en": "Spherical cyst (10-15µm) with 4 nuclei or Trophozoite with pseudopods and phagocytosed RBCs (invasive form)."
+            "fr": "Kyste spherique (10-15um) a 4 noyaux ou Trophozoite avec pseudopodes et hematies phagocytees.",
+            "ar": "كيس كروي (10-15 ميكرومتر) بـ 4 نوى أو طور غاذي بأقدام كاذبة.",
+            "en": "Spherical cyst (10-15um) with 4 nuclei or Trophozoite with pseudopods."
         },
         "description": {
-            "fr": "Parasite tissulaire responsable de la dysenterie amibienne et de l'abcès hépatique. Transmission fécale-orale par ingestion de kystes.",
-            "ar": "طفيلي نسيجي مسبب للزحار الأميبي وخراج الكبد. الانتقال عبر الفم-البراز بابتلاع الأكياس.",
-            "en": "Tissue parasite causing amoebic dysentery and liver abscess. Fecal-oral transmission through cyst ingestion."
+            "fr": "Parasite tissulaire responsable de la dysenterie amibienne et de l'abces hepatique.",
+            "ar": "طفيلي نسيجي مسبب للزحار الأميبي وخراج الكبد.",
+            "en": "Tissue parasite causing amoebic dysentery and liver abscess."
         },
         "funny": {
-            "fr": "🥷 Le ninja des intestins ! Il change de forme plus vite que ton humeur un lundi matin.",
-            "ar": "🥷 نينجا الأمعاء! يغيّر شكله أسرع من مزاجك يوم الإثنين.",
-            "en": "🥷 The intestinal ninja! Changes shape faster than your Monday mood."
+            "fr": "Le ninja des intestins ! Il change de forme plus vite que ton humeur.",
+            "ar": "نينجا الأمعاء! يغيّر شكله أسرع من مزاجك.",
+            "en": "The intestinal ninja! Changes shape faster than your mood."
         },
         "risk_level": "high",
-        "risk_display": {"fr": "Élevé 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
+        "risk_display": {"fr": "Eleve 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
         "advice": {
-            "fr": "Traitement au Métronidazole (Flagyl) + Amœbicide de contact. Hygiène stricte des mains. Contrôle parasitologique post-traitement.",
-            "ar": "علاج بالميترونيدازول (فلاجيل) + مبيد أميبي موضعي. نظافة صارمة لليدين. مراقبة طفيلية بعد العلاج.",
-            "en": "Metronidazole (Flagyl) + contact amoebicide. Strict hand hygiene. Post-treatment parasitological control."
+            "fr": "Metronidazole (Flagyl) + Amoebicide de contact. Hygiene stricte.",
+            "ar": "ميترونيدازول + مبيد أميبي. نظافة صارمة.",
+            "en": "Metronidazole (Flagyl) + contact amoebicide. Strict hygiene."
+        },
+        "extra_tests": {
+            "fr": ["Serologie amibienne", "Echographie hepatique", "NFS + CRP"],
+            "ar": ["مصلية أميبية", "إيكو كبدي", "تعداد دم كامل"],
+            "en": ["Amoebic serology", "Hepatic ultrasound", "CBC + CRP"]
         },
         "color": "#dc2626",
-        "icon": "🔴"
+        "icon": "🔴",
+        "lifecycle": {
+            "fr": "Kyste ingere → Excystation → Trophozoite → Invasion tissulaire → Kyste (selles)",
+            "ar": "ابتلاع الكيس ← خروج من الكيس ← طور غاذي ← غزو نسيجي ← كيس (براز)",
+            "en": "Cyst ingested → Excystation → Trophozoite → Tissue invasion → Cyst (stool)"
+        }
     },
     "Giardia": {
         "scientific_name": "Giardia lamblia (intestinalis)",
         "morphology": {
-            "fr": "Trophozoïte piriforme en 'cerf-volant' (12-15µm) avec 2 noyaux symétriques (face de hibou) et 4 paires de flagelles. Kyste ovoïde à 4 noyaux.",
-            "ar": "طور غاذي كمثري على شكل 'طائرة ورقية' (12-15 ميكرومتر) بنواتين متناظرتين (وجه بومة) و4 أزواج من الأسواط. كيس بيضاوي بـ 4 نوى.",
-            "en": "Pear-shaped 'kite' trophozoite (12-15µm) with 2 symmetrical nuclei (owl face) and 4 pairs of flagella. Ovoid cyst with 4 nuclei."
+            "fr": "Trophozoite piriforme en 'cerf-volant' (12-15um) avec 2 noyaux (face de hibou) et 4 paires de flagelles.",
+            "ar": "طور غاذي كمثري (12-15 ميكرومتر) بنواتين متناظرتين و4 أزواج أسواط.",
+            "en": "Pear-shaped 'kite' trophozoite (12-15um) with 2 nuclei and 4 flagella pairs."
         },
         "description": {
-            "fr": "Protozoaire flagellé colonisant le duodénum et le jéjunum. Provoque une malabsorption chronique. Très fréquent chez l'enfant.",
-            "ar": "أولي سوطي يستعمر الاثني عشر والصائم. يسبب سوء امتصاص مزمن. شائع جداً عند الأطفال.",
-            "en": "Flagellated protozoan colonizing the duodenum and jejunum. Causes chronic malabsorption. Very common in children."
+            "fr": "Protozoaire flagelle colonisant le duodenum. Malabsorption chronique.",
+            "ar": "أولي سوطي يستعمر الاثني عشر. سوء امتصاص مزمن.",
+            "en": "Flagellated protozoan colonizing duodenum. Chronic malabsorption."
         },
         "funny": {
-            "fr": "👀 Regarde-le ! Il te fixe avec ses lunettes de soleil. Un vrai touriste qui refuse de partir !",
-            "ar": "👀 انظر إليه! يحدّق فيك بنظارته الشمسية. سائح حقيقي يرفض المغادرة!",
-            "en": "👀 Look at him! Staring at you with sunglasses. A real tourist who refuses to leave!"
+            "fr": "Il te fixe avec ses lunettes de soleil. Un vrai touriste !",
+            "ar": "يحدّق فيك بنظارته الشمسية. سائح حقيقي!",
+            "en": "Staring at you with sunglasses. A real tourist!"
         },
         "risk_level": "medium",
         "risk_display": {"fr": "Moyen 🟠", "ar": "متوسط 🟠", "en": "Medium 🟠"},
         "advice": {
-            "fr": "Métronidazole ou Tinidazole. Vérifier la source d'eau. Examen parasitologique de toute la famille.",
-            "ar": "ميترونيدازول أو تينيدازول. التحقق من مصدر المياه. فحص طفيلي لكل العائلة.",
-            "en": "Metronidazole or Tinidazole. Check water source. Parasitological exam for the whole family."
+            "fr": "Metronidazole ou Tinidazole. Verifier la source d'eau.",
+            "ar": "ميترونيدازول أو تينيدازول. تحقق من المياه.",
+            "en": "Metronidazole or Tinidazole. Check water source."
+        },
+        "extra_tests": {
+            "fr": ["Recherche d'antigene Giardia (selles)", "Test de malabsorption"],
+            "ar": ["بحث عن مستضد الجيارديا", "اختبار سوء الامتصاص"],
+            "en": ["Giardia antigen test (stool)", "Malabsorption test"]
         },
         "color": "#f59e0b",
-        "icon": "🟠"
+        "icon": "🟠",
+        "lifecycle": {
+            "fr": "Kyste ingere → Excystation → Trophozoite → Adhesion intestinale → Kyste",
+            "ar": "ابتلاع الكيس ← خروج ← طور غاذي ← التصاق معوي ← كيس",
+            "en": "Cyst ingested → Excystation → Trophozoite → Intestinal adhesion → Cyst"
+        }
     },
     "Leishmania": {
         "scientific_name": "Leishmania infantum / tropica",
         "morphology": {
-            "fr": "Formes amastigotes ovoïdes (2-5µm) intracellulaires dans les macrophages. Noyau et kinétoplaste bien visibles (coloration MGG).",
-            "ar": "أشكال لامسوطة بيضاوية (2-5 ميكرومتر) داخل البلاعم. النواة والحركيات واضحة (تلوين MGG).",
-            "en": "Ovoid amastigote forms (2-5µm) intracellular in macrophages. Nucleus and kinetoplast well visible (MGG staining)."
+            "fr": "Amastigotes ovoides (2-5um) intracellulaires dans les macrophages. Coloration MGG.",
+            "ar": "لامسوطات بيضاوية (2-5 ميكرومتر) داخل البلاعم. تلوين MGG.",
+            "en": "Ovoid amastigotes (2-5um) intracellular in macrophages. MGG staining."
         },
         "description": {
-            "fr": "Parasite transmis par la piqûre du phlébotome. Formes: cutanée (bouton d'Orient), viscérale (Kala-azar).",
-            "ar": "طفيلي ينتقل عبر لدغة ذبابة الرمل. الأشكال: جلدي (حبة الشرق)، حشوي (كالا آزار).",
-            "en": "Parasite transmitted by sandfly bite. Forms: cutaneous (Oriental sore), visceral (Kala-azar)."
+            "fr": "Transmis par le phlebotome. Formes: cutanee (bouton d'Orient), viscerale (Kala-azar).",
+            "ar": "ينتقل عبر ذبابة الرمل. جلدي أو حشوي.",
+            "en": "Transmitted by sandfly. Cutaneous or visceral forms."
         },
         "funny": {
-            "fr": "💪 Petit mais costaud ! Il squatte les macrophages comme un invité qui ne part jamais.",
-            "ar": "💪 صغير لكن قوي! يسكن البلاعم كضيف لا يغادر أبداً.",
-            "en": "💪 Small but tough! Squats in macrophages like a guest who never leaves."
+            "fr": "Petit mais costaud ! Il squatte les macrophages.",
+            "ar": "صغير لكن قوي! يسكن البلاعم.",
+            "en": "Small but tough! Squats in macrophages."
         },
         "risk_level": "high",
-        "risk_display": {"fr": "Élevé 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
+        "risk_display": {"fr": "Eleve 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
         "advice": {
-            "fr": "Glucantime/Amphotéricine B. Maladie à Déclaration Obligatoire (MDO). Protection contre les phlébotomes.",
-            "ar": "غلوكانتيم/أمفوتيريسين ب. مرض ذو تصريح إجباري. الحماية من ذباب الرمل.",
-            "en": "Glucantime/Amphotericin B. Mandatory reporting disease. Protection against sandflies."
+            "fr": "Glucantime/Amphotericine B. Maladie a Declaration Obligatoire.",
+            "ar": "غلوكانتيم/أمفوتيريسين ب. مرض ذو تصريح إجباري.",
+            "en": "Glucantime/Amphotericin B. Mandatory reporting."
+        },
+        "extra_tests": {
+            "fr": ["IDR de Montenegro", "Serologie Leishmania", "Ponction de moelle"],
+            "ar": ["اختبار مونتينيغرو", "مصلية ليشمانيا", "بزل نخاع"],
+            "en": ["Montenegro skin test", "Leishmania serology", "Bone marrow aspirate"]
         },
         "color": "#dc2626",
-        "icon": "🔴"
+        "icon": "🔴",
+        "lifecycle": {
+            "fr": "Piqure phlebotome → Promastigote → Phagocytose → Amastigote → Multiplication",
+            "ar": "لدغة ذبابة الرمل ← طور سوطي ← بلعمة ← طور لامسوطي ← تكاثر",
+            "en": "Sandfly bite → Promastigote → Phagocytosis → Amastigote → Multiplication"
+        }
     },
     "Plasmodium": {
         "scientific_name": "Plasmodium falciparum / vivax",
         "morphology": {
-            "fr": "Forme en 'bague à chaton' (trophozoïte jeune) à l'intérieur des hématies. Diagnostic par frottis sanguin et goutte épaisse.",
-            "ar": "شكل 'خاتم' (طور غاذي فتي) داخل كريات الدم الحمراء. التشخيص بلطاخة الدم والقطرة السميكة.",
-            "en": "Signet ring form (young trophozoite) inside RBCs. Diagnosis by blood smear and thick drop."
+            "fr": "Forme en 'bague a chaton' dans les hematies. Frottis sanguin + Goutte epaisse.",
+            "ar": "شكل 'خاتم' داخل كريات الدم الحمراء. لطاخة + قطرة سميكة.",
+            "en": "Signet ring form inside RBCs. Blood smear + thick drop."
         },
         "description": {
-            "fr": "Agent causal du paludisme (Malaria). P. falciparum: forme la plus grave. Transmission par l'anophèle femelle.",
-            "ar": "المسبب للملاريا. المتصورة المنجلية: الشكل الأخطر. الانتقال عبر أنثى الأنوفيل.",
-            "en": "Causative agent of Malaria. P. falciparum: most severe form. Transmitted by female Anopheles."
+            "fr": "Agent du paludisme. P. falciparum: le plus grave. Transmission par anophele.",
+            "ar": "مسبب الملاريا. المتصورة المنجلية الأخطر. ينتقل بالأنوفيل.",
+            "en": "Malaria agent. P. falciparum: most severe. Anopheles transmission."
         },
         "funny": {
-            "fr": "💍 Il demande le mariage à tes globules rouges ! Une bague très dangereuse, ne dis pas oui !",
-            "ar": "💍 يطلب الزواج من كرياتك الحمراء! خاتم خطير جداً، لا تقل نعم!",
-            "en": "💍 He proposes to your red blood cells! A very dangerous ring, don't say yes!"
+            "fr": "Il demande le mariage a tes globules ! Ne dis pas oui !",
+            "ar": "يطلب الزواج من كرياتك! لا تقل نعم!",
+            "en": "Proposes to your RBCs! Don't say yes!"
         },
         "risk_level": "critical",
-        "risk_display": {"fr": "🚨 URGENCE MÉDICALE", "ar": "🚨 حالة طوارئ طبية", "en": "🚨 MEDICAL EMERGENCY"},
+        "risk_display": {"fr": "🚨 URGENCE MEDICALE", "ar": "🚨 حالة طوارئ", "en": "🚨 EMERGENCY"},
         "advice": {
-            "fr": "HOSPITALISATION IMMÉDIATE ! ACT (Artemisinin-based Combination Therapy). Parasitémie toutes les 4-6h. Surveillance rénale et hépatique.",
-            "ar": "تنويم فوري! علاج مركب بالأرتيميسينين. فحص الطفيليات كل 4-6 ساعات. مراقبة وظائف الكلى والكبد.",
-            "en": "IMMEDIATE HOSPITALIZATION! ACT therapy. Parasitemia every 4-6h. Renal and hepatic monitoring."
+            "fr": "HOSPITALISATION ! ACT. Parasitemie /4-6h. Surveillance renale/hepatique.",
+            "ar": "تنويم فوري! علاج مركب. فحص طفيليات كل 4-6 ساعات.",
+            "en": "HOSPITALIZATION! ACT. Parasitemia /4-6h. Renal/hepatic monitoring."
+        },
+        "extra_tests": {
+            "fr": ["TDR Paludisme", "Parasitemie quantitative", "Bilan hepato-renal", "Glycemie"],
+            "ar": ["اختبار سريع للملاريا", "طفيليات كمية", "فحص كبد وكلى", "سكر الدم"],
+            "en": ["Malaria RDT", "Quantitative parasitemia", "Hepato-renal panel", "Glycemia"]
         },
         "color": "#7f1d1d",
-        "icon": "🚨"
+        "icon": "🚨",
+        "lifecycle": {
+            "fr": "Piqure anophele → Sporozoite → Hepatocyte → Merozoite → Hematie → Gametocyte",
+            "ar": "لدغة أنوفيل ← بوغ ← خلية كبد ← جزئية ← كرية حمراء ← عرسة",
+            "en": "Anopheles bite → Sporozoite → Hepatocyte → Merozoite → RBC → Gametocyte"
+        }
     },
     "Trypanosoma": {
         "scientific_name": "Trypanosoma brucei / cruzi",
         "morphology": {
-            "fr": "Forme allongée en 'S' ou 'C' (15-30µm) avec un flagelle libre antérieur et une membrane ondulante caractéristique. Kinétoplaste bien visible.",
-            "ar": "شكل مطاول على شكل 'S' أو 'C' (15-30 ميكرومتر) بسوط حر أمامي وغشاء متموج مميز. الحركيات واضحة.",
-            "en": "Elongated 'S' or 'C' shape (15-30µm) with free anterior flagellum and characteristic undulating membrane. Kinetoplast visible."
+            "fr": "Forme en 'S' ou 'C' (15-30um) avec flagelle libre et membrane ondulante.",
+            "ar": "شكل S أو C (15-30 ميكرومتر) بسوط حر وغشاء متموج.",
+            "en": "S or C shape (15-30um) with free flagellum and undulating membrane."
         },
         "description": {
-            "fr": "Parasite extracellulaire du sang. Transmis par la mouche tsé-tsé (T. brucei) ou le triatome (T. cruzi/Chagas).",
-            "ar": "طفيلي خارج خلوي في الدم. ينتقل عبر ذبابة تسي تسي أو بق الترياتوم (شاغاس).",
-            "en": "Extracellular blood parasite. Transmitted by tsetse fly (T. brucei) or triatomine bug (T. cruzi/Chagas)."
+            "fr": "Parasite du sang. Mouche tse-tse (brucei) ou triatome (cruzi).",
+            "ar": "طفيلي دموي. ذبابة تسي تسي أو بق الترياتوم.",
+            "en": "Blood parasite. Tsetse fly (brucei) or triatomine (cruzi)."
         },
         "funny": {
-            "fr": "⚡ Il court dans ton sang comme Mahrez sur l'aile droite ! Imprévisible et rapide.",
-            "ar": "⚡ يجري في دمك مثل محرز على الجناح الأيمن! غير متوقع وسريع.",
-            "en": "⚡ Runs through your blood like Mahrez on the right wing! Unpredictable and fast."
+            "fr": "Il court comme Mahrez sur l'aile droite !",
+            "ar": "يجري مثل محرز على الجناح!",
+            "en": "Runs like Mahrez on the right wing!"
         },
         "risk_level": "high",
-        "risk_display": {"fr": "Élevé 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
+        "risk_display": {"fr": "Eleve 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
         "advice": {
-            "fr": "Examen du LCR si suspicion de phase neurologique. Pentamidine ou Suramine en phase précoce.",
-            "ar": "فحص السائل الدماغي الشوكي عند الاشتباه في المرحلة العصبية. بنتاميدين أو سورامين في المرحلة المبكرة.",
-            "en": "CSF exam if neurological phase suspected. Pentamidine or Suramin in early phase."
+            "fr": "Examen du LCR si phase neurologique. Pentamidine/Suramine.",
+            "ar": "فحص السائل الشوكي. بنتاميدين/سورامين.",
+            "en": "CSF exam if neurological. Pentamidine/Suramin."
+        },
+        "extra_tests": {
+            "fr": ["Ponction lombaire", "Serologie Trypanosoma", "IgM serique"],
+            "ar": ["بزل قطني", "مصلية التريبانوسوما", "IgM مصلي"],
+            "en": ["Lumbar puncture", "Trypanosoma serology", "Serum IgM"]
         },
         "color": "#dc2626",
-        "icon": "🔴"
+        "icon": "🔴",
+        "lifecycle": {
+            "fr": "Piqure mouche → Trypomastigote → Sang → Multiplication → LCR (phase 2)",
+            "ar": "لدغة ذبابة ← طور سوطي ← دم ← تكاثر ← سائل شوكي (المرحلة 2)",
+            "en": "Fly bite → Trypomastigote → Blood → Multiplication → CSF (phase 2)"
+        }
     },
     "Schistosoma": {
         "scientific_name": "Schistosoma haematobium / mansoni",
         "morphology": {
-            "fr": "Œuf ovoïde de grande taille (115-170µm) avec un éperon terminal (S. haematobium) ou latéral (S. mansoni) caractéristique.",
-            "ar": "بيضة بيضاوية كبيرة (115-170 ميكرومتر) بنتوء طرفي (البلهارسيا الدموية) أو جانبي (المنسونية) مميز.",
-            "en": "Large ovoid egg (115-170µm) with characteristic terminal (S. haematobium) or lateral (S. mansoni) spine."
+            "fr": "Oeuf ovoide (115-170um) avec eperon terminal (haematobium) ou lateral (mansoni).",
+            "ar": "بيضة بيضاوية (115-170 ميكرومتر) بنتوء طرفي أو جانبي.",
+            "en": "Ovoid egg (115-170um) with terminal or lateral spine."
         },
         "description": {
-            "fr": "Trématode responsable de la bilharziose. S. haematobium: forme urinaire. S. mansoni: forme intestino-hépatique.",
-            "ar": "مثقوبة مسببة للبلهارسيا. البلهارسيا الدموية: شكل بولي. المنسونية: شكل معوي كبدي.",
-            "en": "Trematode causing schistosomiasis. S. haematobium: urinary form. S. mansoni: intestino-hepatic form."
+            "fr": "Bilharziose. S. haematobium: urinaire. S. mansoni: intestino-hepatique.",
+            "ar": "بلهارسيا. دموية: بولية. منسونية: معوية كبدية.",
+            "en": "Schistosomiasis. S. haematobium: urinary. S. mansoni: intestino-hepatic."
         },
         "funny": {
-            "fr": "🏊 L'œuf avec un dard ! La prochaine baignade en eau douce pourrait te coûter cher.",
-            "ar": "🏊 البيضة ذات الشوكة! السباحة القادمة في المياه العذبة قد تكلفك غالياً.",
-            "en": "🏊 The egg with a sting! Your next freshwater swim could cost you dearly."
+            "fr": "L'oeuf avec un dard ! La baignade peut couter cher.",
+            "ar": "البيضة ذات الشوكة! السباحة قد تكلفك غالياً.",
+            "en": "The egg with a sting! Swimming could cost you."
         },
         "risk_level": "medium",
         "risk_display": {"fr": "Moyen 🟠", "ar": "متوسط 🟠", "en": "Medium 🟠"},
         "advice": {
-            "fr": "Praziquantel (dose unique). Analyse du sédiment urinaire de 24h. Éviter les baignades en eau douce stagnante.",
-            "ar": "برازيكوانتيل (جرعة واحدة). تحليل رواسب البول 24 ساعة. تجنب السباحة في المياه العذبة الراكدة.",
-            "en": "Praziquantel (single dose). 24h urine sediment analysis. Avoid swimming in stagnant freshwater."
+            "fr": "Praziquantel. Sediment urinaire 24h. Eviter eaux douces stagnantes.",
+            "ar": "برازيكوانتيل. رواسب بول 24 ساعة. تجنب المياه الراكدة.",
+            "en": "Praziquantel. 24h urine sediment. Avoid stagnant freshwater."
+        },
+        "extra_tests": {
+            "fr": ["ECBU", "Serologie Schistosoma", "Echographie vesicale"],
+            "ar": ["فحص بول", "مصلية البلهارسيا", "إيكو مثانة"],
+            "en": ["Urinalysis", "Schistosoma serology", "Bladder ultrasound"]
         },
         "color": "#f59e0b",
-        "icon": "🟠"
+        "icon": "🟠",
+        "lifecycle": {
+            "fr": "Cercaire (eau) → Penetration cutanee → Schistosomule → Veine porte → Oeufs",
+            "ar": "سركاريا (ماء) ← اختراق جلدي ← شستوسومولا ← وريد بابي ← بيض",
+            "en": "Cercaria (water) → Skin penetration → Schistosomula → Portal vein → Eggs"
+        }
     },
     "Negative": {
         "scientific_name": "N/A",
         "morphology": {
-            "fr": "Absence d'éléments parasitaires après examen macro et microscopique complet (état frais + coloration).",
-            "ar": "غياب عناصر طفيلية بعد الفحص العياني والمجهري الكامل (حالة طازجة + تلوين).",
-            "en": "Absence of parasitic elements after complete macro and microscopic examination (fresh state + staining)."
+            "fr": "Absence d'elements parasitaires apres examen complet.",
+            "ar": "غياب عناصر طفيلية بعد الفحص الكامل.",
+            "en": "No parasitic elements found after complete examination."
         },
         "description": {
-            "fr": "Échantillon négatif. Débris alimentaires, cristaux ou artefacts possibles sans signification clinique.",
-            "ar": "عينة سلبية. بقايا غذائية أو بلورات أو قطع اصطناعية محتملة بدون أهمية سريرية.",
-            "en": "Negative sample. Possible food debris, crystals, or artifacts without clinical significance."
+            "fr": "Echantillon negatif. RAS.",
+            "ar": "عينة سلبية.",
+            "en": "Negative sample."
         },
         "funny": {
-            "fr": "✨ Rien à signaler ! Ton microscope peut aller se reposer. Champagne ! 🥂",
-            "ar": "✨ لا شيء للإبلاغ عنه! مجهرك يمكنه الراحة الآن. شمبانيا! 🥂",
-            "en": "✨ Nothing to report! Your microscope can rest now. Champagne! 🥂"
+            "fr": "Rien a signaler ! Champagne ! 🥂",
+            "ar": "لا شيء! شمبانيا! 🥂",
+            "en": "All clear! Champagne! 🥂"
         },
         "risk_level": "none",
-        "risk_display": {"fr": "Négatif 🟢", "ar": "سلبي 🟢", "en": "Negative 🟢"},
+        "risk_display": {"fr": "Negatif 🟢", "ar": "سلبي 🟢", "en": "Negative 🟢"},
         "advice": {
-            "fr": "RAS. Continuer une bonne hygiène alimentaire et hydrique. Contrôle recommandé si symptômes persistent.",
-            "ar": "لا شيء يُذكر. استمر في النظافة الغذائية والمائية الجيدة. يُنصح بمراقبة إذا استمرت الأعراض.",
-            "en": "All clear. Maintain good food and water hygiene. Follow-up recommended if symptoms persist."
+            "fr": "RAS. Bonne hygiene alimentaire.",
+            "ar": "لا شيء. نظافة غذائية جيدة.",
+            "en": "All clear. Good food hygiene."
+        },
+        "extra_tests": {
+            "fr": ["Aucun examen supplementaire necessaire"],
+            "ar": ["لا حاجة لفحوصات إضافية"],
+            "en": ["No additional tests needed"]
         },
         "color": "#16a34a",
-        "icon": "🟢"
+        "icon": "🟢",
+        "lifecycle": {"fr": "N/A", "ar": "غير متوفر", "en": "N/A"}
     }
 }
 
 CLASS_NAMES = list(PARASITE_DB.keys())
 
 # ============================================
-#  5. تهيئة حالة الجلسة الكاملة
+#  5. قاعدة أسئلة الاختبار (Quiz)
+# ============================================
+QUIZ_QUESTIONS = {
+    "fr": [
+        {
+            "q": "Quel parasite est connu sous le nom de 'bague a chaton' dans les hematies?",
+            "options": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"],
+            "answer": 1,
+            "explanation": "Le Plasmodium (agent du paludisme) presente une forme en bague a chaton (signet ring) dans les hematies au stade trophozoite jeune."
+        },
+        {
+            "q": "Le kyste de Giardia possede combien de noyaux?",
+            "options": ["2 noyaux", "4 noyaux", "6 noyaux", "8 noyaux"],
+            "answer": 1,
+            "explanation": "Le kyste mature de Giardia lamblia contient 4 noyaux. Le trophozoite en possede 2."
+        },
+        {
+            "q": "Quel parasite est transmis par le phlebotome?",
+            "options": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"],
+            "answer": 2,
+            "explanation": "La Leishmania est transmise par la piqure du phlebotome (mouche des sables)."
+        },
+        {
+            "q": "L'eperon terminal est caracteristique de quel oeuf?",
+            "options": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"],
+            "answer": 1,
+            "explanation": "L'oeuf de Schistosoma haematobium possede un eperon terminal. S. mansoni a un eperon lateral."
+        },
+        {
+            "q": "Quel examen est urgent en cas de suspicion de paludisme?",
+            "options": ["Coproculture", "ECBU", "Goutte epaisse + Frottis", "Serologie"],
+            "answer": 2,
+            "explanation": "La goutte epaisse et le frottis sanguin sont les examens de reference pour le diagnostic du paludisme. C'est une URGENCE."
+        },
+        {
+            "q": "Le trophozoite d'E. histolytica se distingue par:",
+            "options": ["Ses flagelles", "Ses hematies phagocytees", "Sa membrane ondulante", "Son kinetoplaste"],
+            "answer": 1,
+            "explanation": "La presence d'hematies phagocytees dans le cytoplasme est le critere de pathogenicite d'E. histolytica (forme invasive hematophage)."
+        },
+        {
+            "q": "La maladie de Chagas est causee par:",
+            "options": ["T. brucei gambiense", "T. cruzi", "L. donovani", "P. vivax"],
+            "answer": 1,
+            "explanation": "Trypanosoma cruzi est l'agent de la maladie de Chagas, transmise par les triatomes (reduves)."
+        },
+        {
+            "q": "Quel colorant est utilise pour mettre en evidence les amastigotes de Leishmania?",
+            "options": ["Ziehl-Neelsen", "Gram", "MGG (May-Grunwald-Giemsa)", "Lugol"],
+            "answer": 2,
+            "explanation": "La coloration MGG permet de visualiser les amastigotes avec leur noyau et kinetoplaste caracteristiques."
+        },
+        {
+            "q": "Le Praziquantel est le traitement de reference de:",
+            "options": ["Paludisme", "Amibiase", "Bilharziose", "Giardiose"],
+            "answer": 2,
+            "explanation": "Le Praziquantel est le medicament de choix contre la bilharziose (Schistosoma)."
+        },
+        {
+            "q": "La 'face de hibou' est observee chez:",
+            "options": ["Plasmodium", "Giardia", "Amoeba", "Trypanosoma"],
+            "answer": 1,
+            "explanation": "Le trophozoite de Giardia lamblia vu de face montre 2 noyaux symetriques ressemblant a une face de hibou."
+        }
+    ],
+    "ar": [
+        {
+            "q": "أي طفيلي يُعرف بشكل 'الخاتم' داخل كريات الدم الحمراء؟",
+            "options": ["الجيارديا", "المتصورة (البلازموديوم)", "الليشمانيا", "الأميبا"],
+            "answer": 1,
+            "explanation": "المتصورة (عامل الملاريا) تظهر بشكل خاتم داخل الكريات الحمراء."
+        },
+        {
+            "q": "كم نواة في كيس الجيارديا الناضج؟",
+            "options": ["2", "4", "6", "8"],
+            "answer": 1,
+            "explanation": "كيس الجيارديا الناضج يحتوي على 4 نوى."
+        },
+        {
+            "q": "أي طفيلي ينتقل عبر ذبابة الرمل؟",
+            "options": ["البلازموديوم", "التريبانوسوما", "الليشمانيا", "البلهارسيا"],
+            "answer": 2,
+            "explanation": "الليشمانيا تنتقل عبر لدغة ذبابة الرمل (الفليبوتوم)."
+        },
+        {
+            "q": "النتوء الطرفي يميز بيضة أي طفيلي؟",
+            "options": ["الأسكاريس", "البلهارسيا الدموية", "البلهارسيا المنسونية", "الشريطية"],
+            "answer": 1,
+            "explanation": "بيضة البلهارسيا الدموية لها نتوء طرفي. المنسونية لها نتوء جانبي."
+        },
+        {
+            "q": "ما الفحص العاجل عند الاشتباه بالملاريا؟",
+            "options": ["زرع براز", "فحص بول", "قطرة سميكة + لطاخة", "مصلية"],
+            "answer": 2,
+            "explanation": "القطرة السميكة واللطاخة الدموية هما الفحصان المرجعيان للملاريا."
+        }
+    ],
+    "en": [
+        {
+            "q": "Which parasite shows a 'signet ring' form in RBCs?",
+            "options": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"],
+            "answer": 1,
+            "explanation": "Plasmodium shows a signet ring form inside RBCs at the young trophozoite stage."
+        },
+        {
+            "q": "How many nuclei does a mature Giardia cyst have?",
+            "options": ["2", "4", "6", "8"],
+            "answer": 1,
+            "explanation": "A mature Giardia cyst contains 4 nuclei."
+        },
+        {
+            "q": "Which parasite is transmitted by the sandfly?",
+            "options": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"],
+            "answer": 2,
+            "explanation": "Leishmania is transmitted by the sandfly (phlebotomus) bite."
+        },
+        {
+            "q": "The terminal spine is characteristic of which egg?",
+            "options": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"],
+            "answer": 1,
+            "explanation": "S. haematobium egg has a terminal spine. S. mansoni has a lateral spine."
+        },
+        {
+            "q": "What is the urgent test for suspected malaria?",
+            "options": ["Stool culture", "Urinalysis", "Thick smear + Thin smear", "Serology"],
+            "answer": 2,
+            "explanation": "Thick and thin blood smears are the gold standard for malaria diagnosis."
+        }
+    ]
+}
+
+# ============================================
+#  6. قاعدة بيانات الشات بوت
+# ============================================
+CHATBOT_KNOWLEDGE = {
+    "fr": {
+        "keywords": {
+            "amoeba": "L'Entamoeba histolytica est un parasite causant la dysenterie amibienne. Diagnostic: kystes a 4 noyaux ou trophozoites hematophages. Traitement: Metronidazole.",
+            "amibe": "L'Entamoeba histolytica est un parasite causant la dysenterie amibienne. Diagnostic: kystes a 4 noyaux ou trophozoites hematophages. Traitement: Metronidazole.",
+            "giardia": "Giardia lamblia colonise le duodenum. Forme en cerf-volant avec face de hibou. Cause malabsorption. Traitement: Metronidazole/Tinidazole.",
+            "leishmania": "Leishmania est transmise par le phlebotome. Formes: cutanee et viscerale. Diagnostic: amastigotes dans les macrophages. Traitement: Glucantime.",
+            "plasmodium": "URGENCE ! Le Plasmodium cause le paludisme. Forme en bague dans les hematies. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
+            "malaria": "URGENCE ! Le Plasmodium cause le paludisme. Forme en bague dans les hematies. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
+            "paludisme": "URGENCE ! Le Plasmodium cause le paludisme. Forme en bague dans les hematies. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
+            "trypanosoma": "Trypanosoma cause la maladie du sommeil (brucei) ou de Chagas (cruzi). Forme en S avec membrane ondulante.",
+            "schistosoma": "Schistosoma cause la bilharziose. Oeufs avec eperon terminal (haematobium) ou lateral (mansoni). Traitement: Praziquantel.",
+            "bilharziose": "La bilharziose est causee par Schistosoma. Contamination dans les eaux douces. Diagnostic: oeufs dans les urines/selles.",
+            "bonjour": "Bonjour ! Je suis Dr. DhiaBot, votre assistant parasitologique. Comment puis-je vous aider ?",
+            "merci": "De rien ! C'est mon plaisir de vous aider. N'hesitez pas si vous avez d'autres questions !",
+            "microscope": "Le microscope optique est l'outil principal en parasitologie. Objectif x10 pour le reperage, x40 pour l'identification, x100 (immersion) pour les details.",
+            "coloration": "Les principales colorations: MGG pour les hematies, Lugol pour les selles, Ziehl-Neelsen pour les cryptosporidies.",
+            "selle": "L'examen parasitologique des selles (EPS) comprend: examen macroscopique, microscopique direct, et apres concentration.",
+            "sang": "L'examen du sang pour les parasites: frottis sanguin mince + goutte epaisse. Coloration MGG ou Giemsa.",
+            "hygiene": "Conseils d'hygiene: lavage des mains, eau potable, cuisson des aliments, protection contre les insectes vecteurs.",
+        },
+        "default": "Je suis Dr. DhiaBot. Je connais les parasites suivants: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma. Posez-moi une question specifique !",
+        "greeting": "Bonjour ! Je suis Dr. DhiaBot 🤖 votre assistant parasitologique intelligent. Posez-moi vos questions !"
+    },
+    "ar": {
+        "keywords": {
+            "أميبا": "الأميبا الحالّة للنسج تسبب الزحار الأميبي. التشخيص: أكياس بـ 4 نوى أو أطوار غاذية آكلة للكريات. العلاج: ميترونيدازول.",
+            "جيارديا": "الجيارديا تستعمر الاثني عشر. شكل طائرة ورقية بوجه بومة. تسبب سوء الامتصاص. العلاج: ميترونيدازول.",
+            "ليشمانيا": "الليشمانيا تنتقل عبر ذبابة الرمل. أشكال جلدية وحشوية. العلاج: غلوكانتيم.",
+            "ملاريا": "حالة طوارئ! المتصورة تسبب الملاريا. شكل خاتم في الكريات. العلاج: ACT.",
+            "بلهارسيا": "البلهارسيا تنتقل في المياه العذبة. بيض بنتوء طرفي أو جانبي. العلاج: برازيكوانتيل.",
+            "مرحبا": "مرحباً! أنا الدكتور ضياء بوت، مساعدك في علم الطفيليات. كيف يمكنني مساعدتك؟",
+        },
+        "default": "أنا الدكتور ضياء بوت. أعرف الطفيليات التالية: أميبا، جيارديا، ليشمانيا، بلازموديوم، تريبانوسوما، بلهارسيا.",
+        "greeting": "مرحباً! أنا الدكتور ضياء بوت 🤖 مساعدك الذكي. اسألني!"
+    },
+    "en": {
+        "keywords": {
+            "amoeba": "E. histolytica causes amoebic dysentery. Diagnosis: 4-nuclei cysts or hematophagous trophozoites. Treatment: Metronidazole.",
+            "giardia": "Giardia colonizes the duodenum. Kite-shaped with owl face. Treatment: Metronidazole/Tinidazole.",
+            "leishmania": "Leishmania transmitted by sandfly. Cutaneous and visceral forms. Treatment: Glucantime.",
+            "malaria": "EMERGENCY! Plasmodium causes malaria. Signet ring in RBCs. Treatment: ACT.",
+            "plasmodium": "EMERGENCY! Plasmodium causes malaria. Signet ring in RBCs. Treatment: ACT.",
+            "schistosoma": "Schistosoma causes bilharziasis. Eggs with terminal/lateral spine. Treatment: Praziquantel.",
+            "hello": "Hello! I'm Dr. DhiaBot, your parasitology assistant. How can I help?",
+        },
+        "default": "I'm Dr. DhiaBot. I know: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma.",
+        "greeting": "Hello! I'm Dr. DhiaBot 🤖 your smart assistant. Ask me anything!"
+    }
+}
+
+DAILY_TIPS = {
+    "fr": [
+        "💡 Toujours examiner les selles dans les 30 minutes suivant le prelevement pour voir les formes vegetatives mobiles.",
+        "💡 Le Lugol aide a mettre en evidence les noyaux des kystes d'amibes.",
+        "💡 Un frottis sanguin doit etre fin (monocolique) pour bien identifier les Plasmodium.",
+        "💡 La goutte epaisse est 10x plus sensible que le frottis mince pour detecter les parasites sanguins.",
+        "💡 Les oeufs de Schistosoma haematobium se cherchent dans les urines de midi (pic d'excretion).",
+        "💡 Pensez a faire 3 EPS a quelques jours d'intervalle pour augmenter la sensibilite.",
+        "💡 Le Metronidazole est le traitement de base pour Amoeba, Giardia et Trichomonas.",
+        "💡 La coloration de Ziehl-Neelsen modifiee est utile pour Cryptosporidium.",
+        "💡 En cas de paludisme, la premiere goutte epaisse negative ne suffit pas a exclure le diagnostic.",
+        "💡 Le phlebotome est actif au crepuscule - conseillez les moustiquaires aux patients.",
+    ],
+    "ar": [
+        "💡 افحص البراز خلال 30 دقيقة من الأخذ لرؤية الأطوار المتحركة.",
+        "💡 اللوغول يساعد في إظهار نوى أكياس الأميبا.",
+        "💡 اللطاخة الدموية يجب أن تكون رقيقة لتحديد البلازموديوم.",
+        "💡 القطرة السميكة أكثر حساسية 10 مرات من اللطاخة الرقيقة.",
+        "💡 ابحث عن بيض البلهارسيا في بول الظهيرة (ذروة الإفراز).",
+    ],
+    "en": [
+        "💡 Always examine stool within 30 minutes of collection to see motile trophozoites.",
+        "💡 Lugol helps visualize amoebic cyst nuclei.",
+        "💡 Blood smear must be thin for proper Plasmodium identification.",
+        "💡 Thick smear is 10x more sensitive than thin smear for blood parasites.",
+        "💡 Search for S. haematobium eggs in midday urine (peak excretion).",
+    ]
+}
+
+# ============================================
+#  7. تهيئة حالة الجلسة
 # ============================================
 SESSION_DEFAULTS = {
     "logged_in": False,
@@ -629,7 +956,11 @@ SESSION_DEFAULTS = {
     "login_attempts": 0,
     "lockout_until": None,
     "lang": "fr",
-    "model_loaded": False,
+    "activity_log": [],
+    "quiz_state": {"current": 0, "score": 0, "answered": [], "active": False},
+    "chat_history": [],
+    "last_activity": None,
+    "splash_shown": False,
 }
 
 for key, val in SESSION_DEFAULTS.items():
@@ -638,226 +969,221 @@ for key, val in SESSION_DEFAULTS.items():
 
 
 # ============================================
-#  6. دالة الترجمة
+#  8. الدوال المساعدة
 # ============================================
-def t(key: str) -> str:
-    """إرجاع النص المترجم حسب اللغة الحالية"""
+def t(key):
     lang = st.session_state.get("lang", "fr")
-    translations = TRANSLATIONS.get(lang, TRANSLATIONS["fr"])
-    return translations.get(key, TRANSLATIONS["fr"].get(key, key))
+    trans = TRANSLATIONS.get(lang, TRANSLATIONS["fr"])
+    return trans.get(key, TRANSLATIONS["fr"].get(key, key))
 
-
-def get_parasite_text(parasite_data: dict, field: str) -> str:
-    """إرجاع نص الطفيلي حسب اللغة"""
+def get_p_text(data, field):
     lang = st.session_state.get("lang", "fr")
-    data = parasite_data.get(field, {})
-    if isinstance(data, dict):
-        return data.get(lang, data.get("fr", ""))
-    return str(data)
+    val = data.get(field, {})
+    if isinstance(val, dict):
+        return val.get(lang, val.get("fr", ""))
+    if isinstance(val, list):
+        return val
+    return str(val)
 
-
-# ============================================
-#  7. دوال مساعدة
-# ============================================
-def get_greeting() -> str:
-    """تحية حسب الوقت"""
+def get_greeting():
     h = datetime.now().hour
     lang = st.session_state.get("lang", "fr")
-    if lang == "ar":
-        if h < 12: return "صباح الخير"
-        elif h < 18: return "مساء الخير"
-        return "مساء الخير"
-    elif lang == "en":
-        if h < 12: return "Good morning"
-        elif h < 18: return "Good afternoon"
-        return "Good evening"
-    else:
-        if h < 12: return "Bonjour"
-        elif h < 18: return "Bon après-midi"
-        return "Bonsoir"
+    greetings = {
+        "fr": ("Bonjour", "Bon apres-midi", "Bonsoir"),
+        "ar": ("صباح الخير", "مساء الخير", "مساء الخير"),
+        "en": ("Good morning", "Good afternoon", "Good evening")
+    }
+    g = greetings.get(lang, greetings["fr"])
+    if h < 12: return g[0]
+    elif h < 18: return g[1]
+    return g[2]
 
+def risk_color(level):
+    return {"critical":"#7f1d1d","high":"#dc2626","medium":"#f59e0b","low":"#22c55e","none":"#16a34a"}.get(level, "#6b7280")
 
-def get_risk_color(level: str) -> str:
-    """لون المخاطر"""
-    return {
-        "critical": "#7f1d1d",
-        "high": "#dc2626",
-        "medium": "#f59e0b",
-        "low": "#22c55e",
-        "none": "#16a34a"
-    }.get(level, "#6b7280")
+def risk_percent(level):
+    return {"critical":100,"high":80,"medium":50,"low":25,"none":0}.get(level, 0)
 
+def log_activity(action):
+    st.session_state.activity_log.append({
+        "time": datetime.now().strftime("%H:%M:%S"),
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "user": st.session_state.user_name,
+        "action": action
+    })
+    st.session_state.last_activity = datetime.now()
 
-def get_risk_percent(level: str) -> int:
-    """نسبة الخطورة"""
-    return {
-        "critical": 100, "high": 80,
-        "medium": 50, "low": 25, "none": 0
-    }.get(level, 0)
-
-
-def speak(text: str, lang_code: str = None):
-    """تحويل النص إلى صوت مع حماية التكرار"""
+def speak(text, lang_code=None):
     if lang_code is None:
-        lang_code = {"fr": "fr", "ar": "ar", "en": "en"}.get(
-            st.session_state.get("lang", "fr"), "fr"
-        )
-
+        lang_code = st.session_state.get("lang", "fr")
     text_hash = hashlib.md5(text.encode()).hexdigest()
     if st.session_state.get("last_audio_hash") == text_hash:
         return
-
     try:
         from gtts import gTTS
         tts = gTTS(text=text, lang=lang_code)
-        fname = f"_temp_audio_{int(time.time())}.mp3"
+        fname = f"_audio_{int(time.time())}.mp3"
         tts.save(fname)
         with open(fname, "rb") as f:
             b64 = base64.b64encode(f.read()).decode()
         st.markdown(
             f'<audio autoplay style="display:none;">'
-            f'<source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">'
-            f'</audio>',
+            f'<source src="data:audio/mp3;base64,{b64}" type="audio/mpeg"></audio>',
             unsafe_allow_html=True
         )
-        try:
-            os.remove(fname)
-        except OSError:
-            pass
+        try: os.remove(fname)
+        except: pass
         st.session_state.last_audio_hash = text_hash
-    except Exception:
-        pass
+    except: pass
+
+def chatbot_reply(user_msg):
+    lang = st.session_state.get("lang", "fr")
+    kb = CHATBOT_KNOWLEDGE.get(lang, CHATBOT_KNOWLEDGE["fr"])
+    msg_lower = user_msg.lower().strip()
+
+    for keyword, response in kb["keywords"].items():
+        if keyword in msg_lower:
+            return response
+
+    # بحث في قاعدة الطفيليات
+    for name, data in PARASITE_DB.items():
+        if name.lower() in msg_lower or data["scientific_name"].lower() in msg_lower:
+            morpho = get_p_text(data, "morphology")
+            desc = get_p_text(data, "description")
+            advice = get_p_text(data, "advice")
+            funny = get_p_text(data, "funny")
+            return f"**{name}** ({data['scientific_name']})\n\n📋 {desc}\n\n🔬 {morpho}\n\n💊 {advice}\n\n🤖 {funny}"
+
+    return kb["default"]
+
+def generate_heatmap_overlay(image):
+    """توليد خريطة حرارية محاكاة"""
+    img = image.copy()
+    width, height = img.size
+
+    heatmap = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(heatmap)
+
+    cx = width // 2 + random.randint(-width//6, width//6)
+    cy = height // 2 + random.randint(-height//6, height//6)
+
+    for r in range(min(width, height)//3, 0, -3):
+        alpha = max(0, min(180, int(180 * (1 - r / (min(width, height)//3)))))
+        ratio = r / (min(width, height)//3)
+        if ratio > 0.6:
+            color = (0, 255, 0, alpha // 3)
+        elif ratio > 0.3:
+            color = (255, 255, 0, alpha // 2)
+        else:
+            color = (255, 0, 0, alpha)
+        draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=color)
+
+    result = Image.alpha_composite(img.convert('RGBA'), heatmap)
+    return result.convert('RGB')
 
 
 # ============================================
-#  8. محرك الذكاء الاصطناعي
+#  9. محرك الذكاء الاصطناعي
 # ============================================
 @st.cache_resource(show_spinner=False)
 def load_ai_model():
-    """تحميل موديل الذكاء الاصطناعي"""
     model = None
     model_name = None
     try:
         import tensorflow as tf
         files = os.listdir(".")
-
-        # البحث عن ملفات الموديل
         for ext in [".h5", ".keras"]:
             found = [f for f in files if f.endswith(ext)]
             if found:
                 model_name = found[0]
                 model = tf.keras.models.load_model(model_name, compile=False)
                 break
-
-        # محاولة TFLite
         if model is None:
-            tflite_files = [f for f in files if f.endswith(".tflite")]
-            if tflite_files:
-                model_name = tflite_files[0]
+            tflite = [f for f in files if f.endswith(".tflite")]
+            if tflite:
+                model_name = tflite[0]
                 model = tf.lite.Interpreter(model_path=model_name)
                 model.allocate_tensors()
-
     except Exception as e:
-        st.sidebar.warning(f"⚠️ Model: {e}")
-
+        pass
     return model, model_name
 
-
-def predict_image(model, image: Image.Image) -> dict:
-    """تحليل الصورة والتنبؤ"""
+def predict_image(model, image):
     result = {
-        "label": "Negative",
-        "confidence": 0,
-        "all_predictions": {},
-        "is_reliable": False,
-        "is_demo": False,
-        "info": PARASITE_DB["Negative"]
+        "label": "Negative", "confidence": 0,
+        "all_predictions": {}, "is_reliable": False,
+        "is_demo": False, "info": PARASITE_DB["Negative"]
     }
-
     if model is None:
-        # وضع العرض التوضيحي
         demo_label = random.choice(CLASS_NAMES)
         demo_conf = random.randint(65, 97)
         result.update({
-            "label": demo_label,
-            "confidence": demo_conf,
+            "label": demo_label, "confidence": demo_conf,
             "is_reliable": demo_conf >= CONFIDENCE_THRESHOLD,
             "is_demo": True,
             "info": PARASITE_DB.get(demo_label, PARASITE_DB["Negative"])
         })
         return result
-
     try:
         import tensorflow as tf
-
-        # تحضير الصورة
         img = ImageOps.fit(image, MODEL_INPUT_SIZE, Image.LANCZOS)
-        img_array = np.asarray(img).astype(np.float32) / 127.5 - 1.0
-        img_batch = np.expand_dims(img_array, axis=0)
-
+        arr = np.asarray(img).astype(np.float32) / 127.5 - 1.0
+        batch = np.expand_dims(arr, 0)
         if isinstance(model, tf.lite.Interpreter):
-            input_det = model.get_input_details()
-            output_det = model.get_output_details()
-            model.set_tensor(input_det[0]['index'], img_batch)
+            inp = model.get_input_details()
+            out = model.get_output_details()
+            model.set_tensor(inp[0]['index'], batch)
             model.invoke()
-            predictions = model.get_tensor(output_det[0]['index'])[0]
+            preds = model.get_tensor(out[0]['index'])[0]
         else:
-            predictions = model.predict(img_batch, verbose=0)[0]
-
-        idx = np.argmax(predictions)
-        confidence = int(predictions[idx] * 100)
+            preds = model.predict(batch, verbose=0)[0]
+        idx = np.argmax(preds)
+        conf = int(preds[idx] * 100)
         label = CLASS_NAMES[idx] if idx < len(CLASS_NAMES) else "Negative"
-
-        all_preds = {}
-        for i, cls in enumerate(CLASS_NAMES):
-            if i < len(predictions):
-                all_preds[cls] = round(float(predictions[i]) * 100, 1)
-
+        all_p = {CLASS_NAMES[i]: round(float(preds[i])*100, 1) for i in range(min(len(preds), len(CLASS_NAMES)))}
         result.update({
-            "label": label,
-            "confidence": confidence,
-            "all_predictions": all_preds,
-            "is_reliable": confidence >= CONFIDENCE_THRESHOLD,
+            "label": label, "confidence": conf,
+            "all_predictions": all_p,
+            "is_reliable": conf >= CONFIDENCE_THRESHOLD,
             "is_demo": False,
             "info": PARASITE_DB.get(label, PARASITE_DB["Negative"])
         })
-
     except Exception as e:
         st.error(f"Prediction error: {e}")
-
     return result
 
-
-def apply_thermal(image: Image.Image) -> Image.Image:
-    """فلتر حراري محسّن"""
+def apply_thermal(image):
     enhanced = ImageEnhance.Contrast(image).enhance(1.5)
     gray = ImageOps.grayscale(enhanced)
-    smoothed = gray.filter(ImageFilter.GaussianBlur(radius=1))
+    smoothed = gray.filter(ImageFilter.GaussianBlur(1))
     return ImageOps.colorize(smoothed, black="navy", white="yellow", mid="red")
 
+def apply_edge_detection(image):
+    gray = ImageOps.grayscale(image)
+    return gray.filter(ImageFilter.FIND_EDGES)
+
+def apply_enhanced_contrast(image):
+    return ImageEnhance.Contrast(ImageEnhance.Sharpness(image).enhance(2.0)).enhance(2.0)
+
 
 # ============================================
-#  9. مولد تقارير PDF احترافي
+#  10. PDF احترافي مع QR
 # ============================================
 class MedicalPDF(FPDF):
-    """تقرير طبي احترافي مع هوية بصرية"""
-
     def __init__(self):
         super().__init__()
-        self.set_auto_page_break(auto=True, margin=25)
-
+        self.set_auto_page_break(True, 25)
     def header(self):
         self.set_font("Arial", "B", 10)
         self.set_text_color(37, 99, 235)
         self.cell(0, 6, "DM SMART LAB AI", 0, 0, "L")
         self.set_font("Arial", "", 9)
         self.set_text_color(100, 116, 139)
-        self.cell(0, 6, datetime.now().strftime("%d/%m/%Y  %H:%M"), 0, 1, "R")
+        self.cell(0, 6, datetime.now().strftime("%d/%m/%Y %H:%M"), 0, 1, "R")
         self.set_draw_color(37, 99, 235)
         self.set_line_width(0.6)
         self.line(10, 15, 200, 15)
         self.ln(8)
-
     def footer(self):
         self.set_y(-20)
         self.set_draw_color(200, 200, 200)
@@ -865,17 +1191,15 @@ class MedicalPDF(FPDF):
         self.ln(3)
         self.set_font("Arial", "I", 8)
         self.set_text_color(100, 116, 139)
-        self.cell(0, 5, f"DM Smart Lab AI v{APP_VERSION} - {INSTITUTION['name']}", 0, 0, "L")
+        self.cell(0, 5, f"DM Smart Lab AI v{APP_VERSION}", 0, 0, "L")
         self.cell(0, 5, f"Page {self.page_no()}/{{nb}}", 0, 0, "R")
-
-    def section_header(self, title):
+    def section_title(self, title):
         self.set_fill_color(37, 99, 235)
         self.set_text_color(255, 255, 255)
         self.set_font("Arial", "B", 11)
-        self.cell(0, 8, f"  {title}", 0, 1, "L", fill=True)
+        self.cell(0, 8, f"  {title}", 0, 1, "L", True)
         self.ln(3)
         self.set_text_color(0, 0, 0)
-
     def info_line(self, label, value):
         self.set_font("Arial", "B", 10)
         self.set_text_color(80, 80, 80)
@@ -884,15 +1208,11 @@ class MedicalPDF(FPDF):
         self.set_text_color(0, 0, 0)
         self.cell(0, 7, str(value), 0, 1)
 
-
-def generate_pdf(patient: dict, label: str, conf: int, info: dict) -> bytes:
-    """توليد التقرير"""
+def generate_pdf(patient, label, conf, info):
     lang = st.session_state.get("lang", "fr")
     pdf = MedicalPDF()
     pdf.alias_nb_pages()
     pdf.add_page()
-
-    # العنوان
     pdf.set_font("Arial", "B", 18)
     pdf.set_text_color(37, 99, 235)
     pdf.cell(0, 12, t("pdf_title"), 0, 1, "C")
@@ -900,62 +1220,41 @@ def generate_pdf(patient: dict, label: str, conf: int, info: dict) -> bytes:
     pdf.set_text_color(100, 116, 139)
     pdf.cell(0, 6, t("pdf_subtitle"), 0, 1, "C")
     pdf.ln(8)
-
-    # بيانات المريض
-    pdf.section_header(t("pdf_patient_section"))
+    pdf.section_title(t("pdf_patient_section"))
     for k, v in patient.items():
         pdf.info_line(f"{k} :", str(v))
     pdf.info_line("Date :", datetime.now().strftime("%d/%m/%Y"))
     pdf.ln(5)
-
-    # النتيجة
-    pdf.section_header(t("pdf_result_section"))
+    pdf.section_title(t("pdf_result_section"))
     pdf.ln(2)
     pdf.set_font("Arial", "B", 16)
-    if label == "Negative":
-        pdf.set_text_color(22, 163, 74)
-    else:
-        pdf.set_text_color(220, 38, 38)
+    if label == "Negative": pdf.set_text_color(22, 163, 74)
+    else: pdf.set_text_color(220, 38, 38)
     pdf.cell(0, 10, f"RESULTAT: {label}", 0, 1, "C")
     pdf.set_font("Arial", "B", 12)
     pdf.set_text_color(37, 99, 235)
     pdf.cell(0, 8, f"{t('scan_confidence')}: {conf}%", 0, 1, "C")
     pdf.set_text_color(0, 0, 0)
     pdf.ln(3)
-
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 7, "Nom scientifique:", 0, 1)
-    pdf.set_font("Arial", "I", 10)
-    pdf.multi_cell(0, 6, info.get("scientific_name", "N/A"))
-    pdf.ln(2)
-
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 7, f"{t('scan_morphology')}:", 0, 1)
     pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 6, get_parasite_text(info, "morphology"))
+    pdf.multi_cell(0, 6, f"{t('scan_morphology')}: {get_p_text(info, 'morphology')}")
     pdf.ln(2)
-
-    pdf.set_font("Arial", "B", 10)
-    pdf.cell(0, 7, "Description:", 0, 1)
-    pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 6, get_parasite_text(info, "description"))
-    pdf.ln(2)
-
-    pdf.set_font("Arial", "B", 10)
-    risk_txt = info.get("risk_display", {})
-    if isinstance(risk_txt, dict):
-        risk_txt = risk_txt.get(lang, risk_txt.get("fr", ""))
-    pdf.cell(0, 7, f"{t('scan_risk')}: {risk_txt}", 0, 1)
+    pdf.multi_cell(0, 6, f"Description: {get_p_text(info, 'description')}")
     pdf.ln(5)
-
-    # التوصيات
-    pdf.section_header(t("pdf_advice_section"))
+    pdf.section_title(t("pdf_advice_section"))
     pdf.set_font("Arial", "", 10)
-    pdf.multi_cell(0, 6, get_parasite_text(info, "advice"))
+    pdf.multi_cell(0, 6, get_p_text(info, "advice"))
+    pdf.ln(3)
+    # الفحوصات الإضافية
+    extra = get_p_text(info, "extra_tests")
+    if isinstance(extra, list) and extra:
+        pdf.set_font("Arial", "B", 10)
+        pdf.cell(0, 7, t("scan_extra_tests") + ":", 0, 1)
+        pdf.set_font("Arial", "", 10)
+        for test in extra:
+            pdf.cell(0, 6, f"  - {test}", 0, 1)
     pdf.ln(10)
-
-    # التوقيعات
-    pdf.section_header(t("pdf_validation"))
+    pdf.section_title(t("pdf_validation"))
     pdf.ln(5)
     pdf.set_font("Arial", "B", 10)
     pdf.cell(95, 7, f"{t('pdf_technician')} :", 0, 0)
@@ -964,536 +1263,253 @@ def generate_pdf(patient: dict, label: str, conf: int, info: dict) -> bytes:
     pdf.cell(95, 7, AUTHORS["dev1"]["name"], 0, 0)
     pdf.cell(95, 7, AUTHORS["dev2"]["name"], 0, 1)
     pdf.ln(12)
-
     pdf.set_font("Arial", "I", 8)
     pdf.set_text_color(150, 150, 150)
     pdf.multi_cell(0, 5, t("pdf_disclaimer"))
-
     return pdf.output(dest='S').encode('latin-1')
 
 
 # ============================================
-#  10. التصميم CSS الاحترافي الكامل
+#  11. التصميم CSS الخرافي
 # ============================================
 def apply_full_theme():
-    """تطبيق التصميم المتكامل"""
     dm = st.session_state.get("dark_mode", False)
-
     if dm:
-        bg = "#050a15"
-        bg2 = "#0a1628"
-        card = "#0f1d32"
-        card_hover = "#142540"
-        text = "#e2e8f0"
-        text_muted = "#64748b"
-        border = "#1e3a5f"
-        primary = "#3b82f6"
-        primary_dark = "#1d4ed8"
-        primary_glow = "rgba(59, 130, 246, 0.15)"
+        bg, bg2, card = "#050a15", "#0a1628", "#0f1d32"
+        text, muted, border = "#e2e8f0", "#64748b", "#1e3a5f"
+        primary, primary_dk = "#3b82f6", "#1d4ed8"
+        primary_glow = "rgba(59,130,246,0.15)"
         accent = "#06b6d4"
-        sidebar_bg = "#030712"
-        sidebar_border = "#1e293b"
+        sidebar_bg, sidebar_border = "#030712", "#1e293b"
         input_bg = "#0f1d32"
-        grad1 = "#0a1628"
-        grad2 = "#050a15"
-        grad3 = "#0f1d32"
-        dot_color = "rgba(59, 130, 246, 0.06)"
+        grad1, grad2, grad3 = "#0a1628", "#050a15", "#0f1d32"
+        dot_clr = "rgba(59,130,246,0.06)"
         shadow = "rgba(0,0,0,0.5)"
-        glass = "rgba(15, 29, 50, 0.8)"
-        glass_border = "rgba(59, 130, 246, 0.15)"
+        glass, glass_b = "rgba(15,29,50,0.85)", "rgba(59,130,246,0.15)"
     else:
-        bg = "#f0f4f8"
-        bg2 = "#ffffff"
-        card = "#ffffff"
-        card_hover = "#f8fafc"
-        text = "#0f172a"
-        text_muted = "#64748b"
-        border = "#e2e8f0"
-        primary = "#2563eb"
-        primary_dark = "#1e40af"
-        primary_glow = "rgba(37, 99, 235, 0.1)"
+        bg, bg2, card = "#f0f4f8", "#ffffff", "#ffffff"
+        text, muted, border = "#0f172a", "#64748b", "#e2e8f0"
+        primary, primary_dk = "#2563eb", "#1e40af"
+        primary_glow = "rgba(37,99,235,0.1)"
         accent = "#0891b2"
-        sidebar_bg = "#f8fafc"
-        sidebar_border = "#e2e8f0"
+        sidebar_bg, sidebar_border = "#f8fafc", "#e2e8f0"
         input_bg = "#ffffff"
-        grad1 = "#dbeafe"
-        grad2 = "#f0f4f8"
-        grad3 = "#e0f2fe"
-        dot_color = "rgba(37, 99, 235, 0.04)"
+        grad1, grad2, grad3 = "#dbeafe", "#f0f4f8", "#e0f2fe"
+        dot_clr = "rgba(37,99,235,0.04)"
         shadow = "rgba(0,0,0,0.06)"
-        glass = "rgba(255, 255, 255, 0.85)"
-        glass_border = "rgba(37, 99, 235, 0.12)"
+        glass, glass_b = "rgba(255,255,255,0.9)", "rgba(37,99,235,0.12)"
 
     st.markdown(f"""
     <style>
-    /* ========================================= */
-    /*          IMPORTS & RESET                   */
-    /* ========================================= */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
-    *, *::before, *::after {{
-        box-sizing: border-box;
-    }}
-
-    html, body, [class*="css"], p, span, label, div,
-    .stMarkdown, .stText, li, td, th {{
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont,
-                     'Segoe UI', Roboto, sans-serif !important;
-        color: {text} !important;
-    }}
-
-    h1 {{ font-size: 2.2rem !important; font-weight: 800 !important; letter-spacing: -0.03em; }}
-    h2 {{ font-size: 1.6rem !important; font-weight: 700 !important; letter-spacing: -0.02em; }}
-    h3 {{ font-size: 1.3rem !important; font-weight: 700 !important; }}
-    h4 {{ font-size: 1.1rem !important; font-weight: 600 !important; }}
-    h1, h2, h3, h4, h5, h6 {{
+    html, body, [class*="css"], p, span, label, div, li, td, th {{
         font-family: 'Inter', sans-serif !important;
         color: {text} !important;
     }}
+    h1 {{ font-size:2.2rem !important; font-weight:800 !important; }}
+    h2 {{ font-size:1.6rem !important; font-weight:700 !important; }}
+    h3 {{ font-size:1.3rem !important; font-weight:700 !important; }}
+    h1,h2,h3,h4,h5,h6 {{ color: {text} !important; }}
 
-    /* ========================================= */
-    /*          MAIN BACKGROUND                   */
-    /* ========================================= */
     .stApp {{
         background:
             radial-gradient(ellipse at 20% 50%, {grad1} 0%, transparent 50%),
             radial-gradient(ellipse at 80% 20%, {grad3} 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 100%, {grad1} 0%, transparent 50%),
             linear-gradient(180deg, {bg} 0%, {bg2} 100%);
         background-attachment: fixed;
     }}
-
-    /* شبكة النقاط */
     .stApp::before {{
-        content: '';
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-image:
-            radial-gradient(circle, {dot_color} 1.2px, transparent 1.2px);
-        background-size: 28px 28px;
-        pointer-events: none;
-        z-index: 0;
+        content:''; position:fixed; top:0;left:0;right:0;bottom:0;
+        background-image: radial-gradient(circle, {dot_clr} 1.2px, transparent 1.2px);
+        background-size: 28px 28px; pointer-events:none; z-index:0;
     }}
 
-    /* ========================================= */
-    /*          SIDEBAR                           */
-    /* ========================================= */
     section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {sidebar_bg} 0%, {bg2} 100%) !important;
+        background: linear-gradient(180deg, {sidebar_bg}, {bg2}) !important;
         border-right: 1px solid {sidebar_border} !important;
     }}
+    section[data-testid="stSidebar"] * {{ color: {text} !important; }}
 
-    section[data-testid="stSidebar"] * {{
-        color: {text} !important;
-    }}
-
-    section[data-testid="stSidebar"] .stRadio > label {{
-        font-weight: 500 !important;
-        padding: 4px 0 !important;
-    }}
-
-    section[data-testid="stSidebar"] hr {{
-        border-color: {sidebar_border} !important;
-        opacity: 0.5;
-    }}
-
-    /* ========================================= */
-    /*          GLASS CARDS                       */
-    /* ========================================= */
     .dm-card {{
-        background: {glass};
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid {glass_border};
-        border-radius: 20px;
-        padding: 28px;
-        margin: 14px 0;
-        box-shadow:
-            0 4px 30px {shadow},
-            inset 0 1px 0 rgba(255,255,255,0.05);
-        position: relative;
-        z-index: 2;
-        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        background: {glass}; backdrop-filter:blur(12px);
+        border:1px solid {glass_b}; border-radius:20px;
+        padding:28px; margin:14px 0;
+        box-shadow: 0 4px 30px {shadow};
+        position:relative; z-index:2;
+        transition: all 0.4s ease;
     }}
+    .dm-card:hover {{ transform:translateY(-3px); box-shadow:0 12px 40px {shadow}; }}
+    .dm-card-blue {{ border-left:4px solid {primary}; }}
+    .dm-card-red {{ border-left:4px solid #ef4444; }}
+    .dm-card-green {{ border-left:4px solid #22c55e; }}
+    .dm-card-orange {{ border-left:4px solid #f59e0b; }}
+    .dm-card-purple {{ border-left:4px solid #8b5cf6; }}
+    .dm-card-cyan {{ border-left:4px solid #06b6d4; }}
 
-    .dm-card:hover {{
-        transform: translateY(-3px);
-        box-shadow:
-            0 12px 40px {shadow},
-            0 0 0 1px {glass_border},
-            inset 0 1px 0 rgba(255,255,255,0.08);
-    }}
-
-    .dm-card-blue {{ border-left: 4px solid {primary}; }}
-    .dm-card-red {{ border-left: 4px solid #ef4444; }}
-    .dm-card-green {{ border-left: 4px solid #22c55e; }}
-    .dm-card-orange {{ border-left: 4px solid #f59e0b; }}
-    .dm-card-purple {{ border-left: 4px solid #8b5cf6; }}
-
-    /* ========================================= */
-    /*          METRIC CARDS                      */
-    /* ========================================= */
     .dm-metric {{
-        background: {glass};
-        backdrop-filter: blur(10px);
-        border: 1px solid {glass_border};
-        border-radius: 18px;
-        padding: 22px 16px;
-        text-align: center;
-        box-shadow: 0 2px 16px {shadow};
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
+        background:{glass}; backdrop-filter:blur(10px);
+        border:1px solid {glass_b}; border-radius:18px;
+        padding:22px 16px; text-align:center;
+        box-shadow:0 2px 16px {shadow};
+        transition:all 0.3s ease; position:relative; overflow:hidden;
     }}
-
     .dm-metric::before {{
-        content: '';
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, {primary}, {accent});
-        border-radius: 18px 18px 0 0;
+        content:''; position:absolute; top:0;left:0;right:0; height:3px;
+        background:linear-gradient(90deg,{primary},{accent}); border-radius:18px 18px 0 0;
     }}
-
-    .dm-metric:hover {{
-        transform: translateY(-4px) scale(1.02);
-        box-shadow: 0 8px 30px {shadow};
-    }}
-
-    .dm-metric-icon {{
-        font-size: 1.8rem;
-        margin-bottom: 8px;
-        display: block;
-    }}
-
+    .dm-metric:hover {{ transform:translateY(-4px) scale(1.02); }}
+    .dm-metric-icon {{ font-size:1.8rem; margin-bottom:8px; display:block; }}
     .dm-metric-val {{
-        font-size: 2rem;
-        font-weight: 800;
-        font-family: 'JetBrains Mono', monospace !important;
-        color: {primary} !important;
-        line-height: 1.2;
+        font-size:2rem; font-weight:800;
+        font-family:'JetBrains Mono',monospace !important;
+        color:{primary} !important;
     }}
-
     .dm-metric-lbl {{
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: {text_muted} !important;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-top: 8px;
+        font-size:0.78rem; font-weight:600; color:{muted} !important;
+        text-transform:uppercase; letter-spacing:0.08em; margin-top:8px;
     }}
 
-    /* ========================================= */
-    /*          BUTTONS                           */
-    /* ========================================= */
     div.stButton > button {{
-        background: linear-gradient(135deg, {primary} 0%, {primary_dark} 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 14px !important;
-        padding: 13px 30px !important;
-        font-weight: 600 !important;
-        font-size: 0.95rem !important;
-        letter-spacing: 0.015em;
-        transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
-        box-shadow:
-            0 4px 15px rgba(37, 99, 235, 0.3),
-            0 1px 3px rgba(0,0,0,0.1) !important;
-        position: relative;
-        overflow: hidden;
+        background:linear-gradient(135deg,{primary},{primary_dk}) !important;
+        color:white !important; border:none !important;
+        border-radius:14px !important; padding:13px 30px !important;
+        font-weight:600 !important; transition:all 0.35s ease !important;
+        box-shadow:0 4px 15px rgba(37,99,235,0.3) !important;
     }}
-
-    div.stButton > button::after {{
-        content: '';
-        position: absolute;
-        top: 0; left: -100%; right: 0; bottom: 0;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-        transition: left 0.5s ease;
-    }}
-
     div.stButton > button:hover {{
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow:
-            0 8px 28px rgba(37, 99, 235, 0.45),
-            0 2px 6px rgba(0,0,0,0.15) !important;
+        transform:translateY(-3px) scale(1.02) !important;
+        box-shadow:0 8px 28px rgba(37,99,235,0.45) !important;
     }}
 
-    div.stButton > button:hover::after {{
-        left: 100%;
-    }}
-
-    div.stButton > button:active {{
-        transform: translateY(0) scale(0.98) !important;
-    }}
-
-    /* ========================================= */
-    /*          INPUTS                            */
-    /* ========================================= */
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input {{
-        background: {input_bg} !important;
-        border: 2px solid {border} !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-        color: {text} !important;
-        font-weight: 500 !important;
-        font-size: 0.95rem !important;
-        transition: all 0.3s ease !important;
+        background:{input_bg} !important; border:2px solid {border} !important;
+        border-radius:12px !important; color:{text} !important;
+    }}
+    .stTextInput > div > div > input:focus {{
+        border-color:{primary} !important;
+        box-shadow:0 0 0 4px {primary_glow} !important;
     }}
 
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus {{
-        border-color: {primary} !important;
-        box-shadow: 0 0 0 4px {primary_glow} !important;
-        outline: none !important;
-    }}
-
-    .stSelectbox > div > div > div {{
-        background: {input_bg} !important;
-        border: 2px solid {border} !important;
-        border-radius: 12px !important;
-        color: {text} !important;
-    }}
-
-    /* ========================================= */
-    /*          EXPANDER                          */
-    /* ========================================= */
-    .streamlit-expanderHeader {{
-        background: {glass} !important;
-        border: 1px solid {glass_border} !important;
-        border-radius: 14px !important;
-        font-weight: 600 !important;
-        padding: 12px 16px !important;
-        transition: all 0.3s ease !important;
-    }}
-
-    .streamlit-expanderHeader:hover {{
-        background: {card_hover} !important;
-        border-color: {primary} !important;
-    }}
-
-    /* ========================================= */
-    /*          PROGRESS BAR                      */
-    /* ========================================= */
-    .stProgress > div > div > div {{
-        background: linear-gradient(90deg, {primary}, {accent}) !important;
-        border-radius: 10px !important;
-        height: 8px !important;
-    }}
-
-    /* ========================================= */
-    /*          DATAFRAME / TABLE                 */
-    /* ========================================= */
-    .stDataFrame {{
-        border-radius: 14px !important;
-        overflow: hidden !important;
-        border: 1px solid {border} !important;
-    }}
-
-    /* ========================================= */
-    /*          LOGO ANIMATION                    */
-    /* ========================================= */
-    .dm-logo-wrap {{
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 24px 0 16px 0;
-        position: relative;
-        z-index: 5;
-    }}
-
-    .dm-logo-main {{
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        animation: logoBreath 4s ease-in-out infinite;
-    }}
-
-    .dm-logo-char {{
-        font-family: 'Inter', sans-serif;
-        font-size: 3.8rem;
-        font-weight: 900;
-        line-height: 1;
-        display: inline-block;
-    }}
-
-    .dm-logo-d {{
-        color: {primary};
-        text-shadow: 0 0 30px {primary_glow};
-        animation: charShift 3s ease-in-out infinite;
-    }}
-
-    .dm-logo-m {{
-        color: white;
-        background: linear-gradient(135deg, {primary}, {accent});
-        padding: 6px 20px;
-        border-radius: 14px;
-        box-shadow:
-            0 4px 20px rgba(37, 99, 235, 0.35),
-            inset 0 1px 0 rgba(255,255,255,0.2);
-        animation: charShift 3s ease-in-out infinite 0.5s;
-    }}
-
-    .dm-logo-tag {{
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: {text_muted};
-        letter-spacing: 0.35em;
-        text-transform: uppercase;
-        margin-top: 10px;
-    }}
-
-    .dm-logo-line {{
-        width: 60px;
-        height: 3px;
-        background: linear-gradient(90deg, {primary}, {accent});
-        border-radius: 3px;
-        margin-top: 8px;
-    }}
-
-    @keyframes logoBreath {{
-        0%, 100% {{ transform: translateY(0) scale(1); }}
-        50% {{ transform: translateY(-5px) scale(1.02); }}
-    }}
-
-    @keyframes charShift {{
-        0%, 100% {{ transform: translateY(0); }}
-        50% {{ transform: translateY(-3px); }}
-    }}
-
-    /* ========================================= */
-    /*          FLOATING PARTICLES                */
-    /* ========================================= */
-    .dm-particle {{
-        position: fixed;
-        pointer-events: none;
-        z-index: 0;
-        opacity: 0;
-        font-size: 1.8rem;
-        animation: particleRise 25s linear infinite;
-    }}
-
-    @keyframes particleRise {{
-        0% {{
-            transform: translateY(105vh) rotate(0deg) scale(0.7);
-            opacity: 0;
-        }}
-        8% {{ opacity: 0.08; }}
-        92% {{ opacity: 0.08; }}
-        100% {{
-            transform: translateY(-10vh) rotate(360deg) scale(1);
-            opacity: 0;
-        }}
-    }}
-
-    /* ========================================= */
-    /*          STEP INDICATOR                    */
-    /* ========================================= */
     .dm-step {{
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 18px;
-        border-radius: 12px;
-        margin: 6px 0;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
+        display:flex; align-items:center; gap:10px;
+        padding:12px 18px; border-radius:12px; margin:6px 0;
+        font-weight:600; font-size:0.9rem;
     }}
-
-    .dm-step-done {{
-        background: rgba(34, 197, 94, 0.1);
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        color: #22c55e !important;
-    }}
-
+    .dm-step-done {{ background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:#22c55e !important; }}
     .dm-step-active {{
-        background: {primary_glow};
-        border: 1px solid rgba(37, 99, 235, 0.3);
-        color: {primary} !important;
-        animation: stepPulse 2s ease-in-out infinite;
+        background:{primary_glow}; border:1px solid rgba(37,99,235,0.3);
+        color:{primary} !important; animation:stepPulse 2s infinite;
+    }}
+    .dm-step-pending {{ background:rgba(100,116,139,0.05); border:1px solid rgba(100,116,139,0.15); color:{muted} !important; }}
+    @keyframes stepPulse {{ 0%,100%{{box-shadow:0 0 0 0 {primary_glow};}} 50%{{box-shadow:0 0 0 8px transparent;}} }}
+
+    .dm-chat-msg {{
+        padding:14px 18px; border-radius:16px; margin:8px 0;
+        max-width:85%; line-height:1.6; font-size:0.95rem;
+    }}
+    .dm-chat-user {{
+        background:linear-gradient(135deg,{primary},{primary_dk});
+        color:white !important; margin-left:auto; border-bottom-right-radius:4px;
+    }}
+    .dm-chat-user * {{ color:white !important; }}
+    .dm-chat-bot {{
+        background:{glass}; border:1px solid {glass_b};
+        border-bottom-left-radius:4px;
     }}
 
-    .dm-step-pending {{
-        background: rgba(100, 116, 139, 0.05);
-        border: 1px solid rgba(100, 116, 139, 0.15);
-        color: {text_muted} !important;
+    .dm-quiz-option {{
+        background:{glass}; border:2px solid {border};
+        border-radius:14px; padding:14px 20px; margin:6px 0;
+        cursor:pointer; transition:all 0.3s ease; font-weight:500;
+    }}
+    .dm-quiz-option:hover {{ border-color:{primary}; background:{primary_glow}; transform:translateX(5px); }}
+    .dm-quiz-correct {{ border-color:#22c55e !important; background:rgba(34,197,94,0.1) !important; }}
+    .dm-quiz-wrong {{ border-color:#ef4444 !important; background:rgba(239,68,68,0.1) !important; }}
+
+    .dm-logo-wrap {{ display:flex; flex-direction:column; align-items:center; padding:24px 0 16px; z-index:5; position:relative; }}
+    .dm-logo-main {{ display:flex; align-items:center; gap:6px; animation:logoBreath 4s ease-in-out infinite; }}
+    .dm-logo-char {{ font-size:3.8rem; font-weight:900; display:inline-block; }}
+    .dm-logo-d {{ color:{primary}; text-shadow:0 0 30px {primary_glow}; animation:charShift 3s infinite; }}
+    .dm-logo-m {{
+        color:white; background:linear-gradient(135deg,{primary},{accent});
+        padding:6px 20px; border-radius:14px;
+        box-shadow:0 4px 20px rgba(37,99,235,0.35);
+        animation:charShift 3s infinite 0.5s;
+    }}
+    .dm-logo-tag {{ font-size:0.82rem; font-weight:600; color:{muted}; letter-spacing:0.35em; text-transform:uppercase; margin-top:10px; }}
+    .dm-logo-line {{ width:60px; height:3px; background:linear-gradient(90deg,{primary},{accent}); border-radius:3px; margin-top:8px; }}
+    @keyframes logoBreath {{ 0%,100%{{transform:translateY(0) scale(1);}} 50%{{transform:translateY(-5px) scale(1.02);}} }}
+    @keyframes charShift {{ 0%,100%{{transform:translateY(0);}} 50%{{transform:translateY(-3px);}} }}
+
+    .dm-particle {{
+        position:fixed; pointer-events:none; z-index:0; opacity:0;
+        font-size:1.8rem; animation:particleRise 25s linear infinite;
+    }}
+    @keyframes particleRise {{
+        0%{{transform:translateY(105vh) rotate(0);opacity:0;}}
+        8%{{opacity:0.08;}} 92%{{opacity:0.08;}}
+        100%{{transform:translateY(-10vh) rotate(360deg);opacity:0;}}
     }}
 
-    @keyframes stepPulse {{
-        0%, 100% {{ box-shadow: 0 0 0 0 {primary_glow}; }}
-        50% {{ box-shadow: 0 0 0 8px transparent; }}
+    .dm-splash {{
+        position:fixed; top:0;left:0;right:0;bottom:0;
+        background:{bg}; z-index:9999;
+        display:flex; flex-direction:column;
+        justify-content:center; align-items:center;
+        animation: splashFade 0.5s ease 3s forwards;
     }}
+    @keyframes splashFade {{ to {{ opacity:0; pointer-events:none; }} }}
+    .dm-splash-logo {{ font-size:6rem; animation:splashPulse 1.5s ease-in-out infinite; }}
+    @keyframes splashPulse {{ 0%,100%{{transform:scale(1);opacity:0.8;}} 50%{{transform:scale(1.15);opacity:1;}} }}
 
-    /* ========================================= */
-    /*          RESULT BADGE                      */
-    /* ========================================= */
-    .dm-result-badge {{
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 16px;
-        border-radius: 50px;
-        font-weight: 700;
-        font-size: 0.85rem;
-        letter-spacing: 0.05em;
+    @media (max-width:768px) {{
+        .dm-logo-char {{ font-size:2.8rem; }}
+        .dm-card {{ padding:18px; }}
+        .dm-metric-val {{ font-size:1.5rem; }}
     }}
-
-    /* ========================================= */
-    /*          RESPONSIVE                        */
-    /* ========================================= */
-    @media (max-width: 768px) {{
-        .dm-logo-char {{ font-size: 2.8rem; }}
-        .dm-card {{ padding: 18px; border-radius: 16px; }}
-        .dm-metric {{ padding: 16px 12px; }}
-        .dm-metric-val {{ font-size: 1.5rem; }}
-        h1 {{ font-size: 1.6rem !important; }}
-    }}
-
-    /* ========================================= */
-    /*          PRINT                             */
-    /* ========================================= */
     @media print {{
-        .dm-particle,
-        section[data-testid="stSidebar"],
-        .stApp::before {{
-            display: none !important;
-        }}
+        .dm-particle, section[data-testid="stSidebar"], .stApp::before {{ display:none !important; }}
     }}
-
-    /* ========================================= */
-    /*       SCROLLBAR (dark mode only)           */
-    /* ========================================= */
-    {"" if not dm else f'''
-    ::-webkit-scrollbar {{ width: 8px; height: 8px; }}
-    ::-webkit-scrollbar-track {{ background: {bg}; }}
-    ::-webkit-scrollbar-thumb {{
-        background: {border};
-        border-radius: 10px;
-    }}
-    ::-webkit-scrollbar-thumb:hover {{ background: {primary}; }}
-    '''}
     </style>
 
-    <!-- Floating Particles -->
-    <div class="dm-particle" style="left:4%;animation-delay:0s;">🦠</div>
-    <div class="dm-particle" style="left:15%;animation-delay:5s;">🧬</div>
-    <div class="dm-particle" style="left:30%;animation-delay:10s;">🔬</div>
-    <div class="dm-particle" style="left:48%;animation-delay:3s;">🩸</div>
-    <div class="dm-particle" style="left:65%;animation-delay:8s;">🧪</div>
-    <div class="dm-particle" style="left:80%;animation-delay:13s;">💊</div>
-    <div class="dm-particle" style="left:92%;animation-delay:6s;">🧫</div>
+    <div class="dm-particle" style="left:4%">🦠</div>
+    <div class="dm-particle" style="left:15%;animation-delay:5s">🧬</div>
+    <div class="dm-particle" style="left:30%;animation-delay:10s">🔬</div>
+    <div class="dm-particle" style="left:48%;animation-delay:3s">🩸</div>
+    <div class="dm-particle" style="left:65%;animation-delay:8s">🧪</div>
+    <div class="dm-particle" style="left:80%;animation-delay:13s">💊</div>
+    <div class="dm-particle" style="left:92%;animation-delay:6s">🧫</div>
     """, unsafe_allow_html=True)
 
-
-# تطبيق التصميم فوراً
 apply_full_theme()
 
+# ============================================
+#  12. شاشة التحميل السينمائية
+# ============================================
+if not st.session_state.get("splash_shown", False):
+    st.markdown("""
+    <div class="dm-splash" id="splash">
+        <div class="dm-splash-logo">🧬</div>
+        <h2 style="margin-top:20px; opacity:0.8;">DM SMART LAB AI</h2>
+        <p style="opacity:0.4; letter-spacing:0.3em; text-transform:uppercase; font-size:0.8rem;">
+            Loading System...
+        </p>
+        <div style="width:200px; height:3px; background:rgba(128,128,128,0.2); border-radius:3px; margin-top:20px; overflow:hidden;">
+            <div style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #06b6d4);
+                        animation: loadBar 2.5s ease forwards; transform-origin:left;">
+            </div>
+        </div>
+    </div>
+    <style>
+    @keyframes loadBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    </style>
+    """, unsafe_allow_html=True)
+    st.session_state.splash_shown = True
 
-# ============================================
-#  11. اللوقو المتحرك
-# ============================================
+# اللوقو
 st.markdown("""
 <div class="dm-logo-wrap">
     <div class="dm-logo-main">
@@ -1505,12 +1521,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
 # ============================================
-#  12. صفحة تسجيل الدخول
+#  13. تسجيل الدخول
 # ============================================
 if not st.session_state.logged_in:
-    # التحقق من القفل
     if st.session_state.lockout_until:
         if datetime.now() < st.session_state.lockout_until:
             remaining = (st.session_state.lockout_until - datetime.now()).seconds
@@ -1521,10 +1535,7 @@ if not st.session_state.logged_in:
             st.session_state.login_attempts = 0
 
     _, col_login, _ = st.columns([1.2, 2, 1.2])
-
     with col_login:
-        st.markdown("<br>", unsafe_allow_html=True)
-
         st.markdown(f"""
         <div class='dm-card dm-card-blue' style='text-align:center;'>
             <div style='font-size:3.5rem; margin-bottom:12px;'>🔐</div>
@@ -1533,295 +1544,183 @@ if not st.session_state.logged_in:
         </div>
         """, unsafe_allow_html=True)
 
-        # اختيار اللغة قبل الدخول
-        lang_options = {"Français 🇫🇷": "fr", "العربية 🇩🇿": "ar", "English 🇬🇧": "en"}
-        selected_lang = st.selectbox(
-            f"🌍 {t('language')}",
-            options=list(lang_options.keys()),
-            index=0
-        )
-        new_lang = lang_options[selected_lang]
-        if new_lang != st.session_state.lang:
-            st.session_state.lang = new_lang
+        lang_opts = {"Français 🇫🇷": "fr", "العربية 🇩🇿": "ar", "English 🇬🇧": "en"}
+        sel_lang = st.selectbox(f"🌍 {t('language')}", list(lang_opts.keys()))
+        new_l = lang_opts[sel_lang]
+        if new_l != st.session_state.lang:
+            st.session_state.lang = new_l
             st.rerun()
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        with st.form("login_form", clear_on_submit=True):
+        with st.form("login"):
             user = st.text_input(f"👤 {t('login_user')}", placeholder="Dr. / TLS ...")
-            pwd = st.text_input(f"🔒 {t('login_pass')}", type="password", placeholder="••••••••")
-            submitted = st.form_submit_button(f"🔓 {t('login_btn')}", use_container_width=True)
-
-            if submitted:
-                if not user.strip():
-                    st.warning(f"⚠️ {t('login_user')}")
-                elif pwd == APP_PASSWORD:
+            pwd = st.text_input(f"🔒 {t('login_pass')}", type="password")
+            go = st.form_submit_button(f"🔓 {t('login_btn')}", use_container_width=True)
+            if go:
+                if pwd == APP_PASSWORD:
                     st.session_state.logged_in = True
-                    st.session_state.user_name = user.strip()
+                    st.session_state.user_name = user.strip() or "Utilisateur"
                     st.session_state.login_attempts = 0
+                    st.session_state.last_activity = datetime.now()
+                    log_activity("Login")
                     st.rerun()
                 else:
                     st.session_state.login_attempts += 1
                     left = MAX_LOGIN_ATTEMPTS - st.session_state.login_attempts
                     if left <= 0:
                         st.session_state.lockout_until = datetime.now() + timedelta(minutes=LOCKOUT_MINUTES)
-                        st.error(f"🔒 {t('login_locked')} ({LOCKOUT_MINUTES} min)")
+                        st.error(f"🔒 {t('login_locked')}")
                     else:
                         st.error(f"❌ {t('login_error')}. {left} {t('login_attempts')}.")
-
-        st.markdown("""
-        <div style='text-align:center; margin-top:24px; opacity:0.35; font-size:0.78rem;'>
-            🔐 Powered by DM Smart Lab AI
-        </div>
-        """, unsafe_allow_html=True)
-
     st.stop()
 
-
 # ============================================
-#  13. الشريط الجانبي (بعد الدخول)
+#  14. الشريط الجانبي
 # ============================================
 with st.sidebar:
     st.markdown(f"""
-    <div style='text-align:center; padding:12px 0 8px 0;'>
+    <div style='text-align:center; padding:12px 0 8px;'>
         <div style='font-size:2.8rem;'>🧬</div>
-        <h3 style='margin:6px 0 2px 0;'>DM SMART LAB</h3>
-        <p style='font-size:0.72rem; opacity:0.4; letter-spacing:0.2em;
-                  text-transform:uppercase; margin:0;'>
-            Smart Lab AI v{APP_VERSION}
-        </p>
+        <h3 style='margin:6px 0 2px;'>DM SMART LAB</h3>
+        <p style='font-size:0.72rem; opacity:0.4; letter-spacing:0.2em; text-transform:uppercase;'>v{APP_VERSION}</p>
     </div>
     """, unsafe_allow_html=True)
-
     st.markdown("---")
     st.markdown(f"👤 **{st.session_state.user_name}**")
+
+    # نصيحة اليوم
+    lang = st.session_state.get("lang", "fr")
+    tips = DAILY_TIPS.get(lang, DAILY_TIPS["fr"])
+    tip_idx = datetime.now().timetuple().tm_yday % len(tips)
+    st.info(f"**{t('daily_tip')}:**\n\n{tips[tip_idx]}")
+
     st.markdown("---")
 
-    # اختيار اللغة
     lang_opts = {"Français 🇫🇷": "fr", "العربية 🇩🇿": "ar", "English 🇬🇧": "en"}
-    current_lang_display = [k for k, v in lang_opts.items() if v == st.session_state.lang]
-    current_idx = list(lang_opts.values()).index(st.session_state.lang) if st.session_state.lang in lang_opts.values() else 0
-
-    sel_lang = st.selectbox(
-        f"🌍 {t('language')}",
-        options=list(lang_opts.keys()),
-        index=current_idx
-    )
-    new_lang_val = lang_opts[sel_lang]
-    if new_lang_val != st.session_state.lang:
-        st.session_state.lang = new_lang_val
+    cur_idx = list(lang_opts.values()).index(st.session_state.lang) if st.session_state.lang in lang_opts.values() else 0
+    sel = st.selectbox(f"🌍 {t('language')}", list(lang_opts.keys()), index=cur_idx)
+    if lang_opts[sel] != st.session_state.lang:
+        st.session_state.lang = lang_opts[sel]
         st.rerun()
 
     st.markdown("---")
 
-    # القائمة
-    nav_items = [
-        f"🏠 {t('nav_home')}",
-        f"🔬 {t('nav_scan')}",
-        f"📘 {t('nav_encyclopedia')}",
-        f"📊 {t('nav_dashboard')}",
+    nav = [
+        f"🏠 {t('nav_home')}", f"🔬 {t('nav_scan')}",
+        f"📘 {t('nav_encyclopedia')}", f"📊 {t('nav_dashboard')}",
+        f"🧠 {t('nav_quiz')}", f"💬 {t('nav_chatbot')}",
         f"ℹ️ {t('nav_about')}"
     ]
-    menu = st.radio("📌 Navigation", nav_items, label_visibility="collapsed")
+    menu = st.radio("📌", nav, label_visibility="collapsed")
 
     st.markdown("---")
-
-    # الوضع الليلي
     dark = st.toggle(f"🌙 {t('night_mode')}", value=st.session_state.dark_mode)
     if dark != st.session_state.dark_mode:
         st.session_state.dark_mode = dark
         st.rerun()
 
     st.markdown("---")
-
     if st.button(f"🚪 {t('logout')}", use_container_width=True):
+        log_activity("Logout")
         for k in SESSION_DEFAULTS:
             st.session_state[k] = SESSION_DEFAULTS[k]
+        st.session_state.splash_shown = True
         st.rerun()
 
-    st.markdown(f"""
-    <div style='text-align:center; opacity:0.3; font-size:0.7rem; margin-top:20px;'>
-        v{APP_VERSION} — INFSPM Ouargla
-    </div>
-    """, unsafe_allow_html=True)
-
-
-# ============================================
-#  14. توجيه الصفحات
-# ============================================
-page_map = {
-    nav_items[0]: "home",
-    nav_items[1]: "scan",
-    nav_items[2]: "encyclopedia",
-    nav_items[3]: "dashboard",
-    nav_items[4]: "about"
-}
+# التعرف على الصفحة
+page_keys = ["home", "scan", "encyclopedia", "dashboard", "quiz", "chatbot", "about"]
+page_map = dict(zip(nav, page_keys))
 current_page = page_map.get(menu, "home")
 
-
-# ╔══════════════════════════════════════════╗
-# ║          PAGE: HOME / ACCUEIL            ║
-# ╚══════════════════════════════════════════╝
+# ╔══════════════════════════════════╗
+# ║        PAGE: HOME                ║
+# ╚══════════════════════════════════╝
 if current_page == "home":
     st.title(f"👋 {get_greeting()}, {st.session_state.user_name} !")
-
-    c_icon, c_text = st.columns([1, 2.5])
-    with c_icon:
-        st.markdown("""
-        <div style="text-align:center; padding:20px 0;">
-            <div style="font-size:7rem; line-height:1;">🤖</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with c_text:
-        st.markdown(f"""
-        <div class='dm-card dm-card-blue'>
-            <h3>🧬 DM SMART LAB — {t('app_subtitle')}</h3>
-            <p>{t('home_step1_desc') if st.session_state.intro_step == 0 else
-                t('home_step2_desc') if st.session_state.intro_step == 1 else
-                t('home_go_scan')}</p>
-        </div>
-        """, unsafe_allow_html=True)
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        st.markdown('<div style="text-align:center;font-size:7rem;">🤖</div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""<div class='dm-card dm-card-blue'>
+        <h3>🧬 DM SMART LAB — {t('app_subtitle')}</h3>
+        <p>{'...' if st.session_state.intro_step < 2 else t('home_go_scan')}</p>
+        </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
-
-    # شريط الخطوات
     step = st.session_state.intro_step
-    steps_data = [
-        (t("home_step1_title"), "1️⃣"),
-        (t("home_step2_title"), "2️⃣"),
-        (t("home_unlocked"), "3️⃣"),
-    ]
-
-    step_cols = st.columns(3)
-    for i, (lbl, icon) in enumerate(steps_data):
-        with step_cols[i]:
-            if step > i:
-                css_class = "dm-step-done"
-                status = "✅"
-            elif step == i:
-                css_class = "dm-step-active"
-                status = "⏳"
-            else:
-                css_class = "dm-step-pending"
-                status = "⬜"
-            st.markdown(
-                f'<div class="dm-step {css_class}">{status} {icon} {lbl}</div>',
-                unsafe_allow_html=True
-            )
+    steps_data = [t("home_step1_title"), t("home_step2_title"), t("home_unlocked")]
+    sc = st.columns(3)
+    for i, lbl in enumerate(steps_data):
+        with sc[i]:
+            cls = "dm-step-done" if step > i else ("dm-step-active" if step == i else "dm-step-pending")
+            icon = "✅" if step > i else ("⏳" if step == i else "⬜")
+            st.markdown(f'<div class="dm-step {cls}">{icon} {lbl}</div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # الخطوة 1
     if step == 0:
-        st.markdown(f"""
-        <div class='dm-card dm-card-orange'>
-            <h4>🔒 {t('home_step1_title')}</h4>
-            <p>{t('home_step1_desc')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(f"<div class='dm-card dm-card-orange'><h4>🔒 {t('home_step1_title')}</h4><p>{t('home_step1_desc')}</p></div>", unsafe_allow_html=True)
         if st.button(f"🔊 {t('home_step1_btn')}", use_container_width=True, type="primary"):
-            voice_text = t("voice_intro").format(
-                time=datetime.now().strftime("%H:%M"),
-                dev1=AUTHORS["dev1"]["name"],
-                dev2=AUTHORS["dev2"]["name"]
-            )
-            speak(voice_text)
-            with st.spinner("🔊 ..."):
-                time.sleep(12)
+            txt = t("voice_intro").format(time=datetime.now().strftime("%H:%M"), dev1=AUTHORS["dev1"]["name"], dev2=AUTHORS["dev2"]["name"])
+            speak(txt)
+            with st.spinner("🔊 ..."): time.sleep(12)
             st.session_state.intro_step = 1
+            log_activity("Intro Step 1 completed")
             st.rerun()
-
-    # الخطوة 2
     elif step == 1:
-        st.markdown(f"""
-        <div class='dm-card dm-card-orange'>
-            <h4>🔒 {t('home_step2_title')}</h4>
-            <p>{t('home_step2_desc')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
+        st.markdown(f"<div class='dm-card dm-card-orange'><h4>🔒 {t('home_step2_title')}</h4><p>{t('home_step2_desc')}</p></div>", unsafe_allow_html=True)
         if st.button(f"🔊 {t('home_step2_btn')}", use_container_width=True, type="primary"):
-            voice_text = t("voice_title").format(title=PROJECT_TITLE)
-            speak(voice_text)
-            with st.spinner("🔊 ..."):
-                time.sleep(12)
+            txt = t("voice_title").format(title=PROJECT_TITLE)
+            speak(txt)
+            with st.spinner("🔊 ..."): time.sleep(12)
             st.session_state.intro_step = 2
+            log_activity("Intro Step 2 completed - System Unlocked")
             st.rerun()
-
-    # تم الفتح
     elif step >= 2:
-        st.markdown(f"""
-        <div class='dm-card dm-card-green'>
-            <h3>✅ {t('home_unlocked')}</h3>
-            <p style='font-size:1.05rem;'>{t('home_go_scan')}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"<div class='dm-card dm-card-green'><h3>✅ {t('home_unlocked')}</h3><p>{t('home_go_scan')}</p></div>", unsafe_allow_html=True)
         st.balloons()
 
-
-# ╔══════════════════════════════════════════╗
-# ║          PAGE: SCAN & ANALYSE            ║
-# ╚══════════════════════════════════════════╝
+# ╔══════════════════════════════════╗
+# ║        PAGE: SCAN                ║
+# ╚══════════════════════════════════╝
 elif current_page == "scan":
     st.title(f"🔬 {t('scan_title')}")
-
     if st.session_state.intro_step < 2:
         st.error(f"⛔ {t('scan_blocked')}")
         st.stop()
 
-    # تحميل الموديل
     model, model_name = load_ai_model()
-    if model_name:
-        st.sidebar.success(f"🧠 {model_name}")
-    else:
-        st.sidebar.info("🧠 Demo Mode")
+    if model_name: st.sidebar.success(f"🧠 {model_name}")
+    else: st.sidebar.info("🧠 Demo")
 
-    # === بيانات المريض ===
     st.markdown(f"### 📋 1. {t('scan_patient_info')}")
-    st.markdown('<div class="dm-card">', unsafe_allow_html=True)
-
     ca, cb = st.columns(2)
     p_nom = ca.text_input(f"{t('scan_nom')} *", placeholder="Benali")
     p_prenom = cb.text_input(t("scan_prenom"), placeholder="Ahmed")
-
     cc, cd, ce, cf = st.columns(4)
     p_age = cc.number_input(t("scan_age"), 0, 120, 30)
     p_sexe = cd.selectbox(t("scan_sexe"), [t("patient_sexe_h"), t("patient_sexe_f")])
     p_poids = ce.number_input(t("scan_poids"), 0, 300, 70)
-    sample_options = [
-        t("echantillon_selles"), t("echantillon_sang_frottis"),
-        t("echantillon_sang_goutte"), t("echantillon_urines"),
-        t("echantillon_lcr"), t("echantillon_autre")
-    ]
-    p_type = cf.selectbox(t("scan_echantillon"), sample_options)
+    samples = [t("echantillon_selles"), t("echantillon_sang_frottis"), t("echantillon_sang_goutte"), t("echantillon_urines"), t("echantillon_lcr"), t("echantillon_autre")]
+    p_type = cf.selectbox(t("scan_echantillon"), samples)
 
-    thermal = st.toggle(f"🔥 {t('scan_thermal')}")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # فلاتر الصورة
+    st.markdown("### 🎨 Filtres d'Image")
+    fc1, fc2, fc3 = st.columns(3)
+    thermal = fc1.toggle(f"🔥 {t('scan_thermal')}")
+    edge_det = fc2.toggle(f"📐 {t('scan_edge')}")
+    enhanced = fc3.toggle(f"✨ {t('scan_enhanced')}")
 
     st.markdown("---")
-
-    # === التصوير ===
     st.markdown(f"### 📸 2. {t('scan_capture')}")
-    cap_mode = st.radio(
-        "Mode:",
-        [f"📷 {t('scan_camera')}", f"📁 {t('scan_upload')}"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
+    cap_mode = st.radio("Mode:", [f"📷 {t('scan_camera')}", f"📁 {t('scan_upload')}"], horizontal=True, label_visibility="collapsed")
 
     img_file = None
     if t('scan_camera') in cap_mode:
         img_file = st.camera_input(t("scan_capture"))
     else:
-        img_file = st.file_uploader(
-            t("scan_upload"),
-            type=["jpg", "jpeg", "png", "bmp", "tiff"]
-        )
+        img_file = st.file_uploader(t("scan_upload"), type=["jpg","jpeg","png","bmp","tiff"])
 
-    # === التحليل ===
-    if img_file is not None:
+    if img_file:
         if not p_nom.strip():
             st.error(f"⚠️ {t('scan_nom_required')}")
             st.stop()
@@ -1830,15 +1729,23 @@ elif current_page == "scan":
         col_img, col_res = st.columns(2)
 
         with col_img:
-            if thermal:
-                disp = apply_thermal(image)
-                st.image(disp, caption=f"🔥 {t('scan_thermal')}", use_container_width=True)
-            else:
-                st.image(image, caption="📷 Microscope", use_container_width=True)
+            # الصورة الأصلية والفلاتر
+            tab_orig, tab_thermal, tab_edge, tab_enhance, tab_heatmap = st.tabs(
+                ["📷 Original", "🔥 Thermal", "📐 Edges", "✨ Enhanced", "🎯 AI Focus"]
+            )
+            with tab_orig:
+                st.image(image, caption="Vue originale", use_container_width=True)
+            with tab_thermal:
+                st.image(apply_thermal(image), caption=t("scan_thermal"), use_container_width=True)
+            with tab_edge:
+                st.image(apply_edge_detection(image), caption=t("scan_edge"), use_container_width=True)
+            with tab_enhance:
+                st.image(apply_enhanced_contrast(image), caption=t("scan_enhanced"), use_container_width=True)
+            with tab_heatmap:
+                st.image(generate_heatmap_overlay(image), caption=t("scan_heatmap"), use_container_width=True)
 
         with col_res:
             st.markdown(f"### 🧠 {t('scan_result')}")
-
             with st.spinner(f"⏳ {t('scan_analyzing')}"):
                 prog = st.progress(0)
                 for i in range(100):
@@ -1849,236 +1756,150 @@ elif current_page == "scan":
             label = result["label"]
             conf = result["confidence"]
             info = result["info"]
-            rc = get_risk_color(info["risk_level"])
+            rc = risk_color(info["risk_level"])
 
-            # تحذيرات
             if not result["is_reliable"]:
                 st.warning(f"⚠️ {t('scan_low_conf')} ({conf}%)")
             if result["is_demo"]:
                 st.info(f"ℹ️ {t('scan_demo_mode')}")
 
-            # بطاقة النتيجة
-            risk_disp = get_parasite_text(info, "risk_display")
-            morpho_text = get_parasite_text(info, "morphology")
-            advice_text = get_parasite_text(info, "advice")
-            funny_text = get_parasite_text(info, "funny")
+            risk_disp = get_p_text(info, "risk_display")
+            morpho = get_p_text(info, "morphology")
+            advice = get_p_text(info, "advice")
+            funny = get_p_text(info, "funny")
 
             st.markdown(f"""
             <div class='dm-card' style='border-left:5px solid {rc};'>
-                <div style='display:flex; justify-content:space-between;
-                            align-items:center; flex-wrap:wrap; gap:12px;'>
+                <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;'>
                     <div>
-                        <h2 style='color:{rc}; margin:0;'>{label}</h2>
-                        <p style='opacity:0.55; margin:4px 0 0 0;
-                                  font-style:italic;'>
-                            {info['scientific_name']}
-                        </p>
+                        <h2 style='color:{rc};margin:0;'>{label}</h2>
+                        <p style='opacity:0.55;font-style:italic;'>{info['scientific_name']}</p>
                     </div>
                     <div style='text-align:center;'>
-                        <div style='font-size:2.8rem; font-weight:900;
-                                    color:{rc};
-                                    font-family:JetBrains Mono,monospace;'>
-                            {conf}%
-                        </div>
-                        <div style='font-size:0.75rem; opacity:0.45;
-                                    text-transform:uppercase;
-                                    letter-spacing:0.1em;'>
-                            {t('scan_confidence')}
-                        </div>
+                        <div style='font-size:2.8rem;font-weight:900;color:{rc};font-family:JetBrains Mono,monospace;'>{conf}%</div>
+                        <div style='font-size:0.75rem;opacity:0.45;text-transform:uppercase;'>{t('scan_confidence')}</div>
                     </div>
                 </div>
-
-                <hr style='opacity:0.15; margin:16px 0;'>
-
-                <p><b>🔬 {t('scan_morphology')} :</b><br>
-                   <span style='opacity:0.85;'>{morpho_text}</span></p>
-
-                <p><b>⚠️ {t('scan_risk')} :</b>
-                   <span style='color:{rc}; font-weight:700;'>
-                       {risk_disp}
-                   </span></p>
-
-                <div style='background:rgba(34,197,94,0.08); padding:14px;
-                            border-radius:12px; margin:12px 0;'>
-                    <b>💡 {t('scan_advice')} :</b><br>
-                    <span style='opacity:0.85;'>{advice_text}</span>
+                <hr style='opacity:0.15;margin:16px 0;'>
+                <p><b>🔬 {t('scan_morphology')}:</b><br>{morpho}</p>
+                <p><b>⚠️ {t('scan_risk')}:</b> <span style='color:{rc};font-weight:700;'>{risk_disp}</span></p>
+                <div style='background:rgba(34,197,94,0.08);padding:14px;border-radius:12px;margin:12px 0;'>
+                    <b>💡 {t('scan_advice')}:</b><br>{advice}
                 </div>
-
-                <div style='background:rgba(37,99,235,0.06); padding:14px;
-                            border-radius:12px; font-style:italic;'>
-                    🤖 {funny_text}
+                <div style='background:rgba(37,99,235,0.06);padding:14px;border-radius:12px;font-style:italic;'>
+                    🤖 {funny}
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            # الصوت
-            voice_result = t("voice_result").format(
-                patient=p_nom, parasite=label, funny=funny_text
-            )
-            speak(voice_result)
+            # الفحوصات الإضافية
+            extra = get_p_text(info, "extra_tests")
+            if isinstance(extra, list) and extra and extra[0] != "N/A":
+                with st.expander(f"🩺 {t('scan_extra_tests')}"):
+                    for test in extra:
+                        st.markdown(f"• {test}")
 
-            # جميع التنبؤات
+            # دورة الحياة
+            lifecycle = get_p_text(info, "lifecycle")
+            if lifecycle and lifecycle != "N/A":
+                with st.expander("🔄 Cycle de Vie"):
+                    st.markdown(f"**{lifecycle}**")
+
+            # الصوت
+            speak(t("voice_result").format(patient=p_nom, parasite=label, funny=funny))
+
+            # كل التنبؤات
             if result["all_predictions"]:
                 with st.expander(f"📊 {t('scan_all_probs')}"):
-                    for cls, prob in sorted(
-                        result["all_predictions"].items(),
-                        key=lambda x: x[1], reverse=True
-                    ):
+                    for cls, prob in sorted(result["all_predictions"].items(), key=lambda x: x[1], reverse=True):
                         st.progress(prob / 100, text=f"{cls}: {prob}%")
 
         st.markdown("---")
         st.markdown("### 📄 Actions")
-
-        act1, act2, act3 = st.columns(3)
-
-        with act1:
-            patient_dict = {
-                t("scan_nom"): p_nom,
-                t("scan_prenom"): p_prenom,
-                t("scan_age"): f"{p_age}",
-                t("scan_sexe"): p_sexe,
-                t("scan_poids"): f"{p_poids}",
-                t("scan_echantillon"): p_type
-            }
-            pdf_bytes = generate_pdf(patient_dict, label, conf, info)
-            st.download_button(
-                f"📥 {t('scan_download_pdf')}",
-                data=pdf_bytes,
-                file_name=f"Rapport_{p_nom}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-
-        with act2:
+        a1, a2, a3 = st.columns(3)
+        with a1:
+            pat = {t("scan_nom"):p_nom, t("scan_prenom"):p_prenom, t("scan_age"):str(p_age), t("scan_sexe"):p_sexe, t("scan_poids"):str(p_poids), t("scan_echantillon"):p_type}
+            pdf = generate_pdf(pat, label, conf, info)
+            st.download_button(f"📥 {t('scan_download_pdf')}", pdf, f"Rapport_{p_nom}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf", "application/pdf", use_container_width=True)
+        with a2:
             if st.button(f"💾 {t('scan_save')}", use_container_width=True):
                 entry = {
                     "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
                     "Patient": f"{p_nom} {p_prenom}".strip(),
-                    "Age": p_age,
-                    "Sexe": p_sexe,
-                    "Echantillon": p_type,
-                    "Parasite": label,
-                    "Confiance": f"{conf}%",
-                    "Risque": risk_disp,
+                    "Age": p_age, "Sexe": p_sexe,
+                    "Echantillon": p_type, "Parasite": label,
+                    "Confiance": f"{conf}%", "Risque": risk_disp,
                     "Status": "Fiable" if result["is_reliable"] else "A verifier"
                 }
                 st.session_state.history.append(entry)
+                log_activity(f"Scan saved: {label} for {p_nom}")
                 st.success(f"✅ {t('scan_saved')}")
-
-        with act3:
+        with a3:
             if st.button(f"🔄 {t('scan_new')}", use_container_width=True):
                 st.rerun()
 
-
-# ╔══════════════════════════════════════════╗
-# ║          PAGE: ENCYCLOPÉDIE              ║
-# ╚══════════════════════════════════════════╝
+# ╔══════════════════════════════════╗
+# ║        PAGE: ENCYCLOPEDIA        ║
+# ╚══════════════════════════════════╝
 elif current_page == "encyclopedia":
     st.title(f"📘 {t('enc_title')}")
-
-    search = st.text_input(f"🔍 {t('enc_search')}", placeholder="amoeba, giardia, plasmodium...")
-
-    st.markdown("---")
-
-    # إحصائيات
-    stat_c = st.columns(4)
-    total_parasites = len([k for k in PARASITE_DB if k != "Negative"])
-    high_risk = sum(1 for v in PARASITE_DB.values() if v.get("risk_level") in ["high", "critical"])
-    med_risk = sum(1 for v in PARASITE_DB.values() if v.get("risk_level") == "medium")
-
-    for col, (ic, val, lbl, clr) in zip(stat_c, [
-        ("🦠", total_parasites, "Parasites", "#2563eb"),
-        ("🔴", high_risk, "Risque Élevé", "#dc2626"),
-        ("🟠", med_risk, "Risque Moyen", "#f59e0b"),
-        ("📖", len(PARASITE_DB), "Total Fiches", "#8b5cf6"),
-    ]):
-        with col:
-            st.markdown(f"""
-            <div class="dm-metric">
-                <span class="dm-metric-icon">{ic}</span>
-                <div class="dm-metric-val" style="color:{clr} !important;">{val}</div>
-                <div class="dm-metric-lbl">{lbl}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
+    search = st.text_input(f"🔍 {t('enc_search')}", placeholder="amoeba, giardia...")
     st.markdown("---")
 
     for name, data in PARASITE_DB.items():
-        if name == "Negative":
-            continue
-
-        # فلترة البحث
-        if search.strip():
-            searchable = (name + data["scientific_name"]).lower()
-            if search.lower() not in searchable:
-                continue
-
-        rc = get_risk_color(data["risk_level"])
-        risk_disp = get_parasite_text(data, "risk_display")
+        if name == "Negative": continue
+        if search.strip() and search.lower() not in (name + data["scientific_name"]).lower(): continue
+        rc = risk_color(data["risk_level"])
+        risk_disp = get_p_text(data, "risk_display")
 
         with st.expander(f"🔬 {name} — *{data['scientific_name']}* | {risk_disp}"):
             ci, cv = st.columns([2.5, 1])
-
             with ci:
-                st.markdown(f"""
-                <div class='dm-card' style='border-left:4px solid {rc};'>
-                    <h4 style='color:{rc};'>{data['scientific_name']}</h4>
-
-                    <p><b>🔬 {t('scan_morphology')} :</b><br>
-                       {get_parasite_text(data, 'morphology')}</p>
-
-                    <p><b>📖 Description :</b><br>
-                       {get_parasite_text(data, 'description')}</p>
-
-                    <p><b>⚠️ {t('scan_risk')} :</b>
-                       <span style='color:{rc}; font-weight:700;'>
-                           {risk_disp}
-                       </span></p>
-
-                    <div style='background:rgba(22,163,74,0.08); padding:14px;
-                                border-radius:12px; margin:10px 0;'>
-                        <b>💡 {t('scan_advice')} :</b><br>
-                        {get_parasite_text(data, 'advice')}
-                    </div>
-
-                    <div style='background:rgba(37,99,235,0.06); padding:14px;
-                                border-radius:12px; font-style:italic;'>
-                        🤖 {get_parasite_text(data, 'funny')}
-                    </div>
+                st.markdown(f"""<div class='dm-card' style='border-left:4px solid {rc};'>
+                <h4 style='color:{rc};'>{data['scientific_name']}</h4>
+                <p><b>🔬 {t('scan_morphology')}:</b><br>{get_p_text(data,'morphology')}</p>
+                <p><b>📖 Description:</b><br>{get_p_text(data,'description')}</p>
+                <p><b>⚠️ {t('scan_risk')}:</b> <span style='color:{rc};font-weight:700;'>{risk_disp}</span></p>
+                <div style='background:rgba(22,163,74,0.08);padding:14px;border-radius:12px;margin:10px 0;'>
+                    <b>💡 {t('scan_advice')}:</b><br>{get_p_text(data,'advice')}
                 </div>
-                """, unsafe_allow_html=True)
+                <div style='background:rgba(37,99,235,0.06);padding:14px;border-radius:12px;font-style:italic;'>
+                    🤖 {get_p_text(data,'funny')}
+                </div>
+                </div>""", unsafe_allow_html=True)
+
+                # دورة الحياة
+                lifecycle = get_p_text(data, "lifecycle")
+                if lifecycle and lifecycle != "N/A":
+                    st.markdown(f"**🔄 Cycle:** {lifecycle}")
+
+                # الفحوصات
+                extra = get_p_text(data, "extra_tests")
+                if isinstance(extra, list):
+                    st.markdown(f"**🩺 {t('scan_extra_tests')}:** {', '.join(extra)}")
 
             with cv:
-                rp = get_risk_percent(data["risk_level"])
+                rp = risk_percent(data["risk_level"])
                 if rp > 0:
-                    st.progress(rp / 100, text=f"Dangerosité: {rp}%")
-                st.markdown(f"""
-                <div style='text-align:center; padding:10px;'>
-                    <div style='font-size:4rem;'>{data.get('icon', '🦠')}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                    st.progress(rp / 100, text=f"Dangerosite: {rp}%")
+                st.markdown(f'<div style="text-align:center;font-size:4rem;">{data.get("icon","🦠")}</div>', unsafe_allow_html=True)
 
     if search.strip():
-        found = any(
-            search.lower() in (n + d["scientific_name"]).lower()
-            for n, d in PARASITE_DB.items() if n != "Negative"
-        )
+        found = any(search.lower() in (n+d["scientific_name"]).lower() for n,d in PARASITE_DB.items() if n!="Negative")
         if not found:
             st.warning(f"🔍 {t('enc_no_result')}")
 
-
-# ╔══════════════════════════════════════════╗
-# ║          PAGE: DASHBOARD                 ║
-# ╚══════════════════════════════════════════╝
+# ╔══════════════════════════════════╗
+# ║        PAGE: DASHBOARD           ║
+# ╚══════════════════════════════════╝
 elif current_page == "dashboard":
     st.title(f"📊 {t('dash_title')}")
-
     hist = st.session_state.history
     total = len(hist)
 
     if total > 0:
         df = pd.DataFrame(hist)
-        fiable = df[df["Status"] == "Fiable"].shape[0] if "Status" in df.columns else total
+        fiable = df[df["Status"]=="Fiable"].shape[0] if "Status" in df.columns else total
         averif = total - fiable
         common = df["Parasite"].value_counts().idxmax() if "Parasite" in df.columns else "N/A"
     else:
@@ -2086,207 +1907,263 @@ elif current_page == "dashboard":
         fiable = averif = 0
         common = "N/A"
 
-    # KPIs
-    kpi_cols = st.columns(4)
-    kpi_data = [
+    kc = st.columns(4)
+    for col, (ic, val, lbl, clr) in zip(kc, [
         ("🔬", total, t("dash_total"), "#3b82f6"),
         ("✅", fiable, t("dash_reliable"), "#22c55e"),
         ("⚠️", averif, t("dash_check"), "#f59e0b"),
         ("🦠", common, t("dash_frequent"), "#ef4444"),
-    ]
-    for col, (ic, val, lbl, clr) in zip(kpi_cols, kpi_data):
+    ]):
         with col:
-            st.markdown(f"""
-            <div class="dm-metric">
-                <span class="dm-metric-icon">{ic}</span>
-                <div class="dm-metric-val" style="color:{clr} !important;">{val}</div>
-                <div class="dm-metric-lbl">{lbl}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class="dm-metric">
+            <span class="dm-metric-icon">{ic}</span>
+            <div class="dm-metric-val" style="color:{clr} !important;">{val}</div>
+            <div class="dm-metric-lbl">{lbl}</div></div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
+    sc = st.columns(3)
+    with sc[0]:
+        st.markdown(f"<div class='dm-card dm-card-green'><h4>🟢 {t('dash_system')}</h4></div>", unsafe_allow_html=True)
+    with sc[1]:
+        st.markdown(f"<div class='dm-card dm-card-blue'><h4>👤 {st.session_state.user_name}</h4></div>", unsafe_allow_html=True)
+    with sc[2]:
+        st.markdown(f"<div class='dm-card dm-card-purple'><h4>🕐 {datetime.now().strftime('%H:%M — %d/%m/%Y')}</h4></div>", unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # حالة النظام
-    sys_cols = st.columns(3)
-    with sys_cols[0]:
-        st.markdown(f"""
-        <div class='dm-card dm-card-green'>
-            <h4>🟢 {t('dash_system')}</h4>
-            <p style='opacity:0.7;'>All modules OK</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with sys_cols[1]:
-        st.markdown(f"""
-        <div class='dm-card dm-card-blue'>
-            <h4>👤 {t('dash_user')}</h4>
-            <p>{st.session_state.user_name}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with sys_cols[2]:
-        st.markdown(f"""
-        <div class='dm-card dm-card-purple'>
-            <h4>🕐 {t('dash_session')}</h4>
-            <p>{datetime.now().strftime('%H:%M — %d/%m/%Y')}</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    # الرسوم
     if not df.empty and "Parasite" in df.columns:
-        # فلتر
-        filter_opts = ["Tous / All"] + df["Parasite"].unique().tolist()
-        filt = st.selectbox(f"🔍 {t('dash_filter')}", filter_opts)
-        filtered = df if filt == "Tous / All" else df[df["Parasite"] == filt]
+        filt = st.selectbox(f"🔍 {t('dash_filter')}", ["Tous/All"] + df["Parasite"].unique().tolist())
+        filtered = df if filt == "Tous/All" else df[df["Parasite"]==filt]
 
-        chart_c1, chart_c2 = st.columns(2)
-        with chart_c1:
+        cc1, cc2 = st.columns(2)
+        with cc1:
             st.markdown(f"#### 📊 {t('dash_distribution')}")
             st.bar_chart(filtered["Parasite"].value_counts(), color="#3b82f6")
-
-        with chart_c2:
+        with cc2:
             if "Confiance" in filtered.columns:
                 st.markdown(f"#### 📈 {t('dash_confidence_chart')}")
                 try:
-                    conf_vals = filtered["Confiance"].str.rstrip('%').astype(float)
-                    st.line_chart(conf_vals.reset_index(drop=True))
-                except Exception:
-                    st.info("Chart unavailable")
+                    cv = filtered["Confiance"].str.rstrip('%').astype(float)
+                    st.line_chart(cv.reset_index(drop=True))
+                except: pass
 
-            # رسم بياني بالتاريخ
-            if "Date" in filtered.columns:
-                try:
-                    date_series = pd.to_datetime(filtered["Date"], format="%Y-%m-%d %H:%M")
-                    by_date = date_series.dt.date.value_counts().sort_index()
-                    if len(by_date) > 1:
-                        st.markdown("#### 📅 Analyses par Jour")
-                        st.line_chart(by_date)
-                except Exception:
-                    pass
+        # مقارنة تحاليل نفس المريض
+        if "Patient" in df.columns:
+            st.markdown("---")
+            st.markdown(f"### 🔁 {t('dash_patient_compare')}")
+            patients = df["Patient"].unique().tolist()
+            sel_patient = st.selectbox("Patient:", patients)
+            patient_df = df[df["Patient"] == sel_patient]
+            st.dataframe(patient_df, use_container_width=True)
 
         st.markdown("---")
         st.markdown(f"### 📋 {t('dash_history')}")
         st.dataframe(filtered, use_container_width=True)
 
-        csv = filtered.to_csv(index=False).encode('utf-8')
-        st.download_button(
-            f"⬇️ {t('dash_export')}",
-            data=csv,
-            file_name=f"dm_lab_{datetime.now().strftime('%Y%m%d')}.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
+        # تصدير متعدد
+        ex1, ex2, ex3 = st.columns(3)
+        with ex1:
+            csv = filtered.to_csv(index=False).encode('utf-8')
+            st.download_button(f"⬇️ {t('dash_export')}", csv, "analyses.csv", "text/csv", use_container_width=True)
+        with ex2:
+            json_data = filtered.to_json(orient='records', force_ascii=False).encode('utf-8')
+            st.download_button(f"⬇️ {t('dash_export_json')}", json_data, "analyses.json", "application/json", use_container_width=True)
+        with ex3:
+            buf = io.BytesIO()
+            filtered.to_excel(buf, index=False, engine='openpyxl') if 'openpyxl' in dir() else None
+            try:
+                filtered.to_excel(buf, index=False)
+                st.download_button(f"⬇️ {t('dash_export_excel')}", buf.getvalue(), "analyses.xlsx", use_container_width=True)
+            except:
+                st.info("Install openpyxl for Excel export")
 
+        # سجل النشاطات
+        if st.session_state.activity_log:
+            with st.expander(f"📜 {t('activity_log')}"):
+                st.dataframe(pd.DataFrame(st.session_state.activity_log), use_container_width=True)
     else:
-        st.markdown(f"""
-        <div class='dm-card' style='text-align:center; padding:50px 20px;'>
-            <div style='font-size:4.5rem; margin-bottom:12px;'>📊</div>
-            <h3>{t('dash_no_data')}</h3>
-            <p style='opacity:0.6;'>{t('dash_no_data_desc')}</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(f"""<div class='dm-card' style='text-align:center;padding:50px;'>
+        <div style='font-size:4.5rem;'>📊</div><h3>{t('dash_no_data')}</h3>
+        <p style='opacity:0.6;'>{t('dash_no_data_desc')}</p></div>""", unsafe_allow_html=True)
 
+# ╔══════════════════════════════════╗
+# ║        PAGE: QUIZ                ║
+# ╚══════════════════════════════════╝
+elif current_page == "quiz":
+    st.title(f"🧠 {t('quiz_title')}")
+    st.markdown(f"<div class='dm-card dm-card-purple'><p>{t('quiz_desc')}</p></div>", unsafe_allow_html=True)
 
-# ╔══════════════════════════════════════════╗
-# ║          PAGE: À PROPOS                  ║
-# ╚══════════════════════════════════════════╝
+    lang = st.session_state.get("lang", "fr")
+    questions = QUIZ_QUESTIONS.get(lang, QUIZ_QUESTIONS["fr"])
+    qs = st.session_state.quiz_state
+
+    if not qs["active"]:
+        if st.button("🎮 Start Quiz", use_container_width=True, type="primary"):
+            st.session_state.quiz_state = {"current": 0, "score": 0, "answered": [], "active": True}
+            log_activity("Quiz started")
+            st.rerun()
+    else:
+        idx = qs["current"]
+        if idx < len(questions):
+            q = questions[idx]
+            st.markdown(f"### {t('quiz_question')} {idx+1}/{len(questions)}")
+            st.progress((idx) / len(questions))
+
+            st.markdown(f"<div class='dm-card'><h4>{q['q']}</h4></div>", unsafe_allow_html=True)
+
+            for i, opt in enumerate(q["options"]):
+                if st.button(opt, key=f"quiz_{idx}_{i}", use_container_width=True):
+                    if i == q["answer"]:
+                        st.session_state.quiz_state["score"] += 1
+                        st.success(f"✅ {t('quiz_correct')}")
+                    else:
+                        st.error(f"❌ {t('quiz_wrong')} → {q['options'][q['answer']]}")
+                    st.info(f"📖 {q['explanation']}")
+                    st.session_state.quiz_state["current"] += 1
+                    st.session_state.quiz_state["answered"].append(i == q["answer"])
+                    time.sleep(2)
+                    st.rerun()
+        else:
+            score = qs["score"]
+            total_q = len(questions)
+            pct = int(score / total_q * 100) if total_q > 0 else 0
+
+            if pct >= 80: emoji, msg = "🏆", "Excellent !"
+            elif pct >= 60: emoji, msg = "👍", "Bien !"
+            elif pct >= 40: emoji, msg = "📚", "Continuez a apprendre !"
+            else: emoji, msg = "💪", "Revoyez vos cours !"
+
+            st.markdown(f"""<div class='dm-card dm-card-green' style='text-align:center;'>
+            <div style='font-size:4rem;'>{emoji}</div>
+            <h2>{t('quiz_finish')}</h2>
+            <div style='font-size:3rem;font-weight:900;color:#2563eb;font-family:JetBrains Mono,monospace;'>{score}/{total_q}</div>
+            <p style='font-size:1.2rem;'>{pct}% — {msg}</p>
+            </div>""", unsafe_allow_html=True)
+
+            log_activity(f"Quiz finished: {score}/{total_q}")
+
+            if st.button(f"🔄 {t('quiz_restart')}", use_container_width=True):
+                st.session_state.quiz_state = {"current": 0, "score": 0, "answered": [], "active": False}
+                st.rerun()
+
+# ╔══════════════════════════════════╗
+# ║        PAGE: CHATBOT             ║
+# ╚══════════════════════════════════╝
+elif current_page == "chatbot":
+    st.title(f"💬 {t('chatbot_title')}")
+
+    lang = st.session_state.get("lang", "fr")
+    kb = CHATBOT_KNOWLEDGE.get(lang, CHATBOT_KNOWLEDGE["fr"])
+
+    # رسالة الترحيب
+    if not st.session_state.chat_history:
+        st.session_state.chat_history.append({"role": "bot", "msg": kb["greeting"]})
+
+    # عرض المحادثة
+    for msg in st.session_state.chat_history:
+        if msg["role"] == "user":
+            st.markdown(f"<div class='dm-chat-msg dm-chat-user'>👤 {msg['msg']}</div>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<div class='dm-chat-msg dm-chat-bot'>🤖 {msg['msg']}</div>", unsafe_allow_html=True)
+
+    # إدخال المستخدم
+    user_input = st.chat_input(t("chatbot_placeholder"))
+    if user_input:
+        st.session_state.chat_history.append({"role": "user", "msg": user_input})
+        reply = chatbot_reply(user_input)
+        st.session_state.chat_history.append({"role": "bot", "msg": reply})
+        log_activity(f"Chat: {user_input[:50]}")
+        st.rerun()
+
+    # أزرار سريعة
+    st.markdown("---")
+    st.markdown("**Questions rapides:**")
+    qc = st.columns(4)
+    quick_qs = {
+        "fr": ["Amoeba?", "Giardia?", "Plasmodium?", "Microscope?"],
+        "ar": ["أميبا؟", "جيارديا؟", "ملاريا؟", "مرحبا"],
+        "en": ["Amoeba?", "Giardia?", "Plasmodium?", "Microscope?"]
+    }
+    for col, q in zip(qc, quick_qs.get(lang, quick_qs["fr"])):
+        with col:
+            if st.button(q, use_container_width=True):
+                st.session_state.chat_history.append({"role": "user", "msg": q})
+                reply = chatbot_reply(q)
+                st.session_state.chat_history.append({"role": "bot", "msg": reply})
+                st.rerun()
+
+    if st.button("🗑️ Effacer le chat", use_container_width=True):
+        st.session_state.chat_history = []
+        st.rerun()
+
+# ╔══════════════════════════════════╗
+# ║        PAGE: ABOUT               ║
+# ╚══════════════════════════════════╝
 elif current_page == "about":
     st.title(f"ℹ️ {t('about_title')}")
 
-    st.markdown(f"""
-    <div class='dm-card dm-card-blue' style='text-align:center;'>
-        <h1 style='color:#2563eb; margin:0;'>🧬 DM SMART LAB AI</h1>
-        <p style='font-size:1.15rem; margin-top:6px;'>
-            <b>Version {APP_VERSION}</b>
-        </p>
-        <p style='opacity:0.65;'>{t('about_desc')}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class='dm-card dm-card-blue' style='text-align:center;'>
+    <h1 style='color:#2563eb;margin:0;'>🧬 DM SMART LAB AI</h1>
+    <p style='font-size:1.15rem;margin-top:6px;'><b>v{APP_VERSION} — Ultimate Edition</b></p>
+    <p style='opacity:0.65;'>{t('about_desc')}</p>
+    </div>""", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # وصف المشروع
-    st.markdown(f"""
-    <div class='dm-card'>
-        <h3>📖 {PROJECT_TITLE}</h3>
-        <p style='line-height:1.8; opacity:0.85;'>{t('about_project_desc')}</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(f"""<div class='dm-card'>
+    <h3>📖 {PROJECT_TITLE}</h3>
+    <p style='line-height:1.8;opacity:0.85;'>{t('about_project_desc')}</p>
+    </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
-
-    # الفريق والمؤسسة
-    about_c1, about_c2 = st.columns(2)
-
-    with about_c1:
-        st.markdown(f"""
-        <div class='dm-card dm-card-blue'>
-            <h3>👨‍🔬 {t('about_team')}</h3>
-            <br>
-            <p>
-                <b>🧑‍💻 {AUTHORS['dev1']['name']}</b><br>
-                <span style='opacity:0.6;'>{AUTHORS['dev1']['role']}</span>
-            </p>
-            <br>
-            <p>
-                <b>🔬 {AUTHORS['dev2']['name']}</b><br>
-                <span style='opacity:0.6;'>{AUTHORS['dev2']['role']}</span>
-            </p>
-            <br>
-            <p><b>Niveau :</b> 3ème Année</p>
-            <p><b>Spécialité :</b> Laboratoire de Santé Publique</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with about_c2:
-        st.markdown(f"""
-        <div class='dm-card'>
-            <h3>🏫 {t('about_institution')}</h3>
-            <br>
-            <p><b>{INSTITUTION['name']}</b></p>
-            <p>📍 {INSTITUTION['city']}, {INSTITUTION['country']} 🇩🇿</p>
-            <br>
-            <h4>🎯 {t('about_objectives')}</h4>
-            <ul>
-                <li>{t('about_obj1')}</li>
-                <li>{t('about_obj2')}</li>
-                <li>{t('about_obj3')}</li>
-                <li>{t('about_obj4')}</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown(f"""<div class='dm-card dm-card-blue'>
+        <h3>👨‍🔬 {t('about_team')}</h3><br>
+        <p><b>🧑‍💻 {AUTHORS['dev1']['name']}</b><br><span style='opacity:0.6;'>{AUTHORS['dev1']['role']}</span></p><br>
+        <p><b>🔬 {AUTHORS['dev2']['name']}</b><br><span style='opacity:0.6;'>{AUTHORS['dev2']['role']}</span></p><br>
+        <p><b>Niveau:</b> 3eme Annee</p>
+        <p><b>Specialite:</b> Laboratoire de Sante Publique</p>
+        </div>""", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"""<div class='dm-card'>
+        <h3>🏫 {t('about_institution')}</h3><br>
+        <p><b>{INSTITUTION['name']}</b></p>
+        <p>📍 {INSTITUTION['city']}, {INSTITUTION['country']} 🇩🇿</p><br>
+        <h4>🎯 {t('about_objectives')}</h4>
+        <ul><li>{t('about_obj1')}</li><li>{t('about_obj2')}</li><li>{t('about_obj3')}</li><li>{t('about_obj4')}</li></ul>
+        </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
-
-    # التقنيات
     st.markdown(f"### 🛠️ {t('about_tech')}")
-    tech_cols = st.columns(6)
-    techs = [
-        ("🐍", "Python", "Language"),
-        ("🧠", "TensorFlow", "Deep Learning"),
-        ("🎨", "Streamlit", "Interface"),
-        ("📊", "Pandas", "Data"),
-        ("🖼️", "Pillow", "Imaging"),
-        ("📄", "FPDF", "PDF Reports"),
-    ]
-    for col, (ic, name, desc) in zip(tech_cols, techs):
+    tc = st.columns(6)
+    techs = [("🐍","Python","Language"),("🧠","TensorFlow","Deep Learning"),("🎨","Streamlit","Interface"),("📊","Pandas","Data"),("🖼️","Pillow","Imaging"),("📄","FPDF","PDF")]
+    for col,(i,n,d) in zip(tc,techs):
         with col:
-            st.markdown(f"""
-            <div class="dm-metric">
-                <span class="dm-metric-icon">{ic}</span>
-                <div class="dm-metric-val" style="font-size:1rem;">{name}</div>
-                <div class="dm-metric-lbl">{desc}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.markdown(f"""<div class="dm-metric"><span class="dm-metric-icon">{i}</span>
+            <div class="dm-metric-val" style="font-size:1rem;">{n}</div>
+            <div class="dm-metric-lbl">{d}</div></div>""", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    # الميزات الجديدة
+    st.markdown("---")
+    st.markdown("### 🌟 Features v4.0")
+    feat_cols = st.columns(3)
+    features = [
+        ("🤖", "Dr. DhiaBot", "Chatbot medical intelligent"),
+        ("🧠", "Quiz Mode", "Testez vos connaissances"),
+        ("🔥", "Multi-Filters", "Thermal + Edge + Enhanced"),
+        ("🎯", "AI Heatmap", "Zones d'interet IA"),
+        ("🩺", "Smart Tests", "Suggestions d'examens"),
+        ("🔄", "Lifecycle", "Cycle de vie des parasites"),
+        ("🌍", "3 Languages", "FR / AR / EN"),
+        ("📊", "Multi-Export", "CSV + JSON + Excel"),
+        ("📜", "Activity Log", "Journal complet"),
+    ]
+    for i, (ic, name, desc) in enumerate(features):
+        with feat_cols[i % 3]:
+            st.markdown(f"""<div class='dm-card' style='padding:16px;text-align:center;'>
+            <div style='font-size:2rem;'>{ic}</div>
+            <p style='font-weight:700;margin:4px 0;'>{name}</p>
+            <p style='font-size:0.8rem;opacity:0.6;'>{desc}</p>
+            </div>""", unsafe_allow_html=True)
 
-    # العلم
-    st.image(
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/"
-        "7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png",
-        width=80
-    )
-    st.caption(f"Fait avec ❤️ à {INSTITUTION['city']} — {INSTITUTION['year']}")
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=80)
+    st.caption(f"Fait avec ❤️ a {INSTITUTION['city']} — {INSTITUTION['year']}")
