@@ -1821,4 +1821,4 @@ elif st.session_state.current_page == "about":
     render_about()
 else:
     render_scan(model, model_name, labels)
-```
+
