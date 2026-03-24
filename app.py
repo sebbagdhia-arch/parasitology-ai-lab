@@ -1,13 +1,13 @@
-# ╔══════════════════════════════════════════════════════════════════╗
-# ║          DM SMART LAB AI v4.0 - ULTIMATE EDITION                ║
-# ║     Diagnostic Parasitologique par Intelligence Artificielle     ║
-# ║                                                                  ║
-# ║  Développé par:                                                  ║
-# ║    • Sebbag Mohamed Dhia Eddine (Expert IA & Conception)         ║
-# ║    • Ben Sghir Mohamed (Expert Laboratoire & Données)            ║
-# ║                                                                  ║
-# ║  INFSPM - Ouargla, Algérie                                      ║
-# ╚══════════════════════════════════════════════════════════════════╝
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              DM SMART LAB AI v5.0 - PROFESSIONAL EDITION               ║
+# ║       Diagnostic Parasitologique par Intelligence Artificielle          ║
+# ║                                                                        ║
+# ║  Développé par:                                                        ║
+# ║    • Sebbag Mohamed Dhia Eddine (Expert IA & Conception)               ║
+# ║    • Ben Sghir Mohamed (Expert Laboratoire & Données)                  ║
+# ║                                                                        ║
+# ║  INFSPM - Ouargla, Algérie                                            ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
 
 import streamlit as st
 import numpy as np
@@ -24,29 +24,35 @@ from datetime import datetime, timedelta
 from fpdf import FPDF
 
 # ============================================
-#  1. إعداد الصفحة
+#  1. إعداد الصفحة - تحسين SEO والأداء
 # ============================================
 st.set_page_config(
-    page_title="DM Smart Lab AI",
+    page_title="DM Smart Lab AI - Diagnostic Parasitologique",
     page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/dm-smart-lab',
+        'Report a bug': None,
+        'About': "DM Smart Lab AI v5.0 - Système de diagnostic parasitologique par IA"
+    }
 )
 
 # ============================================
-#  2. الثوابت
+#  2. الثوابت المحسنة
 # ============================================
-APP_VERSION = "4.0.1"  # ✅ تحديث رقم الإصدار بعد التصحيح
-APP_PASSWORD = "123"
+APP_VERSION = "5.0.0"
+APP_PASSWORD_HASH = hashlib.sha256("123".encode()).hexdigest()  # ✅ تشفير كلمة المرور
 MAX_LOGIN_ATTEMPTS = 3
 LOCKOUT_MINUTES = 5
 CONFIDENCE_THRESHOLD = 60
 MODEL_INPUT_SIZE = (224, 224)
 AUTO_LOCK_MINUTES = 15
+MAX_HISTORY = 500  # ✅ حد أقصى للسجل
 
 AUTHORS = {
-    "dev1": {"name": "Sebbag Mohamed Dhia Eddine", "role": "Expert IA & Conception"},
-    "dev2": {"name": "Ben Sghir Mohamed", "role": "Expert Laboratoire & Données"}
+    "dev1": {"name": "Sebbag Mohamed Dhia Eddine", "role": "Expert IA & Conception", "icon": "🧑‍💻"},
+    "dev2": {"name": "Ben Sghir Mohamed", "role": "Expert Laboratoire & Données", "icon": "🔬"}
 }
 
 INSTITUTION = {
@@ -63,14 +69,14 @@ PROJECT_TITLE = (
 )
 
 # ============================================
-#  3. نظام اللغات الكامل
+#  3. نظام اللغات المحسن
 # ============================================
 TRANSLATIONS = {
     "fr": {
         "app_title": "DM SMART LAB AI",
         "app_subtitle": "Où la Science Rencontre l'Intelligence",
         "login_title": "Connexion Sécurisée",
-        "login_subtitle": "Accès Réservé au Personnel Médical",
+        "login_subtitle": "Accès Réservé au Personnel Médical Autorisé",
         "login_user": "Identifiant",
         "login_pass": "Mot de Passe",
         "login_btn": "SE CONNECTER",
@@ -208,12 +214,17 @@ TRANSLATIONS = {
         "pdf_validation": "VALIDATION",
         "pdf_technician": "Technicien de Laboratoire",
         "pdf_disclaimer": "Ce rapport est genere par un systeme d'IA et doit etre valide par un professionnel de sante.",
+        "stats_weekly": "Statistiques Hebdomadaires",
+        "stats_monthly": "Statistiques Mensuelles",
+        "scan_duration": "Durée d'analyse",
+        "scan_image_quality": "Qualité de l'image",
+        "theme_auto": "Thème Automatique",
     },
     "ar": {
         "app_title": "DM SMART LAB AI",
         "app_subtitle": "حيث يلتقي العلم بالذكاء",
         "login_title": "تسجيل الدخول الآمن",
-        "login_subtitle": "الدخول مخصص للكوادر الطبية فقط",
+        "login_subtitle": "الدخول مخصص للكوادر الطبية المعتمدة فقط",
         "login_user": "اسم المستخدم",
         "login_pass": "كلمة المرور",
         "login_btn": "تسجيل الدخول",
@@ -335,12 +346,17 @@ TRANSLATIONS = {
         "pdf_validation": "المصادقة",
         "pdf_technician": "تقني المخبر",
         "pdf_disclaimer": "هذا التقرير مولد بنظام ذكاء اصطناعي.",
+        "stats_weekly": "إحصائيات أسبوعية",
+        "stats_monthly": "إحصائيات شهرية",
+        "scan_duration": "مدة التحليل",
+        "scan_image_quality": "جودة الصورة",
+        "theme_auto": "ثيم تلقائي",
     },
     "en": {
         "app_title": "DM SMART LAB AI",
         "app_subtitle": "Where Science Meets Intelligence",
         "login_title": "Secure Login",
-        "login_subtitle": "Access Reserved for Medical Staff",
+        "login_subtitle": "Access Reserved for Authorized Medical Staff",
         "login_user": "Username",
         "login_pass": "Password",
         "login_btn": "LOG IN",
@@ -462,6 +478,11 @@ TRANSLATIONS = {
         "pdf_validation": "VALIDATION",
         "pdf_technician": "Lab Technician",
         "pdf_disclaimer": "This report is AI-generated.",
+        "stats_weekly": "Weekly Statistics",
+        "stats_monthly": "Monthly Statistics",
+        "scan_duration": "Analysis Duration",
+        "scan_image_quality": "Image Quality",
+        "theme_auto": "Auto Theme",
     }
 }
 
@@ -729,188 +750,95 @@ PARASITE_DB = {
 CLASS_NAMES = list(PARASITE_DB.keys())
 
 # ============================================
-#  5. قاعدة أسئلة الاختبار (Quiz)
+#  5. أسئلة الاختبار
 # ============================================
 QUIZ_QUESTIONS = {
     "fr": [
-        {
-            "q": "Quel parasite est connu sous le nom de 'bague a chaton' dans les hematies?",
-            "options": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"],
-            "answer": 1,
-            "explanation": "Le Plasmodium (agent du paludisme) presente une forme en bague a chaton (signet ring) dans les hematies au stade trophozoite jeune."
-        },
-        {
-            "q": "Le kyste de Giardia possede combien de noyaux?",
-            "options": ["2 noyaux", "4 noyaux", "6 noyaux", "8 noyaux"],
-            "answer": 1,
-            "explanation": "Le kyste mature de Giardia lamblia contient 4 noyaux. Le trophozoite en possede 2."
-        },
-        {
-            "q": "Quel parasite est transmis par le phlebotome?",
-            "options": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"],
-            "answer": 2,
-            "explanation": "La Leishmania est transmise par la piqure du phlebotome (mouche des sables)."
-        },
-        {
-            "q": "L'eperon terminal est caracteristique de quel oeuf?",
-            "options": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"],
-            "answer": 1,
-            "explanation": "L'oeuf de Schistosoma haematobium possede un eperon terminal. S. mansoni a un eperon lateral."
-        },
-        {
-            "q": "Quel examen est urgent en cas de suspicion de paludisme?",
-            "options": ["Coproculture", "ECBU", "Goutte epaisse + Frottis", "Serologie"],
-            "answer": 2,
-            "explanation": "La goutte epaisse et le frottis sanguin sont les examens de reference pour le diagnostic du paludisme. C'est une URGENCE."
-        },
-        {
-            "q": "Le trophozoite d'E. histolytica se distingue par:",
-            "options": ["Ses flagelles", "Ses hematies phagocytees", "Sa membrane ondulante", "Son kinetoplaste"],
-            "answer": 1,
-            "explanation": "La presence d'hematies phagocytees dans le cytoplasme est le critere de pathogenicite d'E. histolytica (forme invasive hematophage)."
-        },
-        {
-            "q": "La maladie de Chagas est causee par:",
-            "options": ["T. brucei gambiense", "T. cruzi", "L. donovani", "P. vivax"],
-            "answer": 1,
-            "explanation": "Trypanosoma cruzi est l'agent de la maladie de Chagas, transmise par les triatomes (reduves)."
-        },
-        {
-            "q": "Quel colorant est utilise pour mettre en evidence les amastigotes de Leishmania?",
-            "options": ["Ziehl-Neelsen", "Gram", "MGG (May-Grunwald-Giemsa)", "Lugol"],
-            "answer": 2,
-            "explanation": "La coloration MGG permet de visualiser les amastigotes avec leur noyau et kinetoplaste caracteristiques."
-        },
-        {
-            "q": "Le Praziquantel est le traitement de reference de:",
-            "options": ["Paludisme", "Amibiase", "Bilharziose", "Giardiose"],
-            "answer": 2,
-            "explanation": "Le Praziquantel est le medicament de choix contre la bilharziose (Schistosoma)."
-        },
-        {
-            "q": "La 'face de hibou' est observee chez:",
-            "options": ["Plasmodium", "Giardia", "Amoeba", "Trypanosoma"],
-            "answer": 1,
-            "explanation": "Le trophozoite de Giardia lamblia vu de face montre 2 noyaux symetriques ressemblant a une face de hibou."
-        }
+        {"q": "Quel parasite est connu sous le nom de 'bague a chaton' dans les hematies?", "options": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "answer": 1, "explanation": "Le Plasmodium presente une forme en bague a chaton dans les hematies.", "difficulty": "easy"},
+        {"q": "Le kyste de Giardia possede combien de noyaux?", "options": ["2 noyaux", "4 noyaux", "6 noyaux", "8 noyaux"], "answer": 1, "explanation": "Le kyste mature de Giardia contient 4 noyaux.", "difficulty": "easy"},
+        {"q": "Quel parasite est transmis par le phlebotome?", "options": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"], "answer": 2, "explanation": "La Leishmania est transmise par le phlebotome.", "difficulty": "medium"},
+        {"q": "L'eperon terminal est caracteristique de quel oeuf?", "options": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"], "answer": 1, "explanation": "L'oeuf de S. haematobium a un eperon terminal.", "difficulty": "medium"},
+        {"q": "Quel examen est urgent en cas de suspicion de paludisme?", "options": ["Coproculture", "ECBU", "Goutte epaisse + Frottis", "Serologie"], "answer": 2, "explanation": "La goutte epaisse et le frottis sanguin sont les examens de reference.", "difficulty": "easy"},
+        {"q": "Le trophozoite d'E. histolytica se distingue par:", "options": ["Ses flagelles", "Ses hematies phagocytees", "Sa membrane ondulante", "Son kinetoplaste"], "answer": 1, "explanation": "La presence d'hematies phagocytees est le critere de pathogenicite.", "difficulty": "hard"},
+        {"q": "La maladie de Chagas est causee par:", "options": ["T. brucei gambiense", "T. cruzi", "L. donovani", "P. vivax"], "answer": 1, "explanation": "Trypanosoma cruzi est l'agent de la maladie de Chagas.", "difficulty": "medium"},
+        {"q": "Quel colorant est utilise pour les amastigotes de Leishmania?", "options": ["Ziehl-Neelsen", "Gram", "MGG (May-Grunwald-Giemsa)", "Lugol"], "answer": 2, "explanation": "La coloration MGG permet de visualiser les amastigotes.", "difficulty": "hard"},
+        {"q": "Le Praziquantel est le traitement de reference de:", "options": ["Paludisme", "Amibiase", "Bilharziose", "Giardiose"], "answer": 2, "explanation": "Le Praziquantel est le traitement de la bilharziose.", "difficulty": "medium"},
+        {"q": "La 'face de hibou' est observee chez:", "options": ["Plasmodium", "Giardia", "Amoeba", "Trypanosoma"], "answer": 1, "explanation": "Le trophozoite de Giardia montre 2 noyaux symetriques.", "difficulty": "easy"}
     ],
     "ar": [
-        {
-            "q": "أي طفيلي يُعرف بشكل 'الخاتم' داخل كريات الدم الحمراء؟",
-            "options": ["الجيارديا", "المتصورة (البلازموديوم)", "الليشمانيا", "الأميبا"],
-            "answer": 1,
-            "explanation": "المتصورة (عامل الملاريا) تظهر بشكل خاتم داخل الكريات الحمراء."
-        },
-        {
-            "q": "كم نواة في كيس الجيارديا الناضج؟",
-            "options": ["2", "4", "6", "8"],
-            "answer": 1,
-            "explanation": "كيس الجيارديا الناضج يحتوي على 4 نوى."
-        },
-        {
-            "q": "أي طفيلي ينتقل عبر ذبابة الرمل؟",
-            "options": ["البلازموديوم", "التريبانوسوما", "الليشمانيا", "البلهارسيا"],
-            "answer": 2,
-            "explanation": "الليشمانيا تنتقل عبر لدغة ذبابة الرمل (الفليبوتوم)."
-        },
-        {
-            "q": "النتوء الطرفي يميز بيضة أي طفيلي؟",
-            "options": ["الأسكاريس", "البلهارسيا الدموية", "البلهارسيا المنسونية", "الشريطية"],
-            "answer": 1,
-            "explanation": "بيضة البلهارسيا الدموية لها نتوء طرفي. المنسونية لها نتوء جانبي."
-        },
-        {
-            "q": "ما الفحص العاجل عند الاشتباه بالملاريا؟",
-            "options": ["زرع براز", "فحص بول", "قطرة سميكة + لطاخة", "مصلية"],
-            "answer": 2,
-            "explanation": "القطرة السميكة واللطاخة الدموية هما الفحصان المرجعيان للملاريا."
-        }
+        {"q": "أي طفيلي يُعرف بشكل 'الخاتم' داخل كريات الدم الحمراء؟", "options": ["الجيارديا", "المتصورة (البلازموديوم)", "الليشمانيا", "الأميبا"], "answer": 1, "explanation": "المتصورة تظهر بشكل خاتم داخل الكريات الحمراء.", "difficulty": "easy"},
+        {"q": "كم نواة في كيس الجيارديا الناضج؟", "options": ["2", "4", "6", "8"], "answer": 1, "explanation": "كيس الجيارديا الناضج يحتوي على 4 نوى.", "difficulty": "easy"},
+        {"q": "أي طفيلي ينتقل عبر ذبابة الرمل؟", "options": ["البلازموديوم", "التريبانوسوما", "الليشمانيا", "البلهارسيا"], "answer": 2, "explanation": "الليشمانيا تنتقل عبر ذبابة الرمل.", "difficulty": "medium"},
+        {"q": "النتوء الطرفي يميز بيضة أي طفيلي؟", "options": ["الأسكاريس", "البلهارسيا الدموية", "البلهارسيا المنسونية", "الشريطية"], "answer": 1, "explanation": "بيضة البلهارسيا الدموية لها نتوء طرفي.", "difficulty": "medium"},
+        {"q": "ما الفحص العاجل عند الاشتباه بالملاريا؟", "options": ["زرع براز", "فحص بول", "قطرة سميكة + لطاخة", "مصلية"], "answer": 2, "explanation": "القطرة السميكة واللطاخة هما الفحصان المرجعيان.", "difficulty": "easy"}
     ],
     "en": [
-        {
-            "q": "Which parasite shows a 'signet ring' form in RBCs?",
-            "options": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"],
-            "answer": 1,
-            "explanation": "Plasmodium shows a signet ring form inside RBCs at the young trophozoite stage."
-        },
-        {
-            "q": "How many nuclei does a mature Giardia cyst have?",
-            "options": ["2", "4", "6", "8"],
-            "answer": 1,
-            "explanation": "A mature Giardia cyst contains 4 nuclei."
-        },
-        {
-            "q": "Which parasite is transmitted by the sandfly?",
-            "options": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"],
-            "answer": 2,
-            "explanation": "Leishmania is transmitted by the sandfly (phlebotomus) bite."
-        },
-        {
-            "q": "The terminal spine is characteristic of which egg?",
-            "options": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"],
-            "answer": 1,
-            "explanation": "S. haematobium egg has a terminal spine. S. mansoni has a lateral spine."
-        },
-        {
-            "q": "What is the urgent test for suspected malaria?",
-            "options": ["Stool culture", "Urinalysis", "Thick smear + Thin smear", "Serology"],
-            "answer": 2,
-            "explanation": "Thick and thin blood smears are the gold standard for malaria diagnosis."
-        }
+        {"q": "Which parasite shows a 'signet ring' form in RBCs?", "options": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "answer": 1, "explanation": "Plasmodium shows a signet ring form inside RBCs.", "difficulty": "easy"},
+        {"q": "How many nuclei does a mature Giardia cyst have?", "options": ["2", "4", "6", "8"], "answer": 1, "explanation": "A mature Giardia cyst contains 4 nuclei.", "difficulty": "easy"},
+        {"q": "Which parasite is transmitted by the sandfly?", "options": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"], "answer": 2, "explanation": "Leishmania is transmitted by the sandfly.", "difficulty": "medium"},
+        {"q": "The terminal spine is characteristic of which egg?", "options": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"], "answer": 1, "explanation": "S. haematobium egg has a terminal spine.", "difficulty": "medium"},
+        {"q": "What is the urgent test for suspected malaria?", "options": ["Stool culture", "Urinalysis", "Thick smear + Thin smear", "Serology"], "answer": 2, "explanation": "Thick and thin blood smears are the gold standard.", "difficulty": "easy"}
     ]
 }
 
 # ============================================
-#  6. قاعدة بيانات الشات بوت
+#  6. الشات بوت
 # ============================================
 CHATBOT_KNOWLEDGE = {
     "fr": {
         "keywords": {
             "amoeba": "L'Entamoeba histolytica est un parasite causant la dysenterie amibienne. Diagnostic: kystes a 4 noyaux ou trophozoites hematophages. Traitement: Metronidazole.",
-            "amibe": "L'Entamoeba histolytica est un parasite causant la dysenterie amibienne. Diagnostic: kystes a 4 noyaux ou trophozoites hematophages. Traitement: Metronidazole.",
-            "giardia": "Giardia lamblia colonise le duodenum. Forme en cerf-volant avec face de hibou. Cause malabsorption. Traitement: Metronidazole/Tinidazole.",
-            "leishmania": "Leishmania est transmise par le phlebotome. Formes: cutanee et viscerale. Diagnostic: amastigotes dans les macrophages. Traitement: Glucantime.",
-            "plasmodium": "URGENCE ! Le Plasmodium cause le paludisme. Forme en bague dans les hematies. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
-            "malaria": "URGENCE ! Le Plasmodium cause le paludisme. Forme en bague dans les hematies. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
-            "paludisme": "URGENCE ! Le Plasmodium cause le paludisme. Forme en bague dans les hematies. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
+            "amibe": "L'Entamoeba histolytica cause la dysenterie amibienne. Traitement: Metronidazole.",
+            "giardia": "Giardia lamblia colonise le duodenum. Forme en cerf-volant. Traitement: Metronidazole/Tinidazole.",
+            "leishmania": "Leishmania transmise par le phlebotome. Formes: cutanee et viscerale. Traitement: Glucantime.",
+            "plasmodium": "URGENCE ! Le Plasmodium cause le paludisme. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
+            "malaria": "URGENCE ! Le Plasmodium cause le paludisme. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
+            "paludisme": "URGENCE ! Le Plasmodium cause le paludisme. Diagnostic: frottis + goutte epaisse. Traitement: ACT.",
             "trypanosoma": "Trypanosoma cause la maladie du sommeil (brucei) ou de Chagas (cruzi). Forme en S avec membrane ondulante.",
-            "schistosoma": "Schistosoma cause la bilharziose. Oeufs avec eperon terminal (haematobium) ou lateral (mansoni). Traitement: Praziquantel.",
-            "bilharziose": "La bilharziose est causee par Schistosoma. Contamination dans les eaux douces. Diagnostic: oeufs dans les urines/selles.",
+            "schistosoma": "Schistosoma cause la bilharziose. Oeufs avec eperon. Traitement: Praziquantel.",
+            "bilharziose": "La bilharziose est causee par Schistosoma. Contamination dans les eaux douces.",
             "bonjour": "Bonjour ! Je suis Dr. DhiaBot, votre assistant parasitologique. Comment puis-je vous aider ?",
-            "merci": "De rien ! C'est mon plaisir de vous aider. N'hesitez pas si vous avez d'autres questions !",
-            "microscope": "Le microscope optique est l'outil principal en parasitologie. Objectif x10 pour le reperage, x40 pour l'identification, x100 (immersion) pour les details.",
-            "coloration": "Les principales colorations: MGG pour les hematies, Lugol pour les selles, Ziehl-Neelsen pour les cryptosporidies.",
-            "selle": "L'examen parasitologique des selles (EPS) comprend: examen macroscopique, microscopique direct, et apres concentration.",
-            "sang": "L'examen du sang pour les parasites: frottis sanguin mince + goutte epaisse. Coloration MGG ou Giemsa.",
-            "hygiene": "Conseils d'hygiene: lavage des mains, eau potable, cuisson des aliments, protection contre les insectes vecteurs.",
+            "merci": "De rien ! N'hesitez pas si vous avez d'autres questions !",
+            "microscope": "Le microscope optique: x10 pour reperage, x40 pour identification, x100 (immersion) pour details.",
+            "coloration": "Principales colorations: MGG pour hematies, Lugol pour selles, Ziehl-Neelsen pour cryptosporidies.",
+            "selle": "L'EPS comprend: examen macroscopique, microscopique direct, et apres concentration.",
+            "sang": "Examen du sang: frottis mince + goutte epaisse. Coloration MGG ou Giemsa.",
+            "hygiene": "Conseils: lavage des mains, eau potable, cuisson des aliments, protection contre insectes.",
+            "diagnostic": "Le diagnostic parasitologique repose sur l'examen direct, les techniques de concentration et parfois la serologie.",
+            "traitement": "Le traitement depend du parasite: Metronidazole (amibes, Giardia), ACT (paludisme), Praziquantel (bilharziose).",
+            "prevention": "Prevention: hygiene des mains, eau potable, cuisson adequte, moustiquaires, controle des vecteurs.",
         },
-        "default": "Je suis Dr. DhiaBot. Je connais les parasites suivants: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma. Posez-moi une question specifique !",
-        "greeting": "Bonjour ! Je suis Dr. DhiaBot 🤖 votre assistant parasitologique intelligent. Posez-moi vos questions !"
+        "default": "Je suis Dr. DhiaBot. Posez-moi une question sur: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, ou sur les techniques de diagnostic !",
+        "greeting": "Bonjour ! 🤖 Je suis **Dr. DhiaBot**, votre assistant parasitologique intelligent. Posez-moi vos questions !"
     },
     "ar": {
         "keywords": {
-            "أميبا": "الأميبا الحالّة للنسج تسبب الزحار الأميبي. التشخيص: أكياس بـ 4 نوى أو أطوار غاذية آكلة للكريات. العلاج: ميترونيدازول.",
-            "جيارديا": "الجيارديا تستعمر الاثني عشر. شكل طائرة ورقية بوجه بومة. تسبب سوء الامتصاص. العلاج: ميترونيدازول.",
-            "ليشمانيا": "الليشمانيا تنتقل عبر ذبابة الرمل. أشكال جلدية وحشوية. العلاج: غلوكانتيم.",
-            "ملاريا": "حالة طوارئ! المتصورة تسبب الملاريا. شكل خاتم في الكريات. العلاج: ACT.",
-            "بلهارسيا": "البلهارسيا تنتقل في المياه العذبة. بيض بنتوء طرفي أو جانبي. العلاج: برازيكوانتيل.",
-            "مرحبا": "مرحباً! أنا الدكتور ضياء بوت، مساعدك في علم الطفيليات. كيف يمكنني مساعدتك؟",
+            "أميبا": "الأميبا الحالّة للنسج تسبب الزحار الأميبي. التشخيص: أكياس بـ 4 نوى. العلاج: ميترونيدازول.",
+            "جيارديا": "الجيارديا تستعمر الاثني عشر. تسبب سوء الامتصاص. العلاج: ميترونيدازول.",
+            "ليشمانيا": "الليشمانيا تنتقل عبر ذبابة الرمل. العلاج: غلوكانتيم.",
+            "ملاريا": "حالة طوارئ! المتصورة تسبب الملاريا. العلاج: ACT.",
+            "بلهارسيا": "البلهارسيا تنتقل في المياه العذبة. العلاج: برازيكوانتيل.",
+            "مرحبا": "مرحباً! أنا الدكتور ضياء بوت، مساعدك في علم الطفيليات!",
+            "شكرا": "عفواً! لا تتردد في السؤال مجدداً!",
         },
-        "default": "أنا الدكتور ضياء بوت. أعرف الطفيليات التالية: أميبا، جيارديا، ليشمانيا، بلازموديوم، تريبانوسوما، بلهارسيا.",
-        "greeting": "مرحباً! أنا الدكتور ضياء بوت 🤖 مساعدك الذكي. اسألني!"
+        "default": "أنا الدكتور ضياء بوت. اسألني عن: أميبا، جيارديا، ليشمانيا، بلازموديوم، تريبانوسوما، بلهارسيا.",
+        "greeting": "مرحباً! 🤖 أنا **الدكتور ضياء بوت**، مساعدك الذكي. اسألني!"
     },
     "en": {
         "keywords": {
-            "amoeba": "E. histolytica causes amoebic dysentery. Diagnosis: 4-nuclei cysts or hematophagous trophozoites. Treatment: Metronidazole.",
-            "giardia": "Giardia colonizes the duodenum. Kite-shaped with owl face. Treatment: Metronidazole/Tinidazole.",
-            "leishmania": "Leishmania transmitted by sandfly. Cutaneous and visceral forms. Treatment: Glucantime.",
-            "malaria": "EMERGENCY! Plasmodium causes malaria. Signet ring in RBCs. Treatment: ACT.",
-            "plasmodium": "EMERGENCY! Plasmodium causes malaria. Signet ring in RBCs. Treatment: ACT.",
-            "schistosoma": "Schistosoma causes bilharziasis. Eggs with terminal/lateral spine. Treatment: Praziquantel.",
-            "hello": "Hello! I'm Dr. DhiaBot, your parasitology assistant. How can I help?",
+            "amoeba": "E. histolytica causes amoebic dysentery. Diagnosis: 4-nuclei cysts. Treatment: Metronidazole.",
+            "giardia": "Giardia colonizes the duodenum. Kite-shaped. Treatment: Metronidazole/Tinidazole.",
+            "leishmania": "Leishmania transmitted by sandfly. Treatment: Glucantime.",
+            "malaria": "EMERGENCY! Plasmodium causes malaria. Treatment: ACT.",
+            "plasmodium": "EMERGENCY! Plasmodium causes malaria. Treatment: ACT.",
+            "schistosoma": "Schistosoma causes bilharziasis. Treatment: Praziquantel.",
+            "hello": "Hello! I'm Dr. DhiaBot, your parasitology assistant!",
+            "thanks": "You're welcome! Don't hesitate to ask more!",
+            "diagnosis": "Parasitological diagnosis relies on direct examination, concentration techniques and sometimes serology.",
+            "treatment": "Treatment depends on parasite: Metronidazole (amoeba, Giardia), ACT (malaria), Praziquantel (schistosomiasis).",
         },
-        "default": "I'm Dr. DhiaBot. I know: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma.",
-        "greeting": "Hello! I'm Dr. DhiaBot 🤖 your smart assistant. Ask me anything!"
+        "default": "I'm Dr. DhiaBot. Ask me about: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma.",
+        "greeting": "Hello! 🤖 I'm **Dr. DhiaBot**, your smart parasitology assistant. Ask me anything!"
     }
 }
 
@@ -918,40 +846,40 @@ DAILY_TIPS = {
     "fr": [
         "💡 Toujours examiner les selles dans les 30 minutes suivant le prelevement pour voir les formes vegetatives mobiles.",
         "💡 Le Lugol aide a mettre en evidence les noyaux des kystes d'amibes.",
-        "💡 Un frottis sanguin doit etre fin (monocolique) pour bien identifier les Plasmodium.",
-        "💡 La goutte epaisse est 10x plus sensible que le frottis mince pour detecter les parasites sanguins.",
-        "💡 Les oeufs de Schistosoma haematobium se cherchent dans les urines de midi (pic d'excretion).",
-        "💡 Pensez a faire 3 EPS a quelques jours d'intervalle pour augmenter la sensibilite.",
+        "💡 Un frottis sanguin doit etre fin pour bien identifier les Plasmodium.",
+        "💡 La goutte epaisse est 10x plus sensible que le frottis mince.",
+        "💡 Les oeufs de S. haematobium se cherchent dans les urines de midi.",
+        "💡 Pensez a faire 3 EPS a quelques jours d'intervalle.",
         "💡 Le Metronidazole est le traitement de base pour Amoeba, Giardia et Trichomonas.",
         "💡 La coloration de Ziehl-Neelsen modifiee est utile pour Cryptosporidium.",
-        "💡 En cas de paludisme, la premiere goutte epaisse negative ne suffit pas a exclure le diagnostic.",
-        "💡 Le phlebotome est actif au crepuscule - conseillez les moustiquaires aux patients.",
+        "💡 Une goutte epaisse negative ne suffit pas a exclure le paludisme.",
+        "💡 Le phlebotome est actif au crepuscule - conseillez les moustiquaires.",
     ],
     "ar": [
         "💡 افحص البراز خلال 30 دقيقة من الأخذ لرؤية الأطوار المتحركة.",
         "💡 اللوغول يساعد في إظهار نوى أكياس الأميبا.",
         "💡 اللطاخة الدموية يجب أن تكون رقيقة لتحديد البلازموديوم.",
         "💡 القطرة السميكة أكثر حساسية 10 مرات من اللطاخة الرقيقة.",
-        "💡 ابحث عن بيض البلهارسيا في بول الظهيرة (ذروة الإفراز).",
+        "💡 ابحث عن بيض البلهارسيا في بول الظهيرة.",
     ],
     "en": [
-        "💡 Always examine stool within 30 minutes of collection to see motile trophozoites.",
+        "💡 Always examine stool within 30 minutes of collection.",
         "💡 Lugol helps visualize amoebic cyst nuclei.",
         "💡 Blood smear must be thin for proper Plasmodium identification.",
-        "💡 Thick smear is 10x more sensitive than thin smear for blood parasites.",
-        "💡 Search for S. haematobium eggs in midday urine (peak excretion).",
+        "💡 Thick smear is 10x more sensitive than thin smear.",
+        "💡 Search for S. haematobium eggs in midday urine.",
     ]
 }
 
 # ============================================
-#  7. تهيئة حالة الجلسة
+#  7. تهيئة حالة الجلسة - ✅ الوضع الليلي افتراضي
 # ============================================
 SESSION_DEFAULTS = {
     "logged_in": False,
     "user_name": "",
     "intro_step": 0,
     "history": [],
-    "dark_mode": False,
+    "dark_mode": True,  # ✅ الوضع الليلي افتراضي
     "last_audio_hash": "",
     "login_attempts": 0,
     "lockout_until": None,
@@ -961,27 +889,29 @@ SESSION_DEFAULTS = {
     "chat_history": [],
     "last_activity": None,
     "splash_shown": False,
-    "balloons_shown": False,  # ✅ إصلاح #17: منع تكرار البالونات
-    "demo_seed": None,  # ✅ إصلاح #8: تثبيت نتائج العشوائي في وضع الديمو
-    "heatmap_seed": None,  # ✅ إصلاح #10: تثبيت الخريطة الحرارية
+    "balloons_shown": False,
+    "demo_seed": None,
+    "heatmap_seed": None,
+    "scan_count": 0,
+    "session_start": None,
 }
 
 for key, val in SESSION_DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
+if st.session_state.session_start is None:
+    st.session_state.session_start = datetime.now()
 
 # ============================================
-#  8. الدوال المساعدة
+#  8. الدوال المساعدة المحسنة
 # ============================================
 def t(key):
-    """✅ ترجمة آمنة مع fallback"""
     lang = st.session_state.get("lang", "fr")
     trans = TRANSLATIONS.get(lang, TRANSLATIONS["fr"])
     return trans.get(key, TRANSLATIONS["fr"].get(key, key))
 
 def get_p_text(data, field):
-    """✅ استخراج نص حسب اللغة مع التعامل مع أنواع مختلفة"""
     lang = st.session_state.get("lang", "fr")
     val = data.get(field, {})
     if isinstance(val, dict):
@@ -1017,9 +947,11 @@ def log_activity(action):
         "action": action
     })
     st.session_state.last_activity = datetime.now()
+    # ✅ حد أقصى للسجل
+    if len(st.session_state.activity_log) > MAX_HISTORY:
+        st.session_state.activity_log = st.session_state.activity_log[-MAX_HISTORY:]
 
 def check_auto_lock():
-    """✅ إصلاح #11: تطبيق القفل التلقائي"""
     if st.session_state.last_activity:
         elapsed = (datetime.now() - st.session_state.last_activity).total_seconds() / 60
         if elapsed > AUTO_LOCK_MINUTES:
@@ -1028,8 +960,16 @@ def check_auto_lock():
             st.session_state.intro_step = 0
             st.rerun()
 
+def get_session_duration():
+    """✅ حساب مدة الجلسة"""
+    if st.session_state.session_start:
+        delta = datetime.now() - st.session_state.session_start
+        hours, remainder = divmod(int(delta.total_seconds()), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+    return "00:00:00"
+
 def speak(text, lang_code=None):
-    """✅ إصلاح #13 و #22: صوت مع fallback وإمكانية إعادة التشغيل"""
     if lang_code is None:
         lang_code = st.session_state.get("lang", "fr")
     try:
@@ -1044,13 +984,11 @@ def speak(text, lang_code=None):
             f'<source src="data:audio/mp3;base64,{b64}" type="audio/mpeg"></audio>',
             unsafe_allow_html=True
         )
-        # ✅ إصلاح #23: تنظيف موثوق للملفات المؤقتة
         try:
             os.remove(fname)
         except OSError:
             pass
     except ImportError:
-        # ✅ إصلاح #22: إذا لم يكن gtts مثبتاً، استخدم JavaScript TTS
         safe_text = text.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
         js_lang = {"fr": "fr-FR", "ar": "ar-SA", "en": "en-US"}.get(lang_code, "fr-FR")
         st.markdown(
@@ -1064,19 +1002,17 @@ def speak(text, lang_code=None):
             unsafe_allow_html=True
         )
     except Exception:
-        pass  # Fail silently
+        pass
 
 def chatbot_reply(user_msg):
     lang = st.session_state.get("lang", "fr")
     kb = CHATBOT_KNOWLEDGE.get(lang, CHATBOT_KNOWLEDGE["fr"])
     msg_lower = user_msg.lower().strip()
 
-    # ✅ بحث محسّن: التحقق من الكلمات المفتاحية
     for keyword, response in kb["keywords"].items():
         if keyword in msg_lower:
             return response
 
-    # بحث في قاعدة الطفيليات
     for name, data in PARASITE_DB.items():
         if name == "Negative":
             continue
@@ -1090,23 +1026,18 @@ def chatbot_reply(user_msg):
     return kb["default"]
 
 def generate_heatmap_overlay(image, seed=None):
-    """✅ إصلاح #10: خريطة حرارية ثابتة مع seed"""
     img = image.copy()
     width, height = img.size
-
     if seed is None:
         seed = st.session_state.get("heatmap_seed")
         if seed is None:
             seed = random.randint(0, 999999)
             st.session_state.heatmap_seed = seed
-
     rng = random.Random(seed)
     heatmap = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(heatmap)
-
     cx = width // 2 + rng.randint(-width//6, width//6)
     cy = height // 2 + rng.randint(-height//6, height//6)
-
     max_r = min(width, height) // 3
     for r in range(max_r, 0, -3):
         alpha = max(0, min(180, int(180 * (1 - r / max_r))))
@@ -1118,9 +1049,30 @@ def generate_heatmap_overlay(image, seed=None):
         else:
             color = (255, 0, 0, alpha)
         draw.ellipse([cx-r, cy-r, cx+r, cy+r], fill=color)
-
     result = Image.alpha_composite(img.convert('RGBA'), heatmap)
     return result.convert('RGB')
+
+def assess_image_quality(image):
+    """✅ تقييم جودة الصورة"""
+    gray = np.array(ImageOps.grayscale(image))
+    brightness = np.mean(gray)
+    contrast = np.std(gray)
+    sharpness = np.mean(np.abs(np.diff(gray.astype(float), axis=0))) + np.mean(np.abs(np.diff(gray.astype(float), axis=1)))
+    score = min(100, int((contrast / 80) * 40 + (sharpness / 30) * 30 + (1 - abs(brightness - 128) / 128) * 30))
+    if score >= 80:
+        quality = {"fr": "Excellente", "ar": "ممتازة", "en": "Excellent"}
+        color = "#22c55e"
+    elif score >= 60:
+        quality = {"fr": "Bonne", "ar": "جيدة", "en": "Good"}
+        color = "#3b82f6"
+    elif score >= 40:
+        quality = {"fr": "Moyenne", "ar": "متوسطة", "en": "Average"}
+        color = "#f59e0b"
+    else:
+        quality = {"fr": "Faible", "ar": "ضعيفة", "en": "Poor"}
+        color = "#ef4444"
+    lang = st.session_state.get("lang", "fr")
+    return score, quality.get(lang, quality["fr"]), color
 
 
 # ============================================
@@ -1128,27 +1080,20 @@ def generate_heatmap_overlay(image, seed=None):
 # ============================================
 @st.cache_resource(show_spinner=False)
 def load_ai_model():
-    """✅ إصلاح #5: تحميل أفضل للنموذج مع معالجة أخطاء"""
     model = None
     model_name = None
     try:
         import tensorflow as tf
-
-        # ✅ إصلاح #19: التعامل الآمن مع listdir
         try:
             files = os.listdir(".")
         except OSError:
             files = []
-
-        # البحث عن نموذج Keras أولاً
         for ext in [".h5", ".keras"]:
             found = [f for f in files if f.endswith(ext)]
             if found:
                 model_name = found[0]
                 model = tf.keras.models.load_model(model_name, compile=False)
                 break
-
-        # البحث عن TFLite إذا لم يوجد Keras
         if model is None:
             tflite = [f for f in files if f.endswith(".tflite")]
             if tflite:
@@ -1156,28 +1101,23 @@ def load_ai_model():
                 model = tf.lite.Interpreter(model_path=model_name)
                 model.allocate_tensors()
     except ImportError:
-        pass  # TensorFlow غير مثبت
+        pass
     except Exception:
-        pass  # أي خطأ آخر
+        pass
     return model, model_name
 
 def predict_image(model, image):
-    """✅ إصلاح #8: نتائج ديمو ثابتة"""
     result = {
         "label": "Negative", "confidence": 0,
         "all_predictions": {}, "is_reliable": False,
         "is_demo": False, "info": PARASITE_DB["Negative"]
     }
     if model is None:
-        # ✅ إصلاح #8: استخدام seed ثابت للصورة نفسها
         if st.session_state.get("demo_seed") is None:
             st.session_state.demo_seed = random.randint(0, 999999)
         rng = random.Random(st.session_state.demo_seed)
-
         demo_label = rng.choice(CLASS_NAMES)
         demo_conf = rng.randint(65, 97)
-
-        # توليد احتمالات ديمو واقعية
         all_preds = {}
         remaining = 100.0 - demo_conf
         for cls in CLASS_NAMES:
@@ -1186,7 +1126,6 @@ def predict_image(model, image):
             else:
                 val = round(rng.uniform(0, remaining / max(1, len(CLASS_NAMES) - 1)), 1)
                 all_preds[cls] = val
-
         result.update({
             "label": demo_label, "confidence": demo_conf,
             "all_predictions": all_preds,
@@ -1195,13 +1134,11 @@ def predict_image(model, image):
             "info": PARASITE_DB.get(demo_label, PARASITE_DB["Negative"])
         })
         return result
-
     try:
         import tensorflow as tf
         img = ImageOps.fit(image, MODEL_INPUT_SIZE, Image.LANCZOS)
         arr = np.asarray(img).astype(np.float32) / 127.5 - 1.0
         batch = np.expand_dims(arr, 0)
-
         if isinstance(model, tf.lite.Interpreter):
             inp = model.get_input_details()
             out = model.get_output_details()
@@ -1210,12 +1147,10 @@ def predict_image(model, image):
             preds = model.get_tensor(out[0]['index'])[0]
         else:
             preds = model.predict(batch, verbose=0)[0]
-
         idx = int(np.argmax(preds))
         conf = int(preds[idx] * 100)
         label = CLASS_NAMES[idx] if idx < len(CLASS_NAMES) else "Negative"
         all_p = {CLASS_NAMES[i]: round(float(preds[i])*100, 1) for i in range(min(len(preds), len(CLASS_NAMES)))}
-
         result.update({
             "label": label, "confidence": conf,
             "all_predictions": all_p,
@@ -1242,7 +1177,7 @@ def apply_enhanced_contrast(image):
 
 
 # ============================================
-#  10. PDF احترافي - ✅ إصلاح #6 و #14
+#  10. PDF احترافي
 # ============================================
 class MedicalPDF(FPDF):
     def __init__(self):
@@ -1268,7 +1203,7 @@ class MedicalPDF(FPDF):
         self.ln(3)
         self.set_font("Arial", "I", 8)
         self.set_text_color(100, 116, 139)
-        self.cell(0, 5, f"DM Smart Lab AI v{APP_VERSION}", 0, 0, "L")
+        self.cell(0, 5, f"DM Smart Lab AI v{APP_VERSION} - Professional Edition", 0, 0, "L")
         self.cell(0, 5, f"Page {self.page_no()}/{{nb}}", 0, 0, "R")
 
     def section_title(self, title):
@@ -1285,21 +1220,16 @@ class MedicalPDF(FPDF):
         self.cell(55, 7, label, 0, 0)
         self.set_font("Arial", "", 10)
         self.set_text_color(0, 0, 0)
-        # ✅ إصلاح #6: تنظيف النص من الأحرف غير المدعومة
         safe_val = _safe_pdf_text(str(value))
         self.cell(0, 7, safe_val, 0, 1)
 
     def safe_multi_cell(self, w, h, txt, border=0, align='L'):
-        """✅ multi_cell آمن"""
         self.multi_cell(w, h, _safe_pdf_text(txt), border, align)
 
 
 def _safe_pdf_text(text):
-    """✅ إصلاح #6 و #14: تحويل النص ليكون متوافقاً مع FPDF (latin-1)
-    يزيل أو يستبدل الأحرف غير المدعومة"""
     if not text:
         return ""
-    # استبدال الأحرف الشائعة
     replacements = {
         'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
         'à': 'a', 'â': 'a', 'ä': 'a',
@@ -1318,8 +1248,6 @@ def _safe_pdf_text(text):
     }
     for orig, repl in replacements.items():
         text = text.replace(orig, repl)
-
-    # إزالة أي حرف خارج latin-1
     result = []
     for ch in text:
         try:
@@ -1335,7 +1263,6 @@ def generate_pdf(patient, label, conf, info):
     pdf.alias_nb_pages()
     pdf.add_page()
 
-    # العنوان
     pdf.set_font("Arial", "B", 18)
     pdf.set_text_color(37, 99, 235)
     pdf.cell(0, 12, _safe_pdf_text(t("pdf_title")), 0, 1, "C")
@@ -1344,14 +1271,13 @@ def generate_pdf(patient, label, conf, info):
     pdf.cell(0, 6, _safe_pdf_text(t("pdf_subtitle")), 0, 1, "C")
     pdf.ln(8)
 
-    # بيانات المريض
     pdf.section_title(_safe_pdf_text(t("pdf_patient_section")))
     for k, v in patient.items():
         pdf.info_line(f"{k} :", str(v))
     pdf.info_line("Date :", datetime.now().strftime("%d/%m/%Y"))
+    pdf.info_line("Heure :", datetime.now().strftime("%H:%M"))
     pdf.ln(5)
 
-    # النتيجة
     pdf.section_title(_safe_pdf_text(t("pdf_result_section")))
     pdf.ln(2)
     pdf.set_font("Arial", "B", 16)
@@ -1366,7 +1292,6 @@ def generate_pdf(patient, label, conf, info):
     pdf.set_text_color(0, 0, 0)
     pdf.ln(3)
 
-    # التفاصيل
     pdf.set_font("Arial", "", 10)
     morpho_text = get_p_text(info, 'morphology')
     pdf.safe_multi_cell(0, 6, f"Morphologie: {morpho_text}")
@@ -1375,14 +1300,12 @@ def generate_pdf(patient, label, conf, info):
     pdf.safe_multi_cell(0, 6, f"Description: {desc_text}")
     pdf.ln(5)
 
-    # التوصيات
     pdf.section_title(_safe_pdf_text(t("pdf_advice_section")))
     pdf.set_font("Arial", "", 10)
     advice_text = get_p_text(info, "advice")
     pdf.safe_multi_cell(0, 6, advice_text)
     pdf.ln(3)
 
-    # الفحوصات الإضافية
     extra = get_p_text(info, "extra_tests")
     if isinstance(extra, list) and extra:
         pdf.set_font("Arial", "B", 10)
@@ -1392,8 +1315,6 @@ def generate_pdf(patient, label, conf, info):
             pdf.cell(0, 6, f"  - {_safe_pdf_text(test)}", 0, 1)
 
     pdf.ln(10)
-
-    # التوقيعات
     pdf.section_title(_safe_pdf_text(t("pdf_validation")))
     pdf.ln(5)
     pdf.set_font("Arial", "B", 10)
@@ -1405,7 +1326,6 @@ def generate_pdf(patient, label, conf, info):
     pdf.cell(95, 7, _safe_pdf_text(AUTHORS["dev2"]["name"]), 0, 1)
     pdf.ln(12)
 
-    # إخلاء المسؤولية
     pdf.set_font("Arial", "I", 8)
     pdf.set_text_color(150, 150, 150)
     pdf.safe_multi_cell(0, 5, t("pdf_disclaimer"))
@@ -1414,219 +1334,435 @@ def generate_pdf(patient, label, conf, info):
 
 
 # ============================================
-#  11. التصميم CSS
+#  11. التصميم CSS المحسن - ✅ وضع ليلي احترافي
 # ============================================
 def apply_full_theme():
-    dm = st.session_state.get("dark_mode", False)
+    dm = st.session_state.get("dark_mode", True)  # ✅ الليلي افتراضي
     if dm:
-        bg, bg2, card = "#050a15", "#0a1628", "#0f1d32"
-        text, muted, border = "#e2e8f0", "#64748b", "#1e3a5f"
-        primary, primary_dk = "#3b82f6", "#1d4ed8"
-        primary_glow = "rgba(59,130,246,0.15)"
+        bg = "#030712"
+        bg2 = "#0a0f1e"
+        card = "#0d1425"
+        text = "#e2e8f0"
+        muted = "#64748b"
+        border = "#1e293b"
+        primary = "#3b82f6"
+        primary_dk = "#2563eb"
+        primary_glow = "rgba(59,130,246,0.12)"
         accent = "#06b6d4"
-        sidebar_bg, sidebar_border = "#030712", "#1e293b"
-        input_bg = "#0f1d32"
-        grad1, grad2, grad3 = "#0a1628", "#050a15", "#0f1d32"
-        dot_clr = "rgba(59,130,246,0.06)"
-        shadow = "rgba(0,0,0,0.5)"
-        glass, glass_b = "rgba(15,29,50,0.85)", "rgba(59,130,246,0.15)"
+        accent2 = "#8b5cf6"
+        sidebar_bg = "#020617"
+        sidebar_border = "#1e293b"
+        input_bg = "#0d1425"
+        grad1 = "#0a1628"
+        grad2 = "#030712"
+        grad3 = "#0c1631"
+        dot_clr = "rgba(59,130,246,0.04)"
+        shadow = "rgba(0,0,0,0.6)"
+        glass = "rgba(13,20,37,0.88)"
+        glass_b = "rgba(59,130,246,0.12)"
+        success_bg = "rgba(34,197,94,0.08)"
+        warning_bg = "rgba(245,158,11,0.08)"
+        error_bg = "rgba(239,68,68,0.08)"
+        info_bg = "rgba(59,130,246,0.08)"
     else:
-        bg, bg2, card = "#f0f4f8", "#ffffff", "#ffffff"
-        text, muted, border = "#0f172a", "#64748b", "#e2e8f0"
-        primary, primary_dk = "#2563eb", "#1e40af"
-        primary_glow = "rgba(37,99,235,0.1)"
+        bg = "#f8fafc"
+        bg2 = "#ffffff"
+        card = "#ffffff"
+        text = "#0f172a"
+        muted = "#64748b"
+        border = "#e2e8f0"
+        primary = "#2563eb"
+        primary_dk = "#1d4ed8"
+        primary_glow = "rgba(37,99,235,0.08)"
         accent = "#0891b2"
-        sidebar_bg, sidebar_border = "#f8fafc", "#e2e8f0"
+        accent2 = "#7c3aed"
+        sidebar_bg = "#f1f5f9"
+        sidebar_border = "#e2e8f0"
         input_bg = "#ffffff"
-        grad1, grad2, grad3 = "#dbeafe", "#f0f4f8", "#e0f2fe"
-        dot_clr = "rgba(37,99,235,0.04)"
-        shadow = "rgba(0,0,0,0.06)"
-        glass, glass_b = "rgba(255,255,255,0.9)", "rgba(37,99,235,0.12)"
+        grad1 = "#dbeafe"
+        grad2 = "#f8fafc"
+        grad3 = "#e0f2fe"
+        dot_clr = "rgba(37,99,235,0.03)"
+        shadow = "rgba(0,0,0,0.04)"
+        glass = "rgba(255,255,255,0.92)"
+        glass_b = "rgba(37,99,235,0.1)"
+        success_bg = "rgba(34,197,94,0.06)"
+        warning_bg = "rgba(245,158,11,0.06)"
+        error_bg = "rgba(239,68,68,0.06)"
+        info_bg = "rgba(37,99,235,0.06)"
 
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
+    /* ═══════════ الأساسيات ═══════════ */
     html, body, [class*="css"], p, span, label, div, li, td, th {{
-        font-family: 'Inter', sans-serif !important;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
         color: {text} !important;
     }}
-    h1 {{ font-size:2.2rem !important; font-weight:800 !important; }}
-    h2 {{ font-size:1.6rem !important; font-weight:700 !important; }}
-    h3 {{ font-size:1.3rem !important; font-weight:700 !important; }}
+    h1 {{ font-size:2.4rem !important; font-weight:900 !important; letter-spacing:-0.02em; }}
+    h2 {{ font-size:1.7rem !important; font-weight:800 !important; }}
+    h3 {{ font-size:1.35rem !important; font-weight:700 !important; }}
     h1,h2,h3,h4,h5,h6 {{ color: {text} !important; }}
 
+    /* ═══════════ الخلفية الرئيسية ═══════════ */
     .stApp {{
         background:
-            radial-gradient(ellipse at 20% 50%, {grad1} 0%, transparent 50%),
-            radial-gradient(ellipse at 80% 20%, {grad3} 0%, transparent 50%),
+            radial-gradient(ellipse at 15% 50%, {grad1} 0%, transparent 55%),
+            radial-gradient(ellipse at 85% 15%, {grad3} 0%, transparent 55%),
+            radial-gradient(ellipse at 50% 85%, rgba(139,92,246,0.03) 0%, transparent 50%),
             linear-gradient(180deg, {bg} 0%, {bg2} 100%);
         background-attachment: fixed;
     }}
-    /* ✅ إصلاح #18: إضافة pointer-events:none للنقاط الخلفية */
     .stApp::before {{
         content:''; position:fixed; top:0;left:0;right:0;bottom:0;
-        background-image: radial-gradient(circle, {dot_clr} 1.2px, transparent 1.2px);
-        background-size: 28px 28px; pointer-events:none; z-index:0;
+        background-image: radial-gradient(circle, {dot_clr} 1px, transparent 1px);
+        background-size: 32px 32px; pointer-events:none; z-index:0;
     }}
 
+    /* ═══════════ الشريط الجانبي ═══════════ */
     section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {sidebar_bg}, {bg2}) !important;
+        background: linear-gradient(180deg, {sidebar_bg} 0%, {bg2} 100%) !important;
         border-right: 1px solid {sidebar_border} !important;
+        backdrop-filter: blur(20px);
     }}
     section[data-testid="stSidebar"] * {{ color: {text} !important; }}
 
+    /* ═══════════ البطاقات ═══════════ */
     .dm-card {{
-        background: {glass}; backdrop-filter:blur(12px);
-        border:1px solid {glass_b}; border-radius:20px;
-        padding:28px; margin:14px 0;
-        box-shadow: 0 4px 30px {shadow};
-        position:relative; z-index:2;
-        transition: all 0.4s ease;
+        background: {glass};
+        backdrop-filter: blur(16px) saturate(1.2);
+        border: 1px solid {glass_b};
+        border-radius: 20px;
+        padding: 28px;
+        margin: 14px 0;
+        box-shadow: 0 4px 24px {shadow}, 0 0 0 1px {glass_b};
+        position: relative; z-index: 2;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }}
-    .dm-card:hover {{ transform:translateY(-3px); box-shadow:0 12px 40px {shadow}; }}
-    .dm-card-blue {{ border-left:4px solid {primary}; }}
-    .dm-card-red {{ border-left:4px solid #ef4444; }}
-    .dm-card-green {{ border-left:4px solid #22c55e; }}
-    .dm-card-orange {{ border-left:4px solid #f59e0b; }}
-    .dm-card-purple {{ border-left:4px solid #8b5cf6; }}
-    .dm-card-cyan {{ border-left:4px solid #06b6d4; }}
+    .dm-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 16px 48px {shadow}, 0 0 0 1px rgba(59,130,246,0.2);
+    }}
+    .dm-card-blue {{ border-left: 4px solid {primary}; }}
+    .dm-card-red {{ border-left: 4px solid #ef4444; }}
+    .dm-card-green {{ border-left: 4px solid #22c55e; }}
+    .dm-card-orange {{ border-left: 4px solid #f59e0b; }}
+    .dm-card-purple {{ border-left: 4px solid #8b5cf6; }}
+    .dm-card-cyan {{ border-left: 4px solid #06b6d4; }}
+    .dm-card-gradient {{
+        background: linear-gradient(135deg, {glass} 0%, rgba(59,130,246,0.05) 100%);
+        border: 1px solid {glass_b};
+    }}
 
+    /* ═══════════ مؤشرات الإحصائيات ═══════════ */
     .dm-metric {{
-        background:{glass}; backdrop-filter:blur(10px);
-        border:1px solid {glass_b}; border-radius:18px;
-        padding:22px 16px; text-align:center;
-        box-shadow:0 2px 16px {shadow};
-        transition:all 0.3s ease; position:relative; overflow:hidden;
+        background: {glass};
+        backdrop-filter: blur(12px);
+        border: 1px solid {glass_b};
+        border-radius: 20px;
+        padding: 24px 18px;
+        text-align: center;
+        box-shadow: 0 2px 16px {shadow};
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
     }}
     .dm-metric::before {{
-        content:''; position:absolute; top:0;left:0;right:0; height:3px;
-        background:linear-gradient(90deg,{primary},{accent}); border-radius:18px 18px 0 0;
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, {primary}, {accent}, {accent2});
+        border-radius: 20px 20px 0 0;
     }}
-    .dm-metric:hover {{ transform:translateY(-4px) scale(1.02); }}
-    .dm-metric-icon {{ font-size:1.8rem; margin-bottom:8px; display:block; }}
+    .dm-metric:hover {{
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 12px 36px {shadow};
+    }}
+    .dm-metric-icon {{ font-size: 2rem; margin-bottom: 10px; display: block; }}
     .dm-metric-val {{
-        font-size:2rem; font-weight:800;
-        font-family:'JetBrains Mono',monospace !important;
-        color:{primary} !important;
+        font-size: 2.2rem; font-weight: 900;
+        font-family: 'JetBrains Mono', monospace !important;
+        background: linear-gradient(135deg, {primary}, {accent});
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }}
     .dm-metric-lbl {{
-        font-size:0.78rem; font-weight:600; color:{muted} !important;
-        text-transform:uppercase; letter-spacing:0.08em; margin-top:8px;
+        font-size: 0.75rem; font-weight: 600; color: {muted} !important;
+        text-transform: uppercase; letter-spacing: 0.1em; margin-top: 8px;
     }}
 
+    /* ═══════════ الأزرار ═══════════ */
     div.stButton > button {{
-        background:linear-gradient(135deg,{primary},{primary_dk}) !important;
-        color:white !important; border:none !important;
-        border-radius:14px !important; padding:13px 30px !important;
-        font-weight:600 !important; transition:all 0.35s ease !important;
-        box-shadow:0 4px 15px rgba(37,99,235,0.3) !important;
+        background: linear-gradient(135deg, {primary}, {primary_dk}) !important;
+        color: white !important; border: none !important;
+        border-radius: 14px !important; padding: 14px 32px !important;
+        font-weight: 700 !important; font-size: 0.9rem !important;
+        letter-spacing: 0.02em;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        box-shadow: 0 4px 16px rgba(37,99,235,0.3), inset 0 1px 0 rgba(255,255,255,0.1) !important;
     }}
     div.stButton > button:hover {{
-        transform:translateY(-3px) scale(1.02) !important;
-        box-shadow:0 8px 28px rgba(37,99,235,0.45) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 8px 32px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+    }}
+    div.stButton > button:active {{
+        transform: translateY(-1px) scale(0.99) !important;
     }}
 
+    /* ═══════════ الحقول ═══════════ */
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input {{
-        background:{input_bg} !important; border:2px solid {border} !important;
-        border-radius:12px !important; color:{text} !important;
+        background: {input_bg} !important;
+        border: 2px solid {border} !important;
+        border-radius: 12px !important;
+        color: {text} !important;
+        transition: all 0.3s ease;
     }}
     .stTextInput > div > div > input:focus {{
-        border-color:{primary} !important;
-        box-shadow:0 0 0 4px {primary_glow} !important;
+        border-color: {primary} !important;
+        box-shadow: 0 0 0 4px {primary_glow} !important;
     }}
 
+    /* ═══════════ الخطوات ═══════════ */
     .dm-step {{
-        display:flex; align-items:center; gap:10px;
-        padding:12px 18px; border-radius:12px; margin:6px 0;
-        font-weight:600; font-size:0.9rem;
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 20px; border-radius: 14px; margin: 6px 0;
+        font-weight: 600; font-size: 0.9rem;
+        transition: all 0.3s ease;
     }}
-    .dm-step-done {{ background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.3); color:#22c55e !important; }}
+    .dm-step-done {{
+        background: {success_bg};
+        border: 1px solid rgba(34,197,94,0.25);
+        color: #22c55e !important;
+    }}
     .dm-step-active {{
-        background:{primary_glow}; border:1px solid rgba(37,99,235,0.3);
-        color:{primary} !important; animation:stepPulse 2s infinite;
+        background: {primary_glow};
+        border: 1px solid rgba(59,130,246,0.25);
+        color: {primary} !important;
+        animation: stepPulse 2.5s ease-in-out infinite;
     }}
-    .dm-step-pending {{ background:rgba(100,116,139,0.05); border:1px solid rgba(100,116,139,0.15); color:{muted} !important; }}
-    @keyframes stepPulse {{ 0%,100%{{box-shadow:0 0 0 0 {primary_glow};}} 50%{{box-shadow:0 0 0 8px transparent;}} }}
+    .dm-step-pending {{
+        background: rgba(100,116,139,0.04);
+        border: 1px solid rgba(100,116,139,0.12);
+        color: {muted} !important;
+    }}
+    @keyframes stepPulse {{
+        0%,100%{{ box-shadow: 0 0 0 0 {primary_glow}; }}
+        50%{{ box-shadow: 0 0 0 10px transparent; }}
+    }}
 
+    /* ═══════════ الشات ═══════════ */
     .dm-chat-msg {{
-        padding:14px 18px; border-radius:16px; margin:8px 0;
-        max-width:85%; line-height:1.6; font-size:0.95rem;
+        padding: 16px 20px; border-radius: 18px; margin: 10px 0;
+        max-width: 85%; line-height: 1.7; font-size: 0.95rem;
+        animation: msgSlide 0.3s ease-out;
+    }}
+    @keyframes msgSlide {{
+        from {{ opacity:0; transform:translateY(10px); }}
+        to {{ opacity:1; transform:translateY(0); }}
     }}
     .dm-chat-user {{
-        background:linear-gradient(135deg,{primary},{primary_dk});
-        color:white !important; margin-left:auto; border-bottom-right-radius:4px;
+        background: linear-gradient(135deg, {primary}, {primary_dk});
+        color: white !important; margin-left: auto;
+        border-bottom-right-radius: 6px;
+        box-shadow: 0 4px 16px rgba(37,99,235,0.25);
     }}
-    .dm-chat-user * {{ color:white !important; }}
+    .dm-chat-user * {{ color: white !important; }}
     .dm-chat-bot {{
-        background:{glass}; border:1px solid {glass_b};
-        border-bottom-left-radius:4px;
+        background: {glass};
+        border: 1px solid {glass_b};
+        border-bottom-left-radius: 6px;
     }}
 
+    /* ═══════════ الاختبار ═══════════ */
     .dm-quiz-option {{
-        background:{glass}; border:2px solid {border};
-        border-radius:14px; padding:14px 20px; margin:6px 0;
-        cursor:pointer; transition:all 0.3s ease; font-weight:500;
+        background: {glass}; border: 2px solid {border};
+        border-radius: 14px; padding: 14px 20px; margin: 8px 0;
+        cursor: pointer; transition: all 0.3s ease; font-weight: 500;
     }}
-    .dm-quiz-option:hover {{ border-color:{primary}; background:{primary_glow}; transform:translateX(5px); }}
-    .dm-quiz-correct {{ border-color:#22c55e !important; background:rgba(34,197,94,0.1) !important; }}
-    .dm-quiz-wrong {{ border-color:#ef4444 !important; background:rgba(239,68,68,0.1) !important; }}
+    .dm-quiz-option:hover {{
+        border-color: {primary}; background: {primary_glow};
+        transform: translateX(6px);
+    }}
 
-    .dm-logo-wrap {{ display:flex; flex-direction:column; align-items:center; padding:24px 0 16px; z-index:5; position:relative; }}
-    .dm-logo-main {{ display:flex; align-items:center; gap:6px; animation:logoBreath 4s ease-in-out infinite; }}
-    .dm-logo-char {{ font-size:3.8rem; font-weight:900; display:inline-block; }}
-    .dm-logo-d {{ color:{primary}; text-shadow:0 0 30px {primary_glow}; animation:charShift 3s infinite; }}
+    /* ═══════════ اللوقو ═══════════ */
+    .dm-logo-wrap {{
+        display: flex; flex-direction: column; align-items: center;
+        padding: 28px 0 20px; z-index: 5; position: relative;
+    }}
+    .dm-logo-main {{
+        display: flex; align-items: center; gap: 8px;
+        animation: logoFloat 5s ease-in-out infinite;
+    }}
+    .dm-logo-char {{ font-size: 4rem; font-weight: 900; display: inline-block; }}
+    .dm-logo-d {{
+        background: linear-gradient(135deg, {primary}, {accent});
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 20px {primary_glow});
+    }}
     .dm-logo-m {{
-        color:white; background:linear-gradient(135deg,{primary},{accent});
-        padding:6px 20px; border-radius:14px;
-        box-shadow:0 4px 20px rgba(37,99,235,0.35);
-        animation:charShift 3s infinite 0.5s;
+        color: white;
+        background: linear-gradient(135deg, {primary}, {accent2});
+        padding: 8px 22px; border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(59,130,246,0.3);
     }}
-    .dm-logo-tag {{ font-size:0.82rem; font-weight:600; color:{muted}; letter-spacing:0.35em; text-transform:uppercase; margin-top:10px; }}
-    .dm-logo-line {{ width:60px; height:3px; background:linear-gradient(90deg,{primary},{accent}); border-radius:3px; margin-top:8px; }}
-    @keyframes logoBreath {{ 0%,100%{{transform:translateY(0) scale(1);}} 50%{{transform:translateY(-5px) scale(1.02);}} }}
-    @keyframes charShift {{ 0%,100%{{transform:translateY(0);}} 50%{{transform:translateY(-3px);}} }}
+    .dm-logo-tag {{
+        font-size: 0.78rem; font-weight: 700; color: {muted};
+        letter-spacing: 0.4em; text-transform: uppercase; margin-top: 12px;
+    }}
+    .dm-logo-line {{
+        width: 60px; height: 3px;
+        background: linear-gradient(90deg, {primary}, {accent}, {accent2});
+        border-radius: 3px; margin-top: 10px;
+    }}
+    @keyframes logoFloat {{
+        0%,100%{{ transform: translateY(0); }}
+        50%{{ transform: translateY(-6px); }}
+    }}
 
+    /* ═══════════ مؤشر الثقة الدائري ═══════════ */
+    .confidence-ring {{
+        width: 140px; height: 140px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto;
+        position: relative;
+    }}
+    .confidence-ring-inner {{
+        width: 110px; height: 110px;
+        border-radius: 50%;
+        background: {card};
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        z-index: 2;
+    }}
+    .confidence-value {{
+        font-size: 2rem; font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+    }}
+    .confidence-label {{
+        font-size: 0.7rem; font-weight: 600; color: {muted};
+        text-transform: uppercase; letter-spacing: 0.1em;
+    }}
+
+    /* ═══════════ شريط الجودة ═══════════ */
+    .quality-bar {{
+        height: 6px; border-radius: 3px; overflow: hidden;
+        background: rgba(100,116,139,0.15);
+    }}
+    .quality-fill {{
+        height: 100%; border-radius: 3px;
+        transition: width 1s ease;
+    }}
+
+    /* ═══════════ الجسيمات ═══════════ */
     .dm-particle {{
-        position:fixed; pointer-events:none; z-index:0; opacity:0;
-        font-size:1.8rem; animation:particleRise 25s linear infinite;
+        position: fixed; pointer-events: none; z-index: 0; opacity: 0;
+        font-size: 1.6rem;
+        animation: particleRise 30s linear infinite;
     }}
     @keyframes particleRise {{
-        0%{{transform:translateY(105vh) rotate(0);opacity:0;}}
-        8%{{opacity:0.08;}} 92%{{opacity:0.08;}}
-        100%{{transform:translateY(-10vh) rotate(360deg);opacity:0;}}
+        0%{{ transform: translateY(105vh) rotate(0); opacity:0; }}
+        5%{{ opacity:0.06; }}
+        95%{{ opacity:0.06; }}
+        100%{{ transform: translateY(-10vh) rotate(360deg); opacity:0; }}
     }}
 
+    /* ═══════════ شاشة التحميل ═══════════ */
     .dm-splash {{
-        position:fixed; top:0;left:0;right:0;bottom:0;
-        background:{bg}; z-index:9999;
-        display:flex; flex-direction:column;
-        justify-content:center; align-items:center;
-        animation: splashFade 0.5s ease 3s forwards;
+        position: fixed; top:0; left:0; right:0; bottom:0;
+        background: {bg}; z-index: 9999;
+        display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        animation: splashFade 0.6s ease 2.8s forwards;
     }}
     @keyframes splashFade {{ to {{ opacity:0; pointer-events:none; }} }}
-    .dm-splash-logo {{ font-size:6rem; animation:splashPulse 1.5s ease-in-out infinite; }}
-    @keyframes splashPulse {{ 0%,100%{{transform:scale(1);opacity:0.8;}} 50%{{transform:scale(1.15);opacity:1;}} }}
+    .dm-splash-logo {{
+        font-size: 5rem;
+        animation: splashPulse 1.5s ease-in-out infinite;
+    }}
+    @keyframes splashPulse {{
+        0%,100%{{ transform:scale(1); opacity:0.8; }}
+        50%{{ transform:scale(1.12); opacity:1; }}
+    }}
+    .dm-splash-bar {{
+        width: 220px; height: 3px;
+        background: rgba(128,128,128,0.15);
+        border-radius: 3px; margin-top: 24px; overflow: hidden;
+    }}
+    .dm-splash-bar-fill {{
+        width: 100%; height: 100%;
+        background: linear-gradient(90deg, {primary}, {accent}, {accent2});
+        animation: loadBar 2.5s ease forwards;
+        transform-origin: left;
+    }}
+    @keyframes loadBar {{ from {{ transform: scaleX(0); }} to {{ transform: scaleX(1); }} }}
 
-    @media (max-width:768px) {{
-        .dm-logo-char {{ font-size:2.8rem; }}
-        .dm-card {{ padding:18px; }}
-        .dm-metric-val {{ font-size:1.5rem; }}
+    /* ═══════════ شارة الإصدار ═══════════ */
+    .dm-version-badge {{
+        display: inline-flex; align-items: center; gap: 6px;
+        background: linear-gradient(135deg, {primary}, {accent});
+        color: white !important; padding: 4px 12px;
+        border-radius: 20px; font-size: 0.7rem;
+        font-weight: 700; letter-spacing: 0.05em;
+    }}
+
+    /* ═══════════ التجاوب ═══════════ */
+    @media (max-width: 768px) {{
+        .dm-logo-char {{ font-size: 2.8rem; }}
+        .dm-card {{ padding: 18px; border-radius: 16px; }}
+        .dm-metric-val {{ font-size: 1.6rem; }}
+        h1 {{ font-size: 1.8rem !important; }}
     }}
     @media print {{
         .dm-particle, section[data-testid="stSidebar"], .stApp::before {{ display:none !important; }}
     }}
+
+    /* ═══════════ شريط التقدم المخصص ═══════════ */
+    .dm-progress {{
+        background: rgba(100,116,139,0.1);
+        border-radius: 8px; overflow: hidden;
+        height: 8px; margin: 8px 0;
+    }}
+    .dm-progress-fill {{
+        height: 100%; border-radius: 8px;
+        background: linear-gradient(90deg, {primary}, {accent});
+        transition: width 0.8s ease;
+    }}
+
+    /* ═══════════ تأثيرات الإنتقال ═══════════ */
+    .dm-fade-in {{
+        animation: fadeIn 0.5s ease-out;
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity:0; transform:translateY(15px); }}
+        to {{ opacity:1; transform:translateY(0); }}
+    }}
+
+    /* ═══════════ حالة النظام ═══════════ */
+    .dm-status-dot {{
+        width: 8px; height: 8px; border-radius: 50%;
+        display: inline-block; margin-right: 6px;
+        animation: statusBlink 2s ease-in-out infinite;
+    }}
+    .dm-status-online {{ background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.5); }}
+    @keyframes statusBlink {{
+        0%,100%{{ opacity:1; }} 50%{{ opacity:0.4; }}
+    }}
     </style>
 
-    <div class="dm-particle" style="left:4%">🦠</div>
-    <div class="dm-particle" style="left:15%;animation-delay:5s">🧬</div>
-    <div class="dm-particle" style="left:30%;animation-delay:10s">🔬</div>
-    <div class="dm-particle" style="left:48%;animation-delay:3s">🩸</div>
-    <div class="dm-particle" style="left:65%;animation-delay:8s">🧪</div>
-    <div class="dm-particle" style="left:80%;animation-delay:13s">💊</div>
-    <div class="dm-particle" style="left:92%;animation-delay:6s">🧫</div>
+    <!-- الجسيمات -->
+    <div class="dm-particle" style="left:3%">🦠</div>
+    <div class="dm-particle" style="left:12%;animation-delay:4s">🧬</div>
+    <div class="dm-particle" style="left:28%;animation-delay:9s">🔬</div>
+    <div class="dm-particle" style="left:45%;animation-delay:2s">🩸</div>
+    <div class="dm-particle" style="left:62%;animation-delay:7s">🧪</div>
+    <div class="dm-particle" style="left:78%;animation-delay:12s">💊</div>
+    <div class="dm-particle" style="left:91%;animation-delay:5s">🧫</div>
+    <div class="dm-particle" style="left:55%;animation-delay:15s">⚕️</div>
     """, unsafe_allow_html=True)
 
 apply_full_theme()
@@ -1638,23 +1774,17 @@ if not st.session_state.get("splash_shown", False):
     st.markdown("""
     <div class="dm-splash" id="splash">
         <div class="dm-splash-logo">🧬</div>
-        <h2 style="margin-top:20px; opacity:0.8;">DM SMART LAB AI</h2>
-        <p style="opacity:0.4; letter-spacing:0.3em; text-transform:uppercase; font-size:0.8rem;">
-            Loading System...
+        <h2 style="margin-top:20px; opacity:0.7; font-weight:800;">DM SMART LAB AI</h2>
+        <p style="opacity:0.3; letter-spacing:0.4em; text-transform:uppercase; font-size:0.75rem; margin-top:8px;">
+            Professional Edition v5.0
         </p>
-        <div style="width:200px; height:3px; background:rgba(128,128,128,0.2); border-radius:3px; margin-top:20px; overflow:hidden;">
-            <div style="width:100%; height:100%; background:linear-gradient(90deg, #3b82f6, #06b6d4);
-                        animation: loadBar 2.5s ease forwards; transform-origin:left;">
-            </div>
+        <div class="dm-splash-bar">
+            <div class="dm-splash-bar-fill"></div>
         </div>
     </div>
-    <style>
-    @keyframes loadBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-    </style>
     """, unsafe_allow_html=True)
     st.session_state.splash_shown = True
 
-# ✅ إصلاح #11: فحص القفل التلقائي
 if st.session_state.logged_in:
     check_auto_lock()
 
@@ -1671,7 +1801,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================
-#  13. تسجيل الدخول
+#  13. تسجيل الدخول المحسن
 # ============================================
 if not st.session_state.logged_in:
     if st.session_state.lockout_until:
@@ -1686,10 +1816,13 @@ if not st.session_state.logged_in:
     _, col_login, _ = st.columns([1.2, 2, 1.2])
     with col_login:
         st.markdown(f"""
-        <div class='dm-card dm-card-blue' style='text-align:center;'>
-            <div style='font-size:3.5rem; margin-bottom:12px;'>🔐</div>
+        <div class='dm-card dm-card-blue dm-fade-in' style='text-align:center;'>
+            <div style='font-size:3.5rem; margin-bottom:16px;'>🔐</div>
             <h2 style='margin:0;'>{t('login_title')}</h2>
-            <p style='opacity:0.6; margin-top:6px;'>{t('login_subtitle')}</p>
+            <p style='opacity:0.5; margin-top:8px; font-size:0.9rem;'>{t('login_subtitle')}</p>
+            <div style='margin-top:12px;'>
+                <span class='dm-version-badge'>v{APP_VERSION} Pro</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
@@ -1706,11 +1839,12 @@ if not st.session_state.logged_in:
             pwd = st.text_input(f"🔒 {t('login_pass')}", type="password")
             go = st.form_submit_button(f"🔓 {t('login_btn')}", use_container_width=True)
             if go:
-                if pwd == APP_PASSWORD:
+                if hashlib.sha256(pwd.encode()).hexdigest() == APP_PASSWORD_HASH:
                     st.session_state.logged_in = True
                     st.session_state.user_name = user.strip() or "Utilisateur"
                     st.session_state.login_attempts = 0
                     st.session_state.last_activity = datetime.now()
+                    st.session_state.session_start = datetime.now()
                     log_activity("Login")
                     st.rerun()
                 else:
@@ -1724,18 +1858,31 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ============================================
-#  14. الشريط الجانبي
+#  14. الشريط الجانبي المحسن
 # ============================================
 with st.sidebar:
     st.markdown(f"""
-    <div style='text-align:center; padding:12px 0 8px;'>
-        <div style='font-size:2.8rem;'>🧬</div>
-        <h3 style='margin:6px 0 2px;'>DM SMART LAB</h3>
-        <p style='font-size:0.72rem; opacity:0.4; letter-spacing:0.2em; text-transform:uppercase;'>v{APP_VERSION}</p>
+    <div style='text-align:center; padding:16px 0 12px;'>
+        <div style='font-size:2.6rem;'>🧬</div>
+        <h3 style='margin:8px 0 4px; font-weight:800;'>DM SMART LAB</h3>
+        <span class='dm-version-badge'>v{APP_VERSION} Professional</span>
     </div>
     """, unsafe_allow_html=True)
     st.markdown("---")
-    st.markdown(f"👤 **{st.session_state.user_name}**")
+
+    # معلومات المستخدم
+    st.markdown(f"""
+    <div style='display:flex; align-items:center; gap:10px; padding:8px 0;'>
+        <div style='width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#06b6d4);
+                    display:flex;align-items:center;justify-content:center;font-size:1.1rem;'>👤</div>
+        <div>
+            <div style='font-weight:700; font-size:0.9rem;'>{st.session_state.user_name}</div>
+            <div style='font-size:0.72rem; opacity:0.5;'>
+                <span class="dm-status-dot dm-status-online"></span>En ligne • {get_session_duration()}
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # نصيحة اليوم
     lang = st.session_state.get("lang", "fr")
@@ -1776,10 +1923,8 @@ with st.sidebar:
         st.session_state.splash_shown = True
         st.rerun()
 
-# ✅ تحديث وقت آخر نشاط
 st.session_state.last_activity = datetime.now()
 
-# التعرف على الصفحة
 page_keys = ["home", "scan", "encyclopedia", "dashboard", "quiz", "chatbot", "about"]
 page_map = dict(zip(nav, page_keys))
 current_page = page_map.get(menu, "home")
@@ -1788,17 +1933,35 @@ current_page = page_map.get(menu, "home")
 # ║        PAGE: HOME                ║
 # ╚══════════════════════════════════╝
 if current_page == "home":
-    st.title(f"👋 {get_greeting()}, {st.session_state.user_name} !")
+    st.markdown(f"""
+    <div class='dm-fade-in'>
+        <h1>👋 {get_greeting()}, {st.session_state.user_name} !</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
     c1, c2 = st.columns([1, 2.5])
     with c1:
-        st.markdown('<div style="text-align:center;font-size:7rem;">🤖</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="text-align:center; padding:20px 0;">
+            <div style="font-size:7rem; animation: logoFloat 4s ease-in-out infinite;">🤖</div>
+        </div>
+        """, unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""<div class='dm-card dm-card-blue'>
-        <h3>🧬 DM SMART LAB — {t('app_subtitle')}</h3>
-        <p>{'...' if st.session_state.intro_step < 2 else t('home_go_scan')}</p>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='dm-card dm-card-gradient dm-fade-in'>
+            <h3>🧬 DM SMART LAB AI — {t('app_subtitle')}</h3>
+            <p style='opacity:0.7; line-height:1.8;'>
+                {'...' if st.session_state.intro_step < 2 else t('home_go_scan')}
+            </p>
+            <div style='margin-top:12px;'>
+                <span class='dm-version-badge'>v{APP_VERSION}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
+
+    # الخطوات
     step = st.session_state.intro_step
     steps_data = [t("home_step1_title"), t("home_step2_title"), t("home_unlocked")]
     sc = st.columns(3)
@@ -1811,31 +1974,78 @@ if current_page == "home":
     st.markdown("<br>", unsafe_allow_html=True)
 
     if step == 0:
-        st.markdown(f"<div class='dm-card dm-card-orange'><h4>🔒 {t('home_step1_title')}</h4><p>{t('home_step1_desc')}</p></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='dm-card dm-card-orange dm-fade-in'>
+            <h4>🔒 {t('home_step1_title')}</h4>
+            <p style='opacity:0.7;'>{t('home_step1_desc')}</p>
+        </div>
+        """, unsafe_allow_html=True)
         if st.button(f"🔊 {t('home_step1_btn')}", use_container_width=True, type="primary"):
-            txt = t("voice_intro").format(time=datetime.now().strftime("%H:%M"), dev1=AUTHORS["dev1"]["name"], dev2=AUTHORS["dev2"]["name"])
+            txt = t("voice_intro").format(
+                time=datetime.now().strftime("%H:%M"),
+                dev1=AUTHORS["dev1"]["name"],
+                dev2=AUTHORS["dev2"]["name"]
+            )
             speak(txt)
             with st.spinner("🔊 ..."):
-                time.sleep(6)  # ✅ تقليل وقت الانتظار
+                time.sleep(5)
             st.session_state.intro_step = 1
             log_activity("Intro Step 1 completed")
             st.rerun()
+
     elif step == 1:
-        st.markdown(f"<div class='dm-card dm-card-orange'><h4>🔒 {t('home_step2_title')}</h4><p>{t('home_step2_desc')}</p></div>", unsafe_allow_html=True)
+        st.markdown(f"""
+        <div class='dm-card dm-card-orange dm-fade-in'>
+            <h4>🔒 {t('home_step2_title')}</h4>
+            <p style='opacity:0.7;'>{t('home_step2_desc')}</p>
+        </div>
+        """, unsafe_allow_html=True)
         if st.button(f"🔊 {t('home_step2_btn')}", use_container_width=True, type="primary"):
             txt = t("voice_title").format(title=PROJECT_TITLE)
             speak(txt)
             with st.spinner("🔊 ..."):
-                time.sleep(6)  # ✅ تقليل وقت الانتظار
+                time.sleep(5)
             st.session_state.intro_step = 2
             log_activity("Intro Step 2 completed - System Unlocked")
             st.rerun()
+
     elif step >= 2:
-        st.markdown(f"<div class='dm-card dm-card-green'><h3>✅ {t('home_unlocked')}</h3><p>{t('home_go_scan')}</p></div>", unsafe_allow_html=True)
-        # ✅ إصلاح #17: البالونات مرة واحدة فقط
+        st.markdown(f"""
+        <div class='dm-card dm-card-green dm-fade-in' style='text-align:center;'>
+            <div style='font-size:3rem; margin-bottom:10px;'>🎉</div>
+            <h3>✅ {t('home_unlocked')}</h3>
+            <p style='opacity:0.7;'>{t('home_go_scan')}</p>
+        </div>
+        """, unsafe_allow_html=True)
         if not st.session_state.get("balloons_shown", False):
             st.balloons()
             st.session_state.balloons_shown = True
+
+        # ✅ إحصائيات سريعة
+        st.markdown("---")
+        st.markdown("### 📊 Quick Stats")
+        qs1, qs2, qs3, qs4 = st.columns(4)
+        with qs1:
+            st.markdown(f"""<div class="dm-metric">
+            <span class="dm-metric-icon">🔬</span>
+            <div class="dm-metric-val">{len(st.session_state.history)}</div>
+            <div class="dm-metric-lbl">{t('dash_total')}</div></div>""", unsafe_allow_html=True)
+        with qs2:
+            st.markdown(f"""<div class="dm-metric">
+            <span class="dm-metric-icon">🕐</span>
+            <div class="dm-metric-val" style="font-size:1.4rem;">{get_session_duration()}</div>
+            <div class="dm-metric-lbl">Session</div></div>""", unsafe_allow_html=True)
+        with qs3:
+            st.markdown(f"""<div class="dm-metric">
+            <span class="dm-metric-icon">🧠</span>
+            <div class="dm-metric-val">{len(PARASITE_DB)-1}</div>
+            <div class="dm-metric-lbl">Parasites</div></div>""", unsafe_allow_html=True)
+        with qs4:
+            st.markdown(f"""<div class="dm-metric">
+            <span class="dm-metric-icon">✅</span>
+            <div class="dm-metric-val" style="font-size:1.4rem;">Active</div>
+            <div class="dm-metric-lbl">{t('dash_system')}</div></div>""", unsafe_allow_html=True)
+
 
 # ╔══════════════════════════════════╗
 # ║        PAGE: SCAN                ║
@@ -1848,11 +2058,12 @@ elif current_page == "scan":
 
     model, model_name = load_ai_model()
     if model_name:
-        st.sidebar.success(f"🧠 {model_name}")
+        st.sidebar.success(f"🧠 Model: {model_name}")
     else:
-        st.sidebar.info("🧠 Demo")
+        st.sidebar.info("🧠 Demo Mode")
 
-    st.markdown(f"### 📋 1. {t('scan_patient_info')}")
+    # بيانات المريض
+    st.markdown(f"### 📋 {t('scan_patient_info')}")
     ca, cb = st.columns(2)
     p_nom = ca.text_input(f"{t('scan_nom')} *", placeholder="Benali")
     p_prenom = cb.text_input(t("scan_prenom"), placeholder="Ahmed")
@@ -1865,7 +2076,7 @@ elif current_page == "scan":
     p_type = cf.selectbox(t("scan_echantillon"), samples)
 
     st.markdown("---")
-    st.markdown(f"### 📸 2. {t('scan_capture')}")
+    st.markdown(f"### 📸 {t('scan_capture')}")
     cap_mode = st.radio("Mode:", [f"📷 {t('scan_camera')}", f"📁 {t('scan_upload')}"],
                         horizontal=True, label_visibility="collapsed")
 
@@ -1880,7 +2091,6 @@ elif current_page == "scan":
             st.error(f"⚠️ {t('scan_nom_required')}")
             st.stop()
 
-        # ✅ إصلاح: إعادة تعيين seeds عند صورة جديدة
         img_hash = hashlib.md5(img_file.getvalue()).hexdigest()
         if st.session_state.get("_last_img_hash") != img_hash:
             st.session_state._last_img_hash = img_hash
@@ -1888,10 +2098,26 @@ elif current_page == "scan":
             st.session_state.heatmap_seed = random.randint(0, 999999)
 
         image = Image.open(img_file).convert("RGB")
+
+        # ✅ تقييم الجودة
+        q_score, q_text, q_color = assess_image_quality(image)
+
         col_img, col_res = st.columns(2)
 
         with col_img:
-            # ✅ إصلاح #7 و #15: استخدام الفلاتر بشكل صحيح
+            # مؤشر الجودة
+            st.markdown(f"""
+            <div class='dm-card' style='padding:16px;'>
+                <div style='display:flex; justify-content:space-between; align-items:center;'>
+                    <span style='font-weight:700; font-size:0.85rem;'>📊 {t('scan_image_quality')}</span>
+                    <span style='color:{q_color}; font-weight:800;'>{q_text} ({q_score}%)</span>
+                </div>
+                <div class='quality-bar' style='margin-top:10px;'>
+                    <div class='quality-fill' style='width:{q_score}%; background:{q_color};'></div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
             tab_orig, tab_thermal, tab_edge, tab_enhance, tab_heatmap = st.tabs(
                 ["📷 Original", "🔥 Thermal", "📐 Edges", "✨ Enhanced", "🎯 AI Focus"]
             )
@@ -1908,13 +2134,16 @@ elif current_page == "scan":
 
         with col_res:
             st.markdown(f"### 🧠 {t('scan_result')}")
+            start_time = time.time()
+
             with st.spinner(f"⏳ {t('scan_analyzing')}"):
                 prog = st.progress(0)
                 for i in range(100):
-                    time.sleep(0.008)  # ✅ تسريع قليلاً
+                    time.sleep(0.006)
                     prog.progress(i + 1)
                 result = predict_image(model, image)
 
+            analysis_time = round(time.time() - start_time, 1)
             label = result["label"]
             conf = result["confidence"]
             info = result["info"]
@@ -1930,25 +2159,32 @@ elif current_page == "scan":
             advice = get_p_text(info, "advice")
             funny = get_p_text(info, "funny")
 
+            # ✅ مؤشر الثقة الدائري
+            ring_gradient = f"conic-gradient({rc} 0% {conf}%, rgba(100,116,139,0.15) {conf}% 100%)"
             st.markdown(f"""
-            <div class='dm-card' style='border-left:5px solid {rc};'>
-                <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;'>
+            <div class='dm-card dm-fade-in' style='border-left:5px solid {rc};'>
+                <div style='display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;'>
                     <div>
-                        <h2 style='color:{rc};margin:0;'>{label}</h2>
-                        <p style='opacity:0.55;font-style:italic;'>{info['scientific_name']}</p>
+                        <h2 style='color:{rc}; margin:0;'>{label}</h2>
+                        <p style='opacity:0.45; font-style:italic; margin-top:4px;'>{info['scientific_name']}</p>
+                        <p style='font-size:0.8rem; opacity:0.4; margin-top:8px;'>
+                            ⏱️ {t('scan_duration')}: {analysis_time}s
+                        </p>
                     </div>
-                    <div style='text-align:center;'>
-                        <div style='font-size:2.8rem;font-weight:900;color:{rc};font-family:JetBrains Mono,monospace;'>{conf}%</div>
-                        <div style='font-size:0.75rem;opacity:0.45;text-transform:uppercase;'>{t('scan_confidence')}</div>
+                    <div class='confidence-ring' style='background:{ring_gradient};'>
+                        <div class='confidence-ring-inner'>
+                            <div class='confidence-value' style='color:{rc};'>{conf}%</div>
+                            <div class='confidence-label'>{t('scan_confidence')}</div>
+                        </div>
                     </div>
                 </div>
-                <hr style='opacity:0.15;margin:16px 0;'>
-                <p><b>🔬 {t('scan_morphology')}:</b><br>{morpho}</p>
-                <p><b>⚠️ {t('scan_risk')}:</b> <span style='color:{rc};font-weight:700;'>{risk_disp}</span></p>
-                <div style='background:rgba(34,197,94,0.08);padding:14px;border-radius:12px;margin:12px 0;'>
+                <hr style='opacity:0.1; margin:20px 0;'>
+                <p><b>🔬 {t('scan_morphology')}:</b><br><span style='opacity:0.8;'>{morpho}</span></p>
+                <p><b>⚠️ {t('scan_risk')}:</b> <span style='color:{rc}; font-weight:800;'>{risk_disp}</span></p>
+                <div style='background:rgba(34,197,94,0.06); padding:16px; border-radius:14px; margin:14px 0; border:1px solid rgba(34,197,94,0.12);'>
                     <b>💡 {t('scan_advice')}:</b><br>{advice}
                 </div>
-                <div style='background:rgba(37,99,235,0.06);padding:14px;border-radius:12px;font-style:italic;'>
+                <div style='background:rgba(59,130,246,0.05); padding:16px; border-radius:14px; font-style:italic; border:1px solid rgba(59,130,246,0.1);'>
                     🤖 {funny}
                 </div>
             </div>
@@ -1958,8 +2194,8 @@ elif current_page == "scan":
             extra = get_p_text(info, "extra_tests")
             if isinstance(extra, list) and extra and extra[0] != "N/A":
                 with st.expander(f"🩺 {t('scan_extra_tests')}"):
-                    for test in extra:
-                        st.markdown(f"• {test}")
+                    for test_item in extra:
+                        st.markdown(f"• {test_item}")
 
             # دورة الحياة
             lifecycle = get_p_text(info, "lifecycle")
@@ -1967,26 +2203,31 @@ elif current_page == "scan":
                 with st.expander("🔄 Cycle de Vie"):
                     st.markdown(f"**{lifecycle}**")
 
-            # الصوت
             speak(t("voice_result").format(patient=p_nom, parasite=label, funny=funny))
 
             # كل التنبؤات
             if result["all_predictions"]:
                 with st.expander(f"📊 {t('scan_all_probs')}"):
                     for cls, prob in sorted(result["all_predictions"].items(), key=lambda x: x[1], reverse=True):
-                        st.progress(min(prob / 100, 1.0), text=f"{cls}: {prob}%")
+                        bar_color = risk_color(PARASITE_DB.get(cls, {}).get("risk_level", "none"))
+                        st.markdown(f"""
+                        <div style='display:flex; align-items:center; gap:10px; margin:6px 0;'>
+                            <span style='width:160px; font-size:0.85rem; font-weight:600;'>{cls}</span>
+                            <div class='dm-progress' style='flex:1;'>
+                                <div class='dm-progress-fill' style='width:{min(prob,100)}%; background:{bar_color};'></div>
+                            </div>
+                            <span style='font-family:JetBrains Mono,monospace; font-weight:700; font-size:0.85rem; color:{bar_color};'>{prob}%</span>
+                        </div>
+                        """, unsafe_allow_html=True)
 
         st.markdown("---")
         st.markdown("### 📄 Actions")
         a1, a2, a3 = st.columns(3)
         with a1:
             pat = {
-                t("scan_nom"): p_nom,
-                t("scan_prenom"): p_prenom,
-                t("scan_age"): str(p_age),
-                t("scan_sexe"): p_sexe,
-                t("scan_poids"): str(p_poids),
-                t("scan_echantillon"): p_type
+                t("scan_nom"): p_nom, t("scan_prenom"): p_prenom,
+                t("scan_age"): str(p_age), t("scan_sexe"): p_sexe,
+                t("scan_poids"): str(p_poids), t("scan_echantillon"): p_type
             }
             try:
                 pdf = generate_pdf(pat, label, conf, info)
@@ -1996,7 +2237,7 @@ elif current_page == "scan":
                     "application/pdf", use_container_width=True
                 )
             except Exception as e:
-                st.error(f"Erreur PDF: {e}")
+                st.error(f"PDF Error: {e}")
         with a2:
             if st.button(f"💾 {t('scan_save')}", use_container_width=True):
                 entry = {
@@ -2005,26 +2246,31 @@ elif current_page == "scan":
                     "Age": p_age, "Sexe": p_sexe,
                     "Echantillon": p_type, "Parasite": label,
                     "Confiance": f"{conf}%",
-                    "Risque": _safe_pdf_text(risk_disp),  # ✅ نص آمن
-                    "Status": "Fiable" if result["is_reliable"] else "A verifier"
+                    "Risque": _safe_pdf_text(risk_disp),
+                    "Status": "Fiable" if result["is_reliable"] else "A verifier",
+                    "Duration": f"{analysis_time}s",
+                    "Quality": f"{q_score}%"
                 }
                 st.session_state.history.append(entry)
+                st.session_state.scan_count += 1
+                if len(st.session_state.history) > MAX_HISTORY:
+                    st.session_state.history = st.session_state.history[-MAX_HISTORY:]
                 log_activity(f"Scan saved: {label} for {p_nom}")
                 st.success(f"✅ {t('scan_saved')}")
         with a3:
             if st.button(f"🔄 {t('scan_new')}", use_container_width=True):
-                # ✅ إعادة تعيين seeds للتحليل الجديد
                 st.session_state.demo_seed = None
                 st.session_state.heatmap_seed = None
                 st.session_state._last_img_hash = None
                 st.rerun()
+
 
 # ╔══════════════════════════════════╗
 # ║        PAGE: ENCYCLOPEDIA        ║
 # ╚══════════════════════════════════╝
 elif current_page == "encyclopedia":
     st.title(f"📘 {t('enc_title')}")
-    search = st.text_input(f"🔍 {t('enc_search')}", placeholder="amoeba, giardia...")
+    search = st.text_input(f"🔍 {t('enc_search')}", placeholder="amoeba, giardia, plasmodium...")
     st.markdown("---")
 
     found_any = False
@@ -2037,40 +2283,44 @@ elif current_page == "encyclopedia":
         rc = risk_color(data["risk_level"])
         risk_disp = get_p_text(data, "risk_display")
 
-        with st.expander(f"🔬 {name} — *{data['scientific_name']}* | {risk_disp}"):
+        with st.expander(f"{data.get('icon','🦠')} {name} — *{data['scientific_name']}* | {risk_disp}"):
             ci, cv = st.columns([2.5, 1])
             with ci:
-                st.markdown(f"""<div class='dm-card' style='border-left:4px solid {rc};'>
+                st.markdown(f"""<div class='dm-card dm-fade-in' style='border-left:4px solid {rc};'>
                 <h4 style='color:{rc};'>{data['scientific_name']}</h4>
                 <p><b>🔬 {t('scan_morphology')}:</b><br>{get_p_text(data,'morphology')}</p>
                 <p><b>📖 Description:</b><br>{get_p_text(data,'description')}</p>
                 <p><b>⚠️ {t('scan_risk')}:</b> <span style='color:{rc};font-weight:700;'>{risk_disp}</span></p>
-                <div style='background:rgba(22,163,74,0.08);padding:14px;border-radius:12px;margin:10px 0;'>
+                <div style='background:rgba(22,163,74,0.06);padding:14px;border-radius:14px;margin:10px 0;border:1px solid rgba(22,163,74,0.1);'>
                     <b>💡 {t('scan_advice')}:</b><br>{get_p_text(data,'advice')}
                 </div>
-                <div style='background:rgba(37,99,235,0.06);padding:14px;border-radius:12px;font-style:italic;'>
+                <div style='background:rgba(59,130,246,0.05);padding:14px;border-radius:14px;font-style:italic;border:1px solid rgba(59,130,246,0.08);'>
                     🤖 {get_p_text(data,'funny')}
                 </div>
                 </div>""", unsafe_allow_html=True)
 
-                # دورة الحياة
                 lifecycle = get_p_text(data, "lifecycle")
                 if lifecycle and lifecycle != "N/A":
                     st.markdown(f"**🔄 Cycle:** {lifecycle}")
 
-                # الفحوصات
                 extra = get_p_text(data, "extra_tests")
                 if isinstance(extra, list):
                     st.markdown(f"**🩺 {t('scan_extra_tests')}:** {', '.join(extra)}")
 
             with cv:
                 rp = risk_percent(data["risk_level"])
+                st.markdown(f'<div style="text-align:center;font-size:5rem;margin:20px 0;">{data.get("icon","🦠")}</div>', unsafe_allow_html=True)
                 if rp > 0:
-                    st.progress(rp / 100, text=f"Dangerosite: {rp}%")
-                st.markdown(f'<div style="text-align:center;font-size:4rem;">{data.get("icon","🦠")}</div>', unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div class='dm-card' style='padding:16px; text-align:center;'>
+                        <div style='font-family:JetBrains Mono,monospace; font-size:1.8rem; font-weight:900; color:{rc};'>{rp}%</div>
+                        <div style='font-size:0.75rem; opacity:0.5; text-transform:uppercase;'>Danger</div>
+                    </div>
+                    """, unsafe_allow_html=True)
 
     if search.strip() and not found_any:
         st.warning(f"🔍 {t('enc_no_result')}")
+
 
 # ╔══════════════════════════════════╗
 # ║        PAGE: DASHBOARD           ║
@@ -2090,6 +2340,7 @@ elif current_page == "dashboard":
         fiable = averif = 0
         common = "N/A"
 
+    # مؤشرات الأداء
     kc = st.columns(4)
     for col, (ic, val, lbl, clr) in zip(kc, [
         ("🔬", total, t("dash_total"), "#3b82f6"),
@@ -2098,19 +2349,33 @@ elif current_page == "dashboard":
         ("🦠", common, t("dash_frequent"), "#ef4444"),
     ]):
         with col:
-            st.markdown(f"""<div class="dm-metric">
+            st.markdown(f"""<div class="dm-metric dm-fade-in">
             <span class="dm-metric-icon">{ic}</span>
-            <div class="dm-metric-val" style="color:{clr} !important;">{val}</div>
+            <div class="dm-metric-val" style="color:{clr} !important; -webkit-text-fill-color:{clr};">{val}</div>
             <div class="dm-metric-lbl">{lbl}</div></div>""", unsafe_allow_html=True)
 
     st.markdown("---")
+
+    # حالة النظام
     sc = st.columns(3)
     with sc[0]:
-        st.markdown(f"<div class='dm-card dm-card-green'><h4>🟢 {t('dash_system')}</h4></div>", unsafe_allow_html=True)
+        st.markdown(f"""<div class='dm-card dm-card-green' style='padding:18px;'>
+        <div style='display:flex;align-items:center;gap:8px;'>
+            <span class="dm-status-dot dm-status-online"></span>
+            <span style='font-weight:700;'>{t('dash_system')}</span>
+        </div></div>""", unsafe_allow_html=True)
     with sc[1]:
-        st.markdown(f"<div class='dm-card dm-card-blue'><h4>👤 {st.session_state.user_name}</h4></div>", unsafe_allow_html=True)
+        st.markdown(f"""<div class='dm-card dm-card-blue' style='padding:18px;'>
+        <div style='display:flex;align-items:center;gap:8px;'>
+            <span>👤</span>
+            <span style='font-weight:700;'>{st.session_state.user_name}</span>
+        </div></div>""", unsafe_allow_html=True)
     with sc[2]:
-        st.markdown(f"<div class='dm-card dm-card-purple'><h4>🕐 {datetime.now().strftime('%H:%M — %d/%m/%Y')}</h4></div>", unsafe_allow_html=True)
+        st.markdown(f"""<div class='dm-card dm-card-purple' style='padding:18px;'>
+        <div style='display:flex;align-items:center;gap:8px;'>
+            <span>🕐</span>
+            <span style='font-weight:700;'>{datetime.now().strftime('%H:%M — %d/%m/%Y')}</span>
+        </div></div>""", unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -2121,7 +2386,9 @@ elif current_page == "dashboard":
         cc1, cc2 = st.columns(2)
         with cc1:
             st.markdown(f"#### 📊 {t('dash_distribution')}")
-            st.bar_chart(filtered["Parasite"].value_counts(), color="#3b82f6")
+            dist_data = filtered["Parasite"].value_counts()
+            st.bar_chart(dist_data, color="#3b82f6")
+
         with cc2:
             if "Confiance" in filtered.columns:
                 st.markdown(f"#### 📈 {t('dash_confidence_chart')}")
@@ -2131,7 +2398,7 @@ elif current_page == "dashboard":
                 except Exception:
                     pass
 
-        # مقارنة تحاليل نفس المريض
+        # مقارنة تحاليل مريض
         if "Patient" in df.columns and len(df["Patient"].unique()) > 0:
             st.markdown("---")
             st.markdown(f"### 🔁 {t('dash_patient_compare')}")
@@ -2144,16 +2411,15 @@ elif current_page == "dashboard":
         st.markdown(f"### 📋 {t('dash_history')}")
         st.dataframe(filtered, use_container_width=True)
 
-        # ✅ إصلاح #1: تصدير متعدد محسّن
+        # تصدير
         ex1, ex2, ex3 = st.columns(3)
         with ex1:
-            csv = filtered.to_csv(index=False).encode('utf-8-sig')  # ✅ UTF-8 BOM للعربية
+            csv = filtered.to_csv(index=False).encode('utf-8-sig')
             st.download_button(f"⬇️ {t('dash_export')}", csv, "analyses.csv", "text/csv", use_container_width=True)
         with ex2:
             json_data = filtered.to_json(orient='records', force_ascii=False).encode('utf-8')
             st.download_button(f"⬇️ {t('dash_export_json')}", json_data, "analyses.json", "application/json", use_container_width=True)
         with ex3:
-            # ✅ إصلاح #1 و #20: Excel export مع معالجة أخطاء صحيحة
             try:
                 import openpyxl  # noqa: F401
                 buf = io.BytesIO()
@@ -2165,31 +2431,41 @@ elif current_page == "dashboard":
                     use_container_width=True
                 )
             except ImportError:
-                st.info("📦 Install `openpyxl` for Excel export: `pip install openpyxl`")
+                st.info("📦 `pip install openpyxl`")
             except Exception as e:
-                st.error(f"Excel export error: {e}")
+                st.error(f"Excel error: {e}")
 
         # سجل النشاطات
         if st.session_state.activity_log:
             with st.expander(f"📜 {t('activity_log')}"):
                 st.dataframe(pd.DataFrame(st.session_state.activity_log), use_container_width=True)
     else:
-        st.markdown(f"""<div class='dm-card' style='text-align:center;padding:50px;'>
-        <div style='font-size:4.5rem;'>📊</div><h3>{t('dash_no_data')}</h3>
-        <p style='opacity:0.6;'>{t('dash_no_data_desc')}</p></div>""", unsafe_allow_html=True)
+        st.markdown(f"""<div class='dm-card dm-fade-in' style='text-align:center;padding:60px;'>
+        <div style='font-size:5rem; opacity:0.3;'>📊</div>
+        <h3 style='margin-top:16px;'>{t('dash_no_data')}</h3>
+        <p style='opacity:0.5;'>{t('dash_no_data_desc')}</p></div>""", unsafe_allow_html=True)
+
 
 # ╔══════════════════════════════════╗
 # ║        PAGE: QUIZ                ║
 # ╚══════════════════════════════════╝
 elif current_page == "quiz":
     st.title(f"🧠 {t('quiz_title')}")
-    st.markdown(f"<div class='dm-card dm-card-purple'><p>{t('quiz_desc')}</p></div>", unsafe_allow_html=True)
+    st.markdown(f"""<div class='dm-card dm-card-purple dm-fade-in'>
+    <p style='font-size:1.05rem;'>{t('quiz_desc')}</p></div>""", unsafe_allow_html=True)
 
     lang = st.session_state.get("lang", "fr")
     questions = QUIZ_QUESTIONS.get(lang, QUIZ_QUESTIONS["fr"])
     qs = st.session_state.quiz_state
 
     if not qs["active"]:
+        st.markdown("""
+        <div class='dm-card' style='text-align:center; padding:40px;'>
+            <div style='font-size:4rem; margin-bottom:16px;'>🎮</div>
+            <h3>Ready to test your knowledge?</h3>
+            <p style='opacity:0.5;'>Answer questions about parasitology!</p>
+        </div>
+        """, unsafe_allow_html=True)
         if st.button("🎮 Start Quiz", use_container_width=True, type="primary"):
             st.session_state.quiz_state = {"current": 0, "score": 0, "answered": [], "active": True}
             log_activity("Quiz started")
@@ -2198,16 +2474,36 @@ elif current_page == "quiz":
         idx = qs["current"]
         if idx < len(questions):
             q = questions[idx]
-            st.markdown(f"### {t('quiz_question')} {idx+1}/{len(questions)}")
-            st.progress((idx) / len(questions))
+            prog_pct = idx / len(questions)
+            st.markdown(f"""
+            <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;'>
+                <span style='font-weight:700;'>{t('quiz_question')} {idx+1}/{len(questions)}</span>
+                <span style='font-weight:700; color:#3b82f6;'>{t('quiz_score')}: {qs['score']}/{idx}</span>
+            </div>
+            """, unsafe_allow_html=True)
+            st.progress(prog_pct)
 
-            st.markdown(f"<div class='dm-card'><h4>{q['q']}</h4></div>", unsafe_allow_html=True)
+            # مستوى الصعوبة
+            diff = q.get("difficulty", "medium")
+            diff_colors = {"easy": "#22c55e", "medium": "#f59e0b", "hard": "#ef4444"}
+            diff_labels = {"easy": "Facile", "medium": "Moyen", "hard": "Difficile"}
+            st.markdown(f"""
+            <div class='dm-card dm-fade-in'>
+                <div style='display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;'>
+                    <span style='font-size:0.8rem; opacity:0.5;'>#{idx+1}</span>
+                    <span style='background:{diff_colors.get(diff,"#f59e0b")}22; color:{diff_colors.get(diff,"#f59e0b")};
+                           padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700;'>
+                        {diff_labels.get(diff, diff)}
+                    </span>
+                </div>
+                <h4>{q['q']}</h4>
+            </div>
+            """, unsafe_allow_html=True)
 
-            # ✅ إصلاح #9: استخدام session_state بدل time.sleep
             answer_key = f"quiz_answered_{idx}"
             if answer_key not in st.session_state:
                 for i, opt in enumerate(q["options"]):
-                    if st.button(opt, key=f"quiz_{idx}_{i}", use_container_width=True):
+                    if st.button(f"{'ABCD'[i]}. {opt}", key=f"quiz_{idx}_{i}", use_container_width=True):
                         is_correct = (i == q["answer"])
                         if is_correct:
                             st.session_state.quiz_state["score"] += 1
@@ -2215,7 +2511,6 @@ elif current_page == "quiz":
                         st.session_state[answer_key] = {"correct": is_correct, "selected": i}
                         st.rerun()
             else:
-                # عرض النتيجة
                 answer_data = st.session_state[answer_key]
                 if answer_data["correct"]:
                     st.success(f"✅ {t('quiz_correct')}")
@@ -2231,27 +2526,40 @@ elif current_page == "quiz":
             total_q = len(questions)
             pct = int(score / total_q * 100) if total_q > 0 else 0
 
-            if pct >= 80: emoji, msg = "🏆", "Excellent !"
-            elif pct >= 60: emoji, msg = "👍", "Bien !"
-            elif pct >= 40: emoji, msg = "📚", "Continuez a apprendre !"
-            else: emoji, msg = "💪", "Revoyez vos cours !"
+            if pct >= 80: emoji, msg, grade = "🏆", "Excellent !", "A+"
+            elif pct >= 60: emoji, msg, grade = "👍", "Bien !", "B"
+            elif pct >= 40: emoji, msg, grade = "📚", "Continuez !", "C"
+            else: emoji, msg, grade = "💪", "Revoyez !", "D"
 
-            st.markdown(f"""<div class='dm-card dm-card-green' style='text-align:center;'>
-            <div style='font-size:4rem;'>{emoji}</div>
-            <h2>{t('quiz_finish')}</h2>
-            <div style='font-size:3rem;font-weight:900;color:#2563eb;font-family:JetBrains Mono,monospace;'>{score}/{total_q}</div>
-            <p style='font-size:1.2rem;'>{pct}% — {msg}</p>
+            st.markdown(f"""<div class='dm-card dm-card-green dm-fade-in' style='text-align:center; padding:40px;'>
+            <div style='font-size:5rem;'>{emoji}</div>
+            <h2 style='margin-top:16px;'>{t('quiz_finish')}</h2>
+            <div style='font-size:4rem; font-weight:900; font-family:JetBrains Mono,monospace;
+                        background:linear-gradient(135deg,#3b82f6,#06b6d4);
+                        -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                        margin:16px 0;'>{score}/{total_q}</div>
+            <div style='display:flex; justify-content:center; gap:20px; margin:16px 0;'>
+                <div class='dm-card' style='padding:12px 24px;'>
+                    <div style='font-size:0.75rem; opacity:0.5;'>Score</div>
+                    <div style='font-weight:800; font-size:1.2rem;'>{pct}%</div>
+                </div>
+                <div class='dm-card' style='padding:12px 24px;'>
+                    <div style='font-size:0.75rem; opacity:0.5;'>Grade</div>
+                    <div style='font-weight:800; font-size:1.2rem;'>{grade}</div>
+                </div>
+            </div>
+            <p style='font-size:1.1rem; opacity:0.7;'>{msg}</p>
             </div>""", unsafe_allow_html=True)
 
-            log_activity(f"Quiz finished: {score}/{total_q}")
+            log_activity(f"Quiz finished: {score}/{total_q} ({pct}%)")
 
             if st.button(f"🔄 {t('quiz_restart')}", use_container_width=True):
-                # ✅ تنظيف حالة الأسئلة
                 for key in list(st.session_state.keys()):
                     if key.startswith("quiz_answered_"):
                         del st.session_state[key]
                 st.session_state.quiz_state = {"current": 0, "score": 0, "answered": [], "active": False}
                 st.rerun()
+
 
 # ╔══════════════════════════════════╗
 # ║        PAGE: CHATBOT             ║
@@ -2262,18 +2570,18 @@ elif current_page == "chatbot":
     lang = st.session_state.get("lang", "fr")
     kb = CHATBOT_KNOWLEDGE.get(lang, CHATBOT_KNOWLEDGE["fr"])
 
-    # رسالة الترحيب
     if not st.session_state.chat_history:
         st.session_state.chat_history.append({"role": "bot", "msg": kb["greeting"]})
 
     # عرض المحادثة
-    for msg in st.session_state.chat_history:
-        if msg["role"] == "user":
-            st.markdown(f"<div class='dm-chat-msg dm-chat-user'>👤 {msg['msg']}</div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div class='dm-chat-msg dm-chat-bot'>🤖 {msg['msg']}</div>", unsafe_allow_html=True)
+    chat_container = st.container()
+    with chat_container:
+        for msg in st.session_state.chat_history:
+            if msg["role"] == "user":
+                st.markdown(f"<div class='dm-chat-msg dm-chat-user'>👤 {msg['msg']}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='dm-chat-msg dm-chat-bot'>🤖 {msg['msg']}</div>", unsafe_allow_html=True)
 
-    # إدخال المستخدم
     user_input = st.chat_input(t("chatbot_placeholder"))
     if user_input:
         st.session_state.chat_history.append({"role": "user", "msg": user_input})
@@ -2282,14 +2590,13 @@ elif current_page == "chatbot":
         log_activity(f"Chat: {user_input[:50]}")
         st.rerun()
 
-    # أزرار سريعة
     st.markdown("---")
-    st.markdown("**Questions rapides:**")
+    st.markdown("**Quick Questions:**")
     qc = st.columns(4)
     quick_qs = {
-        "fr": ["Amoeba?", "Giardia?", "Plasmodium?", "Microscope?"],
+        "fr": ["Amoeba?", "Giardia?", "Plasmodium?", "Diagnostic?"],
         "ar": ["أميبا؟", "جيارديا؟", "ملاريا؟", "مرحبا"],
-        "en": ["Amoeba?", "Giardia?", "Plasmodium?", "Microscope?"]
+        "en": ["Amoeba?", "Giardia?", "Malaria?", "Diagnosis?"]
     }
     for col, q in zip(qc, quick_qs.get(lang, quick_qs["fr"])):
         with col:
@@ -2299,9 +2606,10 @@ elif current_page == "chatbot":
                 st.session_state.chat_history.append({"role": "bot", "msg": reply})
                 st.rerun()
 
-    if st.button("🗑️ Effacer le chat", use_container_width=True):
+    if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.chat_history = []
         st.rerun()
+
 
 # ╔══════════════════════════════════╗
 # ║        PAGE: ABOUT               ║
@@ -2309,68 +2617,100 @@ elif current_page == "chatbot":
 elif current_page == "about":
     st.title(f"ℹ️ {t('about_title')}")
 
-    st.markdown(f"""<div class='dm-card dm-card-blue' style='text-align:center;'>
-    <h1 style='color:#2563eb;margin:0;'>🧬 DM SMART LAB AI</h1>
-    <p style='font-size:1.15rem;margin-top:6px;'><b>v{APP_VERSION} — Ultimate Edition</b></p>
-    <p style='opacity:0.65;'>{t('about_desc')}</p>
+    st.markdown(f"""<div class='dm-card dm-card-gradient dm-fade-in' style='text-align:center;'>
+    <h1 style='margin:0;'>
+        <span style='background:linear-gradient(135deg,#3b82f6,#06b6d4);
+              -webkit-background-clip:text; -webkit-text-fill-color:transparent;'>
+            🧬 DM SMART LAB AI
+        </span>
+    </h1>
+    <p style='font-size:1.15rem; margin-top:8px;'>
+        <span class='dm-version-badge'>v{APP_VERSION} Professional Edition</span>
+    </p>
+    <p style='opacity:0.55; margin-top:12px;'>{t('about_desc')}</p>
     </div>""", unsafe_allow_html=True)
 
-    st.markdown(f"""<div class='dm-card'>
+    st.markdown(f"""<div class='dm-card dm-fade-in'>
     <h3>📖 {PROJECT_TITLE}</h3>
-    <p style='line-height:1.8;opacity:0.85;'>{t('about_project_desc')}</p>
+    <p style='line-height:1.9; opacity:0.8;'>{t('about_project_desc')}</p>
     </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown(f"""<div class='dm-card dm-card-blue'>
+        st.markdown(f"""<div class='dm-card dm-card-blue dm-fade-in'>
         <h3>👨‍🔬 {t('about_team')}</h3><br>
-        <p><b>🧑‍💻 {AUTHORS['dev1']['name']}</b><br><span style='opacity:0.6;'>{AUTHORS['dev1']['role']}</span></p><br>
-        <p><b>🔬 {AUTHORS['dev2']['name']}</b><br><span style='opacity:0.6;'>{AUTHORS['dev2']['role']}</span></p><br>
-        <p><b>Niveau:</b> 3eme Annee</p>
-        <p><b>Specialite:</b> Laboratoire de Sante Publique</p>
+        <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;'>
+            <div style='width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#06b6d4);
+                        display:flex;align-items:center;justify-content:center;font-size:1.4rem;'>🧑‍💻</div>
+            <div>
+                <p style='font-weight:700;margin:0;'>{AUTHORS['dev1']['name']}</p>
+                <p style='opacity:0.5;font-size:0.85rem;margin:0;'>{AUTHORS['dev1']['role']}</p>
+            </div>
+        </div>
+        <div style='display:flex;align-items:center;gap:12px;margin-bottom:16px;'>
+            <div style='width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#ec4899);
+                        display:flex;align-items:center;justify-content:center;font-size:1.4rem;'>🔬</div>
+            <div>
+                <p style='font-weight:700;margin:0;'>{AUTHORS['dev2']['name']}</p>
+                <p style='opacity:0.5;font-size:0.85rem;margin:0;'>{AUTHORS['dev2']['role']}</p>
+            </div>
+        </div>
+        <p style='opacity:0.6;font-size:0.9rem;'><b>Niveau:</b> 3eme Annee<br><b>Specialite:</b> Laboratoire de Sante Publique</p>
         </div>""", unsafe_allow_html=True)
     with c2:
-        st.markdown(f"""<div class='dm-card'>
+        st.markdown(f"""<div class='dm-card dm-fade-in'>
         <h3>🏫 {t('about_institution')}</h3><br>
-        <p><b>{INSTITUTION['name']}</b></p>
+        <p style='font-weight:700;'>{INSTITUTION['name']}</p>
         <p>📍 {INSTITUTION['city']}, {INSTITUTION['country']} 🇩🇿</p><br>
         <h4>🎯 {t('about_objectives')}</h4>
-        <ul><li>{t('about_obj1')}</li><li>{t('about_obj2')}</li><li>{t('about_obj3')}</li><li>{t('about_obj4')}</li></ul>
+        <ul style='line-height:2;'>
+            <li>{t('about_obj1')}</li><li>{t('about_obj2')}</li>
+            <li>{t('about_obj3')}</li><li>{t('about_obj4')}</li>
+        </ul>
         </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown(f"### 🛠️ {t('about_tech')}")
     tc = st.columns(6)
-    techs = [("🐍","Python","Language"),("🧠","TensorFlow","Deep Learning"),("🎨","Streamlit","Interface"),("📊","Pandas","Data"),("🖼️","Pillow","Imaging"),("📄","FPDF","PDF")]
+    techs = [
+        ("🐍","Python","Language"),("🧠","TensorFlow","Deep Learning"),
+        ("🎨","Streamlit","Interface"),("📊","Pandas","Data"),
+        ("🖼️","Pillow","Imaging"),("📄","FPDF","Reports")
+    ]
     for col, (i, n, d) in zip(tc, techs):
         with col:
-            st.markdown(f"""<div class="dm-metric"><span class="dm-metric-icon">{i}</span>
-            <div class="dm-metric-val" style="font-size:1rem;">{n}</div>
+            st.markdown(f"""<div class="dm-metric dm-fade-in">
+            <span class="dm-metric-icon">{i}</span>
+            <div class="dm-metric-val" style="font-size:1rem; -webkit-text-fill-color:inherit;">{n}</div>
             <div class="dm-metric-lbl">{d}</div></div>""", unsafe_allow_html=True)
 
-    # الميزات الجديدة
     st.markdown("---")
-    st.markdown("### 🌟 Features v4.0")
+    st.markdown("### 🌟 Features v5.0 Professional")
     feat_cols = st.columns(3)
     features = [
-        ("🤖", "Dr. DhiaBot", "Chatbot medical intelligent"),
-        ("🧠", "Quiz Mode", "Testez vos connaissances"),
-        ("🔥", "Multi-Filters", "Thermal + Edge + Enhanced"),
-        ("🎯", "AI Heatmap", "Zones d'interet IA"),
-        ("🩺", "Smart Tests", "Suggestions d'examens"),
-        ("🔄", "Lifecycle", "Cycle de vie des parasites"),
-        ("🌍", "3 Languages", "FR / AR / EN"),
-        ("📊", "Multi-Export", "CSV + JSON + Excel"),
-        ("📜", "Activity Log", "Journal complet"),
+        ("🤖", "Dr. DhiaBot", "AI Medical Chatbot"),
+        ("🧠", "Smart Quiz", "With difficulty levels"),
+        ("🔥", "Multi-Filters", "Thermal + Edge + AI Focus"),
+        ("🎯", "AI Heatmap", "Intelligent focus areas"),
+        ("📊", "Quality Score", "Image quality assessment"),
+        ("⏱️", "Analysis Timer", "Performance tracking"),
+        ("🌙", "Pro Dark Mode", "Premium dark theme"),
+        ("📈", "Advanced Charts", "Interactive dashboards"),
+        ("🔒", "Enhanced Security", "SHA-256 + Auto-lock"),
     ]
     for i, (ic, name, desc) in enumerate(features):
         with feat_cols[i % 3]:
-            st.markdown(f"""<div class='dm-card' style='padding:16px;text-align:center;'>
-            <div style='font-size:2rem;'>{ic}</div>
-            <p style='font-weight:700;margin:4px 0;'>{name}</p>
-            <p style='font-size:0.8rem;opacity:0.6;'>{desc}</p>
+            st.markdown(f"""<div class='dm-card dm-fade-in' style='padding:18px;text-align:center;'>
+            <div style='font-size:2rem;margin-bottom:8px;'>{ic}</div>
+            <p style='font-weight:800;margin:4px 0;font-size:0.95rem;'>{name}</p>
+            <p style='font-size:0.78rem;opacity:0.5;'>{desc}</p>
             </div>""", unsafe_allow_html=True)
 
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=80)
-    st.caption(f"Fait avec ❤️ a {INSTITUTION['city']} — {INSTITUTION['year']}")
+    st.markdown("---")
+    st.markdown("""
+    <div style='text-align:center; padding:20px 0;'>
+        <img src='https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png' width='80' style='border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);'>
+    </div>
+    """, unsafe_allow_html=True)
+    st.caption(f"Fait avec ❤️ à {INSTITUTION['city']} — {INSTITUTION['year']}")
