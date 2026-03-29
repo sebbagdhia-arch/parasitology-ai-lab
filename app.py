@@ -2242,12 +2242,12 @@ if not st.session_state.logged_in:
                     st.rerun()
 
         st.markdown("""
-        <div style='text-align:center; opacity:0.4; font-size:0.75rem; margin-top:12st.markdown("""
-        <div style='text-align:center; opacity:0.4; font-size:0.75rem; margin-top:12px;'>
-            <p>👑 admin/admin2026 | 🔬 dhia/dhia2026 | 👁️ demo/demo123</p>
-        </div>
-        """, unsafe_allow_html=True)
-    st.stop()
+<div style='text-align:center; opacity:0.4; font-size:0.75rem; margin-top:12px;'>
+    <p>👑 admin/admin2026 | 🔬 dhia/dhia2026 | 👁️ demo/demo123</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.stop()
 
 
 # ============================================
