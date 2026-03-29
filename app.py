@@ -1837,188 +1837,153 @@ if current_page == "home":
             st.balloons()
             st.session_state.balloons_shown = True
 
-# ╔══════════════════════════════════╗
-# ║        PAGE: SCAN                ║
-# ╚══════════════════════════════════╝
-elif current_page == "scan":
-    st.title(f"🔬 {t('scan_title')}")
+# --- دالة تحميل الموديل الحقيقي (يجب أن تكون خارج الـ if) ---
+@st.cache_resource
+def load_model_ia():
+    model = None
+    classes = ["Negative"] # افتراضي
+    try:
+        # قراءة التسميات الحقيقية من ملف labels.txt
+        if os.path.exists("labels.txt"):
+            with open("labels.txt", "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                # إزالة الأرقام من بداية السطر (مثال: "0 Amoeba" تصبح "Amoeba")
+                classes = [line.strip().split(" ", 1)[-1] if " " in line else line.strip() for line in lines]
+        
+        # تحميل الموديل الحقيقي
+        if os.path.exists("keras_model.h5"):
+            model = tf.keras.models.load_model("keras_model.h5", compile=False)
+            
+    except Exception as e:
+        st.error(f"Erreur de modèle: {e}")
+        
+    return model, classes
+
+# ---------------------------------------------------------
+# داخل قسم: elif menu == "🔬 Scan & Analyse":
+# ---------------------------------------------------------
+
+elif menu == "🔬 Scan & Analyse":
+    st.title("🔬 Unité de Diagnostic IA")
+    
     if st.session_state.intro_step < 2:
-        st.error(f"⛔ {t('scan_blocked')}")
+        st.error("⛔ ACCÈS REFUSÉ : Veuillez activer le système dans la page 'Accueil' d'abord !")
         st.stop()
-
-    model, model_name = load_ai_model()
-    if model_name:
-        st.sidebar.success(f"🧠 {model_name}")
-    else:
-        st.sidebar.info("🧠 Demo")
-
-    st.markdown(f"### 📋 1. {t('scan_patient_info')}")
-    ca, cb = st.columns(2)
-    p_nom = ca.text_input(f"{t('scan_nom')} *", placeholder="Benali")
-    p_prenom = cb.text_input(t("scan_prenom"), placeholder="Ahmed")
-    cc, cd, ce, cf = st.columns(4)
-    p_age = cc.number_input(t("scan_age"), 0, 120, 30)
-    p_sexe = cd.selectbox(t("scan_sexe"), [t("patient_sexe_h"), t("patient_sexe_f")])
-    p_poids = ce.number_input(t("scan_poids"), 0, 300, 70)
-    samples = [t("echantillon_selles"), t("echantillon_sang_frottis"), t("echantillon_sang_goutte"),
-               t("echantillon_urines"), t("echantillon_lcr"), t("echantillon_autre")]
-    p_type = cf.selectbox(t("scan_echantillon"), samples)
+        
+    st.markdown("#### 1. Informations du Patient")
+    with st.container():
+        c_a, c_b = st.columns(2)
+        p_nom = c_a.text_input("Nom", placeholder="ex: Benali")
+        p_prenom = c_b.text_input("Prénom", placeholder="ex: Ahmed")
+        
+        c_c, c_d, c_e, c_f, c_g = st.columns(5)
+        p_age = c_c.number_input("Age", 1, 100, 30)
+        p_sexe = c_d.selectbox("Sexe", ["H", "F"])
+        p_poids = c_e.number_input("Poids", 1, 150, 60)
+        p_type = c_f.selectbox("Échantillon", ["Selles", "Sang", "Autre"])
+        thermal = c_g.toggle("🔥 Vision Thermique")
 
     st.markdown("---")
-    st.markdown(f"### 📸 2. {t('scan_capture')}")
-    cap_mode = st.radio("Mode:", [f"📷 {t('scan_camera')}", f"📁 {t('scan_upload')}"],
-                        horizontal=True, label_visibility="collapsed")
+    st.markdown("#### 2. Capture Microscopique")
+    
+    # تحميل الموديل
+    model, class_names = load_model_ia() 
+    
+    img_file = st.camera_input("Placez la lame et capturez", label_visibility="visible")
+    
+    if img_file:
+        if not p_nom:
+            st.error("⚠️ Veuillez entrer le NOM du patient ci-dessus !")
+        else:
+            col_res1, col_res2 = st.columns([1, 1])
+            
+            with col_res1:
+                image = Image.open(img_file).convert("RGB")
+                if thermal:
+                    gray = ImageOps.grayscale(image)
+                    disp_img = ImageOps.colorize(gray, black="blue", white="yellow", mid="red")
+                    st.image(disp_img, caption="Vue Thermique (Activée)", use_container_width=True)
+                else:
+                    st.image(image, caption="Vue Normale", use_container_width=True)
 
-    img_file = None
-    if t('scan_camera') in cap_mode:
-        img_file = st.camera_input(t("scan_capture"))
-    else:
-        img_file = st.file_uploader(t("scan_upload"), type=["jpg", "jpeg", "png", "bmp", "tiff"])
+            with col_res2:
+                with st.spinner("Traitement IA en cours..."):
+                    time.sleep(1) # فقط أنيميشن للانتظار
+                    
+                    # 1. متغيرات افتراضية للحماية من توقف التطبيق
+                    predicted_label = "Negative"
+                    conf = 0
+                    
+                    # 2. التحليل الحقيقي 100% (لا توجد عشوائية)
+                    if model:
+                        try:
+                            # تحجيم الصورة لتناسب Keras (224x224)
+                            # نستخدم getattr لتفادي مشاكل مكتبة Pillow في النسخ المختلفة
+                            resample_method = getattr(Image, 'Resampling', Image).LANCZOS
+                            img_rez = ImageOps.fit(image, (224, 224), resample_method)
+                            
+                            # تحويل الصورة إلى مصفوفة وتطبيق الـ Normalization
+                            img_arr = np.asarray(img_rez).astype(np.float32)
+                            img_arr = (img_arr / 127.5) - 1.0 
+                            batch = np.expand_dims(img_arr, axis=0)
+                            
+                            # التوقع الفعلي
+                            preds = model.predict(batch, verbose=0)[0]
+                            idx = int(np.argmax(preds))
+                            
+                            # أخذ اسم الطفيلي ونسبة الثقة
+                            if idx < len(class_names):
+                                predicted_label = class_names[idx].strip()
+                                conf = int(preds[idx] * 100)
+                                
+                        except Exception as e: 
+                            st.error(f"Erreur d'analyse IA: {e}")
+                    else:
+                        st.error("⚠️ الموديل غير متصل! تأكد من وجود ملف keras_model.h5")
 
-    if img_file is not None:
-        if not p_nom.strip():
-            st.error(f"⚠️ {t('scan_nom_required')}")
-            st.stop()
-
-        # ✅ إصلاح: إعادة تعيين seeds عند صورة جديدة
-        img_hash = hashlib.md5(img_file.getvalue()).hexdigest()
-        if st.session_state.get("_last_img_hash") != img_hash:
-            st.session_state._last_img_hash = img_hash
-            st.session_state.demo_seed = random.randint(0, 999999)
-            st.session_state.heatmap_seed = random.randint(0, 999999)
-
-        image = Image.open(img_file).convert("RGB")
-        col_img, col_res = st.columns(2)
-
-        with col_img:
-            # ✅ إصلاح #7 و #15: استخدام الفلاتر بشكل صحيح
-            tab_orig, tab_thermal, tab_edge, tab_enhance, tab_heatmap = st.tabs(
-                ["📷 Original", "🔥 Thermal", "📐 Edges", "✨ Enhanced", "🎯 AI Focus"]
-            )
-            with tab_orig:
-                st.image(image, caption="Vue originale", use_container_width=True)
-            with tab_thermal:
-                st.image(apply_thermal(image), caption=t("scan_thermal"), use_container_width=True)
-            with tab_edge:
-                st.image(apply_edge_detection(image), caption=t("scan_edge"), use_container_width=True)
-            with tab_enhance:
-                st.image(apply_enhanced_contrast(image), caption=t("scan_enhanced"), use_container_width=True)
-            with tab_heatmap:
-                st.image(generate_heatmap_overlay(image), caption=t("scan_heatmap"), use_container_width=True)
-
-        with col_res:
-            st.markdown(f"### 🧠 {t('scan_result')}")
-            with st.spinner(f"⏳ {t('scan_analyzing')}"):
-                prog = st.progress(0)
-                for i in range(100):
-                    time.sleep(0.008)  # ✅ تسريع قليلاً
-                    prog.progress(i + 1)
-                result = predict_image(model, image)
-
-            label = result["label"]
-            conf = result["confidence"]
-            info = result["info"]
-            rc = risk_color(info["risk_level"])
-
-            if not result["is_reliable"]:
-                st.warning(f"⚠️ {t('scan_low_conf')} ({conf}%)")
-            if result["is_demo"]:
-                st.info(f"ℹ️ {t('scan_demo_mode')}")
-
-            risk_disp = get_p_text(info, "risk_display")
-            morpho = get_p_text(info, "morphology")
-            advice = get_p_text(info, "advice")
-            funny = get_p_text(info, "funny")
-
-            st.markdown(f"""
-            <div class='dm-card' style='border-left:5px solid {rc};'>
-                <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;'>
-                    <div>
-                        <h2 style='color:{rc};margin:0;'>{label}</h2>
-                        <p style='opacity:0.55;font-style:italic;'>{info['scientific_name']}</p>
+                    # 3. المطابقة الذكية مع قاعدة البيانات (Smart Matching)
+                    # هذا سيحل مشكلة الأسماء المختلفة بين الموديل وقاعدة البيانات
+                    matched_key = "Negative"
+                    for db_key in parasite_db.keys():
+                        if predicted_label.lower() in db_key.lower() or db_key.lower() in predicted_label.lower():
+                            matched_key = db_key
+                            break
+                            
+                    info = parasite_db.get(matched_key, parasite_db["Negative"])
+                    
+                    # 4. عرض النتيجة
+                    card_color = "red" if matched_key != "Negative" else "green"
+                    st.markdown(f"""
+                    <div class='medical-card' style='border-left: 5px solid {card_color};'>
+                        <h2 style='color:{card_color}'>{matched_key}</h2>
+                        <p><b>Confiance de l'IA:</b> {conf}%</p>
+                        <p><b>Morphologie:</b> {info['morphology']}</p>
+                        <hr>
+                        <p>🤡 <i>{info['funny']}</i></p>
                     </div>
-                    <div style='text-align:center;'>
-                        <div style='font-size:2.8rem;font-weight:900;color:{rc};font-family:JetBrains Mono,monospace;'>{conf}%</div>
-                        <div style='font-size:0.75rem;opacity:0.45;text-transform:uppercase;'>{t('scan_confidence')}</div>
-                    </div>
-                </div>
-                <hr style='opacity:0.15;margin:16px 0;'>
-                <p><b>🔬 {t('scan_morphology')}:</b><br>{morpho}</p>
-                <p><b>⚠️ {t('scan_risk')}:</b> <span style='color:{rc};font-weight:700;'>{risk_disp}</span></p>
-                <div style='background:rgba(34,197,94,0.08);padding:14px;border-radius:12px;margin:12px 0;'>
-                    <b>💡 {t('scan_advice')}:</b><br>{advice}
-                </div>
-                <div style='background:rgba(37,99,235,0.06);padding:14px;border-radius:12px;font-style:italic;'>
-                    🤖 {funny}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # الفحوصات الإضافية
-            extra = get_p_text(info, "extra_tests")
-            if isinstance(extra, list) and extra and extra[0] != "N/A":
-                with st.expander(f"🩺 {t('scan_extra_tests')}"):
-                    for test in extra:
-                        st.markdown(f"• {test}")
-
-            # دورة الحياة
-            lifecycle = get_p_text(info, "lifecycle")
-            if lifecycle and lifecycle != "N/A":
-                with st.expander("🔄 Cycle de Vie"):
-                    st.markdown(f"**{lifecycle}**")
-
-            # الصوت
-            speak(t("voice_result").format(patient=p_nom, parasite=label, funny=funny))
-
-            # كل التنبؤات
-            if result["all_predictions"]:
-                with st.expander(f"📊 {t('scan_all_probs')}"):
-                    for cls, prob in sorted(result["all_predictions"].items(), key=lambda x: x[1], reverse=True):
-                        st.progress(min(prob / 100, 1.0), text=f"{cls}: {prob}%")
-
-        st.markdown("---")
-        st.markdown("### 📄 Actions")
-        a1, a2, a3 = st.columns(3)
-        with a1:
-            pat = {
-                t("scan_nom"): p_nom,
-                t("scan_prenom"): p_prenom,
-                t("scan_age"): str(p_age),
-                t("scan_sexe"): p_sexe,
-                t("scan_poids"): str(p_poids),
-                t("scan_echantillon"): p_type
-            }
-            try:
-                pdf = generate_pdf(pat, label, conf, info)
-                st.download_button(
-                    f"📥 {t('scan_download_pdf')}", pdf,
-                    f"Rapport_{p_nom}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                    "application/pdf", use_container_width=True
-                )
-            except Exception as e:
-                st.error(f"Erreur PDF: {e}")
-        with a2:
-            if st.button(f"💾 {t('scan_save')}", use_container_width=True):
-                entry = {
-                    "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                    "Patient": f"{p_nom} {p_prenom}".strip(),
-                    "Age": p_age, "Sexe": p_sexe,
-                    "Echantillon": p_type, "Parasite": label,
-                    "Confiance": f"{conf}%",
-                    "Risque": _safe_pdf_text(risk_disp),  # ✅ نص آمن
-                    "Status": "Fiable" if result["is_reliable"] else "A verifier"
-                }
-                st.session_state.history.append(entry)
-                log_activity(f"Scan saved: {label} for {p_nom}")
-                st.success(f"✅ {t('scan_saved')}")
-        with a3:
-            if st.button(f"🔄 {t('scan_new')}", use_container_width=True):
-                # ✅ إعادة تعيين seeds للتحليل الجديد
-                st.session_state.demo_seed = None
-                st.session_state.heatmap_seed = None
-                st.session_state._last_img_hash = None
-                st.rerun()
-
+                    """, unsafe_allow_html=True)
+                    
+                    # الصوت
+                    res_txt = f"Résultat pour {p_nom} : {matched_key}. {info['funny']}"
+                    if st.session_state.last_audio != res_txt:
+                        speak(res_txt)
+                        st.session_state.last_audio = res_txt
+                    
+                    # توليد PDF
+                    p_data = {"Nom":p_nom, "Prenom":p_prenom, "Age":p_age, "Sexe":p_sexe, "Poids":p_poids, "Type":p_type}
+                    pdf_bytes = generate_pdf(p_data, matched_key, conf, info)
+                    st.download_button("📥 Télécharger Rapport PDF", pdf_bytes, f"Rapport_{p_nom}.pdf", "application/pdf", use_container_width=True)
+                    
+                # الأرشفة
+                if st.button("💾 Sauvegarder"):
+                    st.session_state.history.append({
+                        "Date": datetime.now().strftime("%Y-%m-%d %H:%M"), 
+                        "Patient": p_nom, 
+                        "Res": matched_key,
+                        "Parasite": matched_key, 
+                        "Status": "Succès"
+                    })
+                    st.success("Sauvegardé avec succès.")
 # ╔══════════════════════════════════╗
 # ║        PAGE: ENCYCLOPEDIA        ║
 # ╚══════════════════════════════════╝
