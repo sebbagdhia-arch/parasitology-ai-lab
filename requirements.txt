@@ -1,7 +1,10 @@
 streamlit
-tensorflow
+tensorflow==2.15.0
+keras==2.15.0
+pillow
 numpy
-pandas
-Pillow
+requests
+streamlit-lottie
+gTTS
 fpdf
-gtts
+matplotlib
