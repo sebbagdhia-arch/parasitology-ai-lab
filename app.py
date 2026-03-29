@@ -1080,99 +1080,110 @@ def assess_image_quality(image):
 # ============================================
 @st.cache_resource(show_spinner=False)
 def load_ai_model():
+    """تحميل الموديل الحقيقي بدقة ومنع العشوائية"""
     model = None
-    model_name = None
+    model_name = "keras_model.h5"
     try:
         import tensorflow as tf
-        try:
-            files = os.listdir(".")
-        except OSError:
-            files = []
-        for ext in [".h5", ".keras"]:
-            found = [f for f in files if f.endswith(ext)]
-            if found:
-                model_name = found[0]
-                model = tf.keras.models.load_model(model_name, compile=False)
-                break
-        if model is None:
-            tflite = [f for f in files if f.endswith(".tflite")]
-            if tflite:
-                model_name = tflite[0]
-                model = tf.lite.Interpreter(model_path=model_name)
-                model.allocate_tensors()
-    except ImportError:
-        pass
-    except Exception:
-        pass
+        if os.path.exists(model_name):
+            model = tf.keras.models.load_model(model_name, compile=False)
+        else:
+            st.sidebar.error("⚠️ ملف keras_model.h5 غير موجود!")
+    except Exception as e:
+        st.sidebar.error(f"⚠️ خطأ في تحميل الموديل: {e}")
     return model, model_name
 
+def load_labels():
+    """قراءة أسماء الطفيليات من ملف labels.txt"""
+    classes = ["Amoeba", "Giardia", "Leishmania", "Plasmodium", "Trypanosoma", "Schistosoma", "Negative"]
+    try:
+        if os.path.exists("labels.txt"):
+            with open("labels.txt", "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                # إزالة الأرقام من الأسماء (مثال: "0 Amoeba" تصبح "Amoeba")
+                classes = [line.strip().split(" ", 1)[-1] if " " in line else line.strip() for line in lines]
+    except:
+        pass
+    return classes
+
+# المتغيرات الأساسية للموديل
+CLASS_NAMES = load_labels()
+MODEL_INPUT_SIZE = (224, 224)
+CONFIDENCE_THRESHOLD = 60
+
 def predict_image(model, image):
+    """تحليل الصورة وإرجاع النتيجة الحقيقية فقط"""
+    # النتيجة الافتراضية إذا فشل كل شيء
     result = {
-        "label": "Negative", "confidence": 0,
-        "all_predictions": {}, "is_reliable": False,
-        "is_demo": False, "info": PARASITE_DB["Negative"]
+        "label": "Negative", 
+        "confidence": 0,
+        "all_predictions": {}, 
+        "is_reliable": False,
+        "is_demo": False,
+        "info": PARASITE_DB.get("Negative") # يفترض أن لديك Negative في PARASITE_DB
     }
+    
     if model is None:
-        if st.session_state.get("demo_seed") is None:
-            st.session_state.demo_seed = random.randint(0, 999999)
-        rng = random.Random(st.session_state.demo_seed)
-        demo_label = rng.choice(CLASS_NAMES)
-        demo_conf = rng.randint(65, 97)
-        all_preds = {}
-        remaining = 100.0 - demo_conf
-        for cls in CLASS_NAMES:
-            if cls == demo_label:
-                all_preds[cls] = float(demo_conf)
-            else:
-                val = round(rng.uniform(0, remaining / max(1, len(CLASS_NAMES) - 1)), 1)
-                all_preds[cls] = val
-        result.update({
-            "label": demo_label, "confidence": demo_conf,
-            "all_predictions": all_preds,
-            "is_reliable": demo_conf >= CONFIDENCE_THRESHOLD,
-            "is_demo": True,
-            "info": PARASITE_DB.get(demo_label, PARASITE_DB["Negative"])
-        })
+        st.error("⚠️ لا يمكن التحليل، الموديل غير متصل.")
         return result
+        
     try:
         import tensorflow as tf
-        img = ImageOps.fit(image, MODEL_INPUT_SIZE, Image.LANCZOS)
-        arr = np.asarray(img).astype(np.float32) / 127.5 - 1.0
-        batch = np.expand_dims(arr, 0)
-        if isinstance(model, tf.lite.Interpreter):
-            inp = model.get_input_details()
-            out = model.get_output_details()
-            model.set_tensor(inp[0]['index'], batch)
-            model.invoke()
-            preds = model.get_tensor(out[0]['index'])[0]
-        else:
-            preds = model.predict(batch, verbose=0)[0]
+        # 1. معالجة الصورة لتناسب Teachable Machine / Keras
+        # استخدام Image.Resampling.LANCZOS بدلاً من Image.LANCZOS لتوافق أفضل
+        img = ImageOps.fit(image, MODEL_INPUT_SIZE, getattr(Image, 'Resampling', Image).LANCZOS)
+        arr = np.asarray(img).astype(np.float32)
+        arr = (arr / 127.5) - 1.0  # Normalization
+        batch = np.expand_dims(arr, axis=0)
+        
+        # 2. التنبؤ الحقيقي
+        preds = model.predict(batch, verbose=0)[0]
         idx = int(np.argmax(preds))
         conf = int(preds[idx] * 100)
+        
+        # 3. تحديد الطفيلي
         label = CLASS_NAMES[idx] if idx < len(CLASS_NAMES) else "Negative"
+        
+        # 4. مطابقة ذكية مع قاعدة البيانات (PARASITE_DB) لتفادي أخطاء الأسماء
+        matched_key = "Negative"
+        for key in PARASITE_DB.keys():
+            if key.lower() in label.lower() or label.lower() in key.lower():
+                matched_key = key
+                break
+                
+        db_info = PARASITE_DB.get(matched_key, PARASITE_DB["Negative"])
+        
+        # 5. حفظ كل التوقعات
         all_p = {CLASS_NAMES[i]: round(float(preds[i])*100, 1) for i in range(min(len(preds), len(CLASS_NAMES)))}
+        
         result.update({
-            "label": label, "confidence": conf,
+            "label": label, 
+            "confidence": conf,
             "all_predictions": all_p,
             "is_reliable": conf >= CONFIDENCE_THRESHOLD,
             "is_demo": False,
-            "info": PARASITE_DB.get(label, PARASITE_DB["Negative"])
+            "info": db_info
         })
+        
     except Exception as e:
-        st.error(f"Prediction error: {e}")
+        st.error(f"⚠️ خطأ أثناء التحليل: {e}")
+        
     return result
 
 def apply_thermal(image):
+    from PIL import ImageEnhance, ImageFilter, ImageOps
     enhanced = ImageEnhance.Contrast(image).enhance(1.5)
     gray = ImageOps.grayscale(enhanced)
     smoothed = gray.filter(ImageFilter.GaussianBlur(1))
     return ImageOps.colorize(smoothed, black="navy", white="yellow", mid="red")
 
 def apply_edge_detection(image):
+    from PIL import ImageFilter, ImageOps
     gray = ImageOps.grayscale(image)
     return gray.filter(ImageFilter.FIND_EDGES)
 
 def apply_enhanced_contrast(image):
+    from PIL import ImageEnhance
     return ImageEnhance.Contrast(ImageEnhance.Sharpness(image).enhance(2.0)).enhance(2.0)
 
 
