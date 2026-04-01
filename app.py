@@ -2508,8 +2508,6 @@ elif pg == "dash":
                                df.to_json(orient='records', force_ascii=False).encode(),
                                "analyses.json", "application/json", use_container_width=True)
     else:
-        st.info
-    else:
         st.info(t("no_data"))
 
 
