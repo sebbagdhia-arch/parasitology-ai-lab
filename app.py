@@ -1984,8 +1984,7 @@ if current_page == "home":
 
     # Quick stats
     st.markdown("---")
-    st.markdown(f"### 📊 {{'fr': 'Aperçu Rapide', 'ar': 'نظرة سريعة', 'en': 'Quick Overview'}.get(st.session_state.lang, 'Aperçu Rapide')}")
-    stats = db_get_stats(st.session_state.user_id)
+    st.markdown(f"### 📊 { {'fr': 'Aperçu Rapide', 'ar': 'نظرة سريعة', 'en': 'Quick Overview'}.get(st.session_state.lang, 'Aperçu Rapide') }")    stats = db_get_stats(st.session_state.user_id)
     kc = st.columns(4)
     metrics = [
         ("🔬", stats["total"], t("total_analyses")),
