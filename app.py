@@ -1633,7 +1633,7 @@ def make_pdf(pat, lab, result, lbl):
     pdf.ln(10)
     pdf.cell(0, 5, "Validation Biologiste: ___________________", 0, 1)
 
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output()
 
 
 # ============================================
