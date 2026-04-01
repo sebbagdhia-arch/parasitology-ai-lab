@@ -2103,7 +2103,7 @@ elif pg == "cmp":
                 metrics = compare_imgs(i1, i2)
 
             # Metrics
-            st.markdown(f"### 📊 {{'fr':'Résultats de la comparaison','ar':'نتائج المقارنة','en':'Comparison Results'}.get(st.session_state.lang,'')}")
+            st.markdown(f"### 📊 {{'fr':'Résultats de la comparaison','ar':'نتائج المقارنة','en':'Comparison Results'}.get(st.session_state.lang,'')}}")
             mc = st.columns(4)
             with mc[0]:
                 st.markdown(f"<div class='dm-m'><span class='dm-m-i'>📊</span><div class='dm-m-v'>{metrics['sim']}%</div><div class='dm-m-l'>{t('similarity')}</div></div>", unsafe_allow_html=True)
