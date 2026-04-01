@@ -2074,9 +2074,9 @@ elif pg == "chat":
 elif pg == "cmp":
     st.title(f"🔄 {t('compare')}")
     st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <p>{{"fr":"Comparez deux images microscopiques avec analyse avancée",
+    <p>{"fr":"Comparez deux images microscopiques avec analyse avancée",
     "ar":"قارن بين صورتين مجهريتين بتحليل متقدم",
-    "en":"Compare two microscopic images with advanced analysis"}.get(st.session_state.lang,"")}</p>
+    "en":"Compare two microscopic images with advanced analysis"}.get(st.session_state.lang,"")</p>
     </div>""", unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
