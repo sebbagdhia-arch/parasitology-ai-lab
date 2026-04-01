@@ -1996,9 +1996,9 @@ elif pg == "quiz":
 elif pg == "chat":
     st.title(f"💬 DM Bot")
     st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <p>{{"fr":"Assistant médical intelligent spécialisé en parasitologie",
+    <p>{"fr":"Assistant médical intelligent spécialisé en parasitologie",
     "ar":"مساعد طبي ذكي متخصص في علم الطفيليات",
-    "en":"Intelligent medical assistant specialized in parasitology"}.get(st.session_state.lang,"")}</p>
+    "en":"Intelligent medical assistant specialized in parasitology"}.get(st.session_state.lang,"")</p>
     </div>""", unsafe_allow_html=True)
 
     if not st.session_state.chat_history:
