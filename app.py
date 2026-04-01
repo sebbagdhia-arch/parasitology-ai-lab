@@ -2343,7 +2343,7 @@ elif pg == "about":
         <ul>
         <li>{ {'fr':'Automatiser la lecture microscopique','ar':'أتمتة القراءة المجهرية','en':'Automate microscopic reading'}.get(lang,'') }</li>
         <li>{ {'fr':'Réduire les erreurs diagnostiques','ar':'تقليل الأخطاء التشخيصية','en':'Reduce diagnostic errors'}.get(lang,'') }</li>
-        <li>{ {'fr':'Accélérer le processus d'analyse','ar':'تسريع عملية التحليل','en':'Speed up analysis process'}.get(lang,'') }</li>
+        <li>{ {'fr':"Accélérer le processus d'analyse",'ar':'تسريع عملية التحليل','en':'Speed up analysis process'}.get(lang,'') }</li>
         <li>{ {'fr':'Assister les professionnels de santé','ar':'مساعدة المهنيين الصحيين','en':'Assist healthcare professionals'}.get(lang,'') }</li>
         </ul>
         </div>""", unsafe_allow_html=True)
