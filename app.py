@@ -2331,20 +2331,20 @@ elif pg == "about":
         <h3>👨‍🔬 {t('dev_team')}</h3><br>
         <p><b>🧑‍💻 {AUTHORS['dev1']['name']}</b><br><span style='opacity:.5;'>{d1r}</span></p><br>
         <p><b>🔬 {AUTHORS['dev2']['name']}</b><br><span style='opacity:.5;'>{d2r}</span></p><br>
-        <p><b>{{"fr":"Niveau","ar":"المستوى","en":"Level"}.get(lang,"")}:</b> {{"fr":"3ème Année","ar":"السنة الثالثة","en":"3rd Year"}.get(lang,"")}</p>
-        <p><b>{{"fr":"Spécialité","ar":"التخصص","en":"Speciality"}.get(lang,"")}:</b> {{"fr":"Laboratoire de Santé Publique","ar":"مخبر الصحة العمومية","en":"Public Health Laboratory"}.get(lang,"")}</p>
+        <p><b>{ {'fr':'Niveau','ar':'المستوى','en':'Level'}.get(lang,'') }:</b> { {'fr':'3ème Année','ar':'السنة الثالثة','en':'3rd Year'}.get(lang,'') }</p>
+        <p><b>{ {'fr':'Spécialité','ar':'التخصص','en':'Speciality'}.get(lang,'') }:</b> { {'fr':'Laboratoire de Santé Publique','ar':'مخبر الصحة العمومية','en':'Public Health Laboratory'}.get(lang,'') }</p>
         </div>""", unsafe_allow_html=True)
     with c2:
         st.markdown(f"""<div class='dm-card'>
         <h3>🏫 {t('institution')}</h3><br>
         <p><b>{tl(INSTITUTION['name'])}</b></p>
         <p>📍 {INSTITUTION['city']}, {tl(INSTITUTION['country'])} 🇩🇿</p><br>
-        <h4>🎯 {{"fr":"Objectifs","ar":"الأهداف","en":"Objectives"}.get(lang,"")}</h4>
+        <h4>🎯 { {'fr':'Objectifs','ar':'الأهداف','en':'Objectives'}.get(lang,'') }</h4>
         <ul>
-        <li>{{"fr":"Automatiser la lecture microscopique","ar":"أتمتة القراءة المجهرية","en":"Automate microscopic reading"}.get(lang,"")}</li>
-        <li>{{"fr":"Réduire les erreurs diagnostiques","ar":"تقليل الأخطاء التشخيصية","en":"Reduce diagnostic errors"}.get(lang,"")}</li>
-        <li>{{"fr":"Accélérer le processus d'analyse","ar":"تسريع عملية التحليل","en":"Speed up analysis process"}.get(lang,"")}</li>
-        <li>{{"fr":"Assister les professionnels de santé","ar":"مساعدة المهنيين الصحيين","en":"Assist healthcare professionals"}.get(lang,"")}</li>
+        <li>{ {'fr':'Automatiser la lecture microscopique','ar':'أتمتة القراءة المجهرية','en':'Automate microscopic reading'}.get(lang,'') }</li>
+        <li>{ {'fr':'Réduire les erreurs diagnostiques','ar':'تقليل الأخطاء التشخيصية','en':'Reduce diagnostic errors'}.get(lang,'') }</li>
+        <li>{ {'fr':'Accélérer le processus d'analyse','ar':'تسريع عملية التحليل','en':'Speed up analysis process'}.get(lang,'') }</li>
+        <li>{ {'fr':'Assister les professionnels de santé','ar':'مساعدة المهنيين الصحيين','en':'Assist healthcare professionals'}.get(lang,'') }</li>
         </ul>
         </div>""", unsafe_allow_html=True)
 
