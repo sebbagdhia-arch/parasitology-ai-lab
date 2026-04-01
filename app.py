@@ -2311,11 +2311,15 @@ elif pg == "about":
     <p style='opacity:.5;'>{t('system_desc')}</p>
     </div>""", unsafe_allow_html=True)
 
+    desc_about = {
+        "fr": "Ce projet innovant utilise les technologies de Deep Learning et de Vision par Ordinateur pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites.",
+        "ar": "يستخدم هذا المشروع المبتكر تقنيات التعلم العميق والرؤية الحاسوبية لمساعدة تقنيي المخبر في التعرف السريع والدقيق على الطفيليات.",
+        "en": "This innovative project uses Deep Learning and Computer Vision technologies to assist laboratory technicians in the rapid and accurate identification of parasites."
+    }.get(lang, "")
+
     st.markdown(f"""<div class='dm-card'>
     <h3>📖 {tl(PROJECT_TITLE)}</h3>
-    <p style='line-height:1.8;opacity:.8;'>{{"fr":"Ce projet innovant utilise les technologies de Deep Learning et de Vision par Ordinateur pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites.",
-    "ar":"يستخدم هذا المشروع المبتكر تقنيات التعلم العميق والرؤية الحاسوبية لمساعدة تقنيي المخبر في التعرف السريع والدقيق على الطفيليات.",
-    "en":"This innovative project uses Deep Learning and Computer Vision technologies to assist laboratory technicians in the rapid and accurate identification of parasites."}.get(lang,"")}</p>
+    <p style='line-height:1.8;opacity:.8;'>{desc_about}</p>
     </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
