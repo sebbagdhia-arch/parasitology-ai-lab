@@ -1982,7 +1982,7 @@ if current_page == "home":
         if st.button("🔇 Stop", use_container_width=True):
             stop_speech_js()
 
-   # Quick stats
+# Quick stats
 st.markdown("---")
 
 st.markdown(
@@ -1999,13 +1999,13 @@ metrics = [
     ("⚠️", stats["to_verify"], t("to_verify")),
     ("🦠", stats["most_frequent"], t("most_frequent")),
 ]
-    for col, (ic, val, lbl) in zip(kc, metrics):
-        with col:
-            st.markdown(f"""<div class="dm-metric">
-            <span class="dm-metric-icon">{ic}</span>
-            <div class="dm-metric-val">{val}</div>
-            <div class="dm-metric-lbl">{lbl}</div></div>""", unsafe_allow_html=True)
 
+for col, (ic, val, lbl) in zip(kc, metrics):
+    with col:
+        st.markdown(f"""<div class="dm-metric">
+        <span class="dm-metric-icon">{ic}</span>
+        <div class="dm-metric-val">{val}</div>
+        <div class="dm-metric-lbl">{lbl}</div></div>""", unsafe_allow_html=True)
 
 # ╔══════════════════════════════════════════╗
 # ║            PAGE: SCAN & ANALYSE           ║
