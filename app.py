@@ -2542,7 +2542,7 @@ elif pg == "quiz":
         st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
         <div style='font-size:4rem;margin-bottom:10px;'>🧠</div>
         <h3 class='dm-nt'>{{"fr":"Testez vos connaissances en parasitologie !","ar":"اختبر معارفك في علم الطفيليات!","en":"Test your parasitology knowledge!"}.get(st.session_state.lang,"")}</h3>
-        <p style='opacity:.5;'>{{"fr":f"{len(QUIZ_QUESTIONS)} questions disponibles","ar":f"{len(QUIZ_QUESTIONS)} سؤال متاح","en":f"{len(QUIZ_QUESTIONS)} questions available"}.get(st.session_state.lang,"")}</p>
+        <p style='opacity:.5;'>{ {"fr":f"{len(QUIZ_QUESTIONS)} questions disponibles","ar":f"{len(QUIZ_QUESTIONS)} سؤال متاح","en":f"{len(QUIZ_QUESTIONS)} questions available"}.get(st.session_state.lang,"") }</p>
         </div>""", unsafe_allow_html=True)
 
         st.markdown("---")
@@ -2642,10 +2642,10 @@ elif pg == "quiz":
                 is_correct = selected == correct_idx
 
                 if is_correct:
-                    st.success(f"✅ {{'fr':'Bonne reponse !','ar':'إجابة صحيحة!','en':'Correct!'}.get(st.session_state.lang,'Correct!')}")
+                    st.success(f"✅ { {'fr':'Bonne reponse !','ar':'إجابة صحيحة!','en':'Correct!'}.get(st.session_state.lang,'Correct!') }")
                 else:
                     correct_ans = q["opts"][correct_idx]
-                    st.error(f"❌ {{'fr':'Reponse correcte','ar':'الإجابة الصحيحة','en':'Correct answer'}.get(st.session_state.lang,'Correct answer')}: **{correct_ans}**")
+                    st.error(f"❌ { {'fr':'Reponse correcte','ar':'الإجابة الصحيحة','en':'Correct answer'}.get(st.session_state.lang,'Correct answer') }: **{correct_ans}**")
 
                 # Show explanation
                 expl = tl(q.get("expl", {}))
