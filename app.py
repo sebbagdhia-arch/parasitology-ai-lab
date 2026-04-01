@@ -1982,16 +1982,23 @@ if current_page == "home":
         if st.button("🔇 Stop", use_container_width=True):
             stop_speech_js()
 
-    # Quick stats
-    st.markdown("---")
-    st.markdown(f"### 📊 { {'fr': 'Aperçu Rapide', 'ar': 'نظرة سريعة', 'en': 'Quick Overview'}.get(st.session_state.lang, 'Aperçu Rapide') }")    stats = db_get_stats(st.session_state.user_id)
-    kc = st.columns(4)
-    metrics = [
-        ("🔬", stats["total"], t("total_analyses")),
-        ("✅", stats["reliable"], t("reliable")),
-        ("⚠️", stats["to_verify"], t("to_verify")),
-        ("🦠", stats["most_frequent"], t("most_frequent")),
-    ]
+   # Quick stats
+st.markdown("---")
+
+st.markdown(
+    f"### 📊 { {'fr': 'Aperçu Rapide', 'ar': 'نظرة سريعة', 'en': 'Quick Overview'}.get(st.session_state.lang, 'Aperçu Rapide') }"
+)
+
+stats = db_get_stats(st.session_state.user_id)
+
+kc = st.columns(4)
+
+metrics = [
+    ("🔬", stats["total"], t("total_analyses")),
+    ("✅", stats["reliable"], t("reliable")),
+    ("⚠️", stats["to_verify"], t("to_verify")),
+    ("🦠", stats["most_frequent"], t("most_frequent")),
+]
     for col, (ic, val, lbl) in zip(kc, metrics):
         with col:
             st.markdown(f"""<div class="dm-metric">
