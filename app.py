@@ -1836,10 +1836,9 @@ elif pg == "quiz":
     if not qs["active"]:
         st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
         <div style='font-size:3rem;'>🧠</div>
-        <h3>{{"fr":"Testez vos connaissances en parasitologie !","ar":"اختبر معارفك في علم الطفيليات!","en":"Test your parasitology knowledge!"}.get(st.session_state.lang,"")}</h3>
-        <p style='opacity:.6;'>{{"fr":f"{len(QUIZ_QUESTIONS)} questions disponibles","ar":f"{len(QUIZ_QUESTIONS)} سؤال متاح","en":f"{len(QUIZ_QUESTIONS)} questions available"}.get(st.session_state.lang,"")}</p>
+        <h3>{"fr":"Testez vos connaissances en parasitologie !","ar":"اختبر معارفك في علم الطفيليات!","en":"Test your parasitology knowledge!"}.get(st.session_state.lang,"")</h3>
+        <p style='opacity:.6;'>{"fr":f"{len(QUIZ_QUESTIONS)} questions disponibles","ar":f"{len(QUIZ_QUESTIONS)} سؤال متاح","en":f"{len(QUIZ_QUESTIONS)} questions available"}.get(st.session_state.lang,"")</p>
         </div>""", unsafe_allow_html=True)
-
         # Quiz settings
         st.markdown("---")
         qc1, qc2 = st.columns(2)
