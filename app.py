@@ -2074,9 +2074,9 @@ elif pg == "chat":
 elif pg == "cmp":
     st.title(f"🔄 {t('compare')}")
     st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <p>{"fr":"Comparez deux images microscopiques avec analyse avancée",
+    <p>{{"fr":"Comparez deux images microscopiques avec analyse avancée",
     "ar":"قارن بين صورتين مجهريتين بتحليل متقدم",
-    "en":"Compare two microscopic images with advanced analysis"}.get(st.session_state.lang,"")</p>
+    "en":"Compare two microscopic images with advanced analysis"}.get(st.session_state.lang,"")}</p>
     </div>""", unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
@@ -2103,7 +2103,7 @@ elif pg == "cmp":
                 metrics = compare_imgs(i1, i2)
 
             # Metrics
-            st.markdown(f"### 📊 {{'fr':'Résultats de la comparaison','ar':'نتائج المقارنة','en':'Comparison Results'}.get(st.session_state.lang,'')}}")
+            st.markdown(f"### 📊 { {'fr':'Résultats de la comparaison','ar':'نتائج المقارنة','en':'Comparison Results'}.get(st.session_state.lang,'') }")
             mc = st.columns(4)
             with mc[0]:
                 st.markdown(f"<div class='dm-m'><span class='dm-m-i'>📊</span><div class='dm-m-v'>{metrics['sim']}%</div><div class='dm-m-l'>{t('similarity')}</div></div>", unsafe_allow_html=True)
@@ -2175,7 +2175,7 @@ elif pg == "cmp":
 
             # Histogram comparison
             if HAS_PLOTLY:
-                st.markdown(f"### 📊 {{'fr':'Comparaison des histogrammes','ar':'مقارنة المدرجات التكرارية','en':'Histogram Comparison'}.get(st.session_state.lang,'')}")
+                st.markdown(f"### 📊 { {'fr':'Comparaison des histogrammes','ar':'مقارنة المدرجات التكرارية','en':'Histogram Comparison'}.get(st.session_state.lang,'') }")
                 h1 = histogram(i1)
                 h2 = histogram(i2)
                 hc1, hc2 = st.columns(2)
@@ -2201,7 +2201,8 @@ elif pg == "cmp":
 elif pg == "admin":
     st.title(f"⚙️ {t('admin')}")
     if not has_role(3):
-        st.error("🔒 Admin only"); st.stop()
+        st.error("🔒 Admin only")
+        st.stop()
 
     tab1, tab2, tab3 = st.tabs([f"👥 {t('users_mgmt')}", f"📜 {t('activity_log')}", f"🖥️ {t('system_info')}"])
 
@@ -2216,7 +2217,8 @@ elif pg == "admin":
             if tc3.button("Apply", use_container_width=True):
                 db_toggle(uid, act == "Active")
                 db_log(st.session_state.user_id, st.session_state.user_name, "Toggle user", f"#{uid}={act}")
-                st.success(f"✅ #{uid} → {act}"); st.rerun()
+                st.success(f"✅ #{uid} → {act}")
+                st.rerun()
 
         st.markdown("---")
         st.markdown(f"### ➕ {t('create_user')}")
@@ -2230,7 +2232,8 @@ elif pg == "admin":
                 if nu and np2 and nf:
                     if db_create_user(nu, np2, nf, nr, ns):
                         db_log(st.session_state.user_id, st.session_state.user_name, "Created user", nu)
-                        st.success(f"✅ {nu}"); st.rerun()
+                        st.success(f"✅ {nu}")
+                        st.rerun()
                     else:
                         st.error("❌ Username exists")
                 else:
