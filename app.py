@@ -2538,13 +2538,14 @@ elif pg == "quiz":
             st.info(t("no_data"))
 
     # Quiz not started
-    if not qs.get("active", False) and not qs.get("finished", False):
-        st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
+if not qs.get("active", False) and not qs.get("finished", False):
+    st.markdown(f"""
+    <div class='dm-card dm-card-cyan' style='text-align:center;'>
         <div style='font-size:4rem;margin-bottom:10px;'>🧠</div>
-        <h3 class='dm-nt'>{{"fr":"Testez vos connaissances en parasitologie !","ar":"اختبر معارفك في علم الطفيليات!","en":"Test your parasitology knowledge!"}.get(st.session_state.lang,"")}</h3>
-        <p style='opacity:.5;'>{ {"fr":f"{len(QUIZ_QUESTIONS)} questions disponibles","ar":f"{len(QUIZ_QUESTIONS)} سؤال متاح","en":f"{len(QUIZ_QUESTIONS)} questions available"}.get(st.session_state.lang,"") }</p>
-        </div>""", unsafe_allow_html=True)
-
+        <h3 class='dm-nt'>{t('quiz_invite')}</h3>
+        <p style='opacity:.5;'>{len(QUIZ_QUESTIONS)} {t('questions_available')}</p>
+    </div>
+    """, unsafe_allow_html=True)
         st.markdown("---")
         qc1, qc2 = st.columns(2)
         with qc1:
