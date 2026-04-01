@@ -2770,7 +2770,7 @@ elif pg == "chat":
         <div style='font-size:2.5rem;'>🤖</div>
         <div>
             <h4 style='margin:0;' class='dm-nt'>DM Bot</h4>
-            <p style='margin:0;opacity:.5;font-size:.85rem;'>{{"fr":"Assistant medical intelligent specialise en parasitologie",
+            <p style='margin:0;opacity:.5;font-size:.85rem;'>{ {"fr":"Assistant medical intelligent specialise en parasitologie",
     "ar":"مساعد طبي ذكي متخصص في علم الطفيليات",
     "en":"Intelligent medical assistant specialized in parasitology"}.get(st.session_state.lang,"")}</p>
         </div>
@@ -2790,11 +2790,11 @@ elif pg == "chat":
         for msg_item in st.session_state.chat_history:
             if msg_item["role"] == "user":
                 st.markdown(f"""<div style='display:flex;justify-content:flex-end;margin:8px 0;'>
-                <div class='dm-ch dm-cu'>👤 {msg_item['msg']}</div>
+                <div class='dm-ch dm-cu'>👤 {msg_item['msg'] }</div>
                 </div>""", unsafe_allow_html=True)
             else:
                 st.markdown(f"""<div style='display:flex;justify-content:flex-start;margin:8px 0;'>
-                <div class='dm-ch dm-cb'>🤖 {msg_item['msg']}</div>
+                <div class='dm-ch dm-cb'>🤖 {msg_item['msg'] }</div>
                 </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
@@ -2816,7 +2816,7 @@ elif pg == "chat":
             )
 
     if send_btn and user_input and user_input.strip():
-        st.session_state.chat_history.append({"role": "user", "msg": user_input.strip()})
+        st.session_state.chat_history.append( {"role": "user", "msg": user_input.strip()} )
         reply = chatbot_reply(user_input.strip())
         st.session_state.chat_history.append({"role": "bot", "msg": reply})
         db_log(st.session_state.user_id, st.session_state.user_name, "Chat", user_input[:100])
