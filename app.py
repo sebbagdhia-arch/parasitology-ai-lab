@@ -3220,4 +3220,5 @@ elif pg == "about":
     st.markdown("---")
     made_label = {"fr": "Fait avec", "ar": "صنع بـ", "en": "Made with"}.get(lang, "Made with")
     in_label = {"fr": "a", "ar": "في", "en": "in"}.get(lang, "in")
-    st.caption(f"{made_label} ❤️ {in_label} {INSTITUTION['city']} — {INSTITUTION['year']} 🇩🇿")     
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=80)
+    st.caption(f"Fait avec ❤️ a {INSTITUTION['city']} — {INSTITUTION['year']}")
