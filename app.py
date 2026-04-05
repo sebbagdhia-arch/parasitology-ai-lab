@@ -3731,14 +3731,515 @@ def main():
         else:
             st.info(t("no_data"))
 
-    # ============================================
-    #  PAGE: QUIZ - ENHANCED
-    # ============================================
-    elif pg == "quiz":
-        st.title(f"🧠 {t('quiz')}")
+# ============================================
+#  PAGE: QUIZ - ENHANCED
+# ============================================
+elif pg == "quiz":
+    st.title(f"🧠 {t('quiz')}")
 
-        # Initialize quiz state
-        if "quiz_state" not in st.session_state:
+    # Initialize quiz state
+    if "quiz_state" not in st.session_state:
+        st.session_state.quiz_state = {
+            "current": 0, "score": 0, "answered": [],
+            "active": False, "order": [], "wrong": [],
+            "total_q": 0, "finished": False,
+            "selected_answer": None, "show_result": False,
+            "start_time": None, "time_taken": 0
+        }
+
+    qs = st.session_state.quiz_state
+
+    # ✅ NEW: Enhanced leaderboard with filters
+    with st.expander(f"🏆 {t('leaderboard')}"):
+        lb_col1, lb_col2 = st.columns(2)
+        with lb_col1:
+            lb_limit = st.selectbox("Nombre d'entrées", [5, 10, 20, 50], index=1)
+        with lb_col2:
+            lb_cat = st.selectbox("Catégorie", ["Toutes"] + list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS)))
+
+        lb_data = db_leaderboard(lb_limit * 2)  # Get more to filter
+
+        if lb_data:
+            # Filter by category if needed
+            if lb_cat != "Toutes":
+                lb_data = [e for e in lb_data if e.get('category', 'general') == lb_cat]
+
+            # Display limited results
+            for i, e in enumerate(lb_data[:lb_limit]):
+                medal = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"**#{i + 1}**"
+                time_str = f" en {e.get('time_seconds', 0)}s" if e.get('time_seconds') else ""
+                st.markdown(f"""
+                <div class='dm-card' style='margin:4px 0;padding:8px;'>
+                    {medal} **{e['username']}** — {e['score']}/{e['total_questions']}
+                    ({e['percentage']:.0f}%){time_str}
+                    <div style='opacity:.6;font-size:.8rem;'>{e.get('category', 'Général')}</div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info(t("no_data"))
+
+    # Quiz not started
+    if not qs.get("active", False) and not qs.get("finished", False):
+        lang = st.session_state.lang
+        quiz_title = {
+            "fr": "Testez vos connaissances en parasitologie !",
+            "ar": "اختبر معارفك في علم الطفيليات!",
+            "en": "Test your parasitology knowledge!"
+        }.get(lang, "")
+        
+        quiz_available = {
+            "fr": f"{len(QUIZ_QUESTIONS)} questions disponibles",
+            "ar": f"{len(QUIZ_QUESTIONS)} سؤال متاح",
+            "en": f"{len(QUIZ_QUESTIONS)} questions available"
+        }.get(lang, "")
+        
+        st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
+        <div style='font-size:4rem;margin-bottom:10px;'>🧠</div>
+        <h3 class='dm-nt'>{quiz_title}</h3>
+        <p style='opacity:.5;'>{quiz_available}</p>
+        </div>""", unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # ✅ NEW: Enhanced quiz configuration
+        qc1, qc2, qc3 = st.columns(3)
+        with qc1:
+            n_questions = st.slider(
+                {
+                    "fr": "Nombre de questions:",
+                    "ar": "عدد الأسئلة:",
+                    "en": "Number of questions:"
+                }.get(st.session_state.lang, "Questions:"),
+                5, min(50, len(QUIZ_QUESTIONS)), 10
+            )
+        with qc2:
+            cats = list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS))
+            all_cat_label = {
+                "fr": "Toutes les catégories",
+                "ar": "جميع الفئات",
+                "en": "All categories"
+            }.get(st.session_state.lang, "All")
+            cats.insert(0, all_cat_label)
+            chosen_cat = st.selectbox(
+                {
+                    "fr": "Catégorie:",
+                    "ar": "الفئة:",
+                    "en": "Category:"
+                }.get(st.session_state.lang, "Category:"),
+                cats
+            )
+        with qc3:
+            time_limit = st.selectbox(
+                {
+                    "fr": "Limite de temps:",
+                    "ar": "حد الوقت:",
+                    "en": "Time limit:"
+                }.get(st.session_state.lang, "Time limit:"),
+                ["Aucune", "30s", "1min", "2min"],
+                index=0
+            )
+
+        if st.button(f"🎮 {t('start_quiz')}", use_container_width=True, type="primary"):
+            # Create question pool
+            if chosen_cat == all_cat_label:
+                pool = list(range(len(QUIZ_QUESTIONS)))
+            else:
+                pool = [i for i, q in enumerate(QUIZ_QUESTIONS) if q.get("cat") == chosen_cat]
+
+            if len(pool) == 0:
+                pool = list(range(len(QUIZ_QUESTIONS)))
+
+            random.shuffle(pool)
+            final_order = pool[:min(n_questions, len(pool))]
+
+            # Start quiz
+            st.session_state.quiz_state = {
+                "current": 0,
+                "score": 0,
+                "answered": [],
+                "active": True,
+                "order": final_order,
+                "wrong": [],
+                "total_q": len(final_order),
+                "finished": False,
+                "selected_answer": None,
+                "show_result": False,
+                "start_time": time.time(),
+                "time_limit": {
+                    "Aucune": 0, "30s": 30, "1min": 60, "2min": 120
+                }.get(time_limit, 0),
+                "category": chosen_cat if chosen_cat != all_cat_label else "general"
+            }
+
+            db_log(st.session_state.user_id, st.session_state.user_name,
+                  "Quiz started", f"n={len(final_order)} cat={chosen_cat}")
+            st.rerun()
+
+    # Quiz active - answering questions
+    elif qs.get("active", False) and not qs.get("finished", False):
+        idx = qs["current"]
+        order = qs.get("order", [])
+        total_q = qs.get("total_q", len(order))
+
+        if idx < len(order):
+            qi = order[idx]
+            q = QUIZ_QUESTIONS[qi]
+
+            # ✅ NEW: Time tracking
+            time_elapsed = int(time.time() - qs["start_time"])
+            time_left = qs["time_limit"] - time_elapsed if qs["time_limit"] > 0 else 0
+
+            if qs["time_limit"] > 0 and time_left <= 0:
+                st.session_state.quiz_state["finished"] = True
+                st.session_state.quiz_state["active"] = False
+                st.rerun()
+
+            # Progress with time
+            progress_val = idx / total_q if total_q > 0 else 0
+            st.progress(progress_val)
+
+            lang = st.session_state.lang
+            
+            # Time display
+            if qs["time_limit"] > 0:
+                mins, secs = divmod(time_left, 60)
+                time_display = f"⏱️ {mins:02d}:{secs:02d}"
+                question_label = {"fr": "Question", "ar": "سؤال", "en": "Question"}.get(lang, "Question")
+                
+                st.markdown(f"""
+                <div style='display:flex;justify-content:space-between;align-items:center;'>
+                    <h3>{question_label} {idx + 1}/{total_q}</h3>
+                    <div style='background:rgba(255,0,64,0.1);padding:4px 8px;border-radius:6px;'>
+                        {time_display}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                question_label = {"fr": "Question", "ar": "سؤال", "en": "Question"}.get(lang, "Question")
+                st.markdown(f"### {question_label} {idx + 1}/{total_q}")
+                
+            # Category display
+            cat = q.get("cat", "")
+            if cat:
+                st.caption(f"📂 {cat}")
+
+            # Question text
+            q_text = tl(q["q"])
+            st.markdown(f"""<div class='dm-card dm-card-purple'>
+            <h4 style='margin:0;line-height:1.6;'>{q_text}</h4>
+            </div>""", unsafe_allow_html=True)
+
+            # Check if already answered this question
+            if not qs.get("show_result", False):
+                st.markdown("---")
+                option_cols = st.columns(2)
+
+                # ✅ NEW: Enhanced option buttons with letters and colors
+                for i, opt in enumerate(q["opts"]):
+                    with option_cols[i % 2]:
+                        letter = ['A', 'B', 'C', 'D'][i]
+                        btn_key = f"quiz_opt_{idx}_{i}"
+
+                        # Color options based on selection
+                        if qs.get("selected_answer") == i:
+                            btn_label = f"{letter}. {opt} ✓"
+                        else:
+                            btn_label = f"{letter}. {opt}"
+
+                        if st.button(
+                            btn_label,
+                            key=btn_key,
+                            use_container_width=True,
+                            help=f"Option {letter}"
+                        ):
+                            correct = (i == q["ans"])
+                            st.session_state.quiz_state["selected_answer"] = i
+                            st.session_state.quiz_state["show_result"] = True
+
+                            if correct:
+                                st.session_state.quiz_state["score"] += 1
+                            else:
+                                st.session_state.quiz_state["wrong"].append({
+                                    "q": q_text,
+                                    "your": opt,
+                                    "correct": q["opts"][q["ans"]],
+                                    "cat": q.get("cat", "general")
+                                })
+
+                            st.session_state.quiz_state["answered"].append(correct)
+                            st.rerun()
+
+            else:
+                # Show result of answer
+                selected = qs.get("selected_answer", -1)
+                correct_idx = q["ans"]
+                is_correct = selected == correct_idx
+
+                # ✅ NEW: Enhanced result display
+                if is_correct:
+                    correct_msg = {"fr": "Bonne réponse !", "ar": "إجابة صحيحة!", "en": "Correct!"}.get(lang, "Correct!")
+                    st.success(f"✅ {correct_msg}")
+                else:
+                    correct_ans = q["opts"][correct_idx]
+                    correct_answer_label = {"fr": "Réponse correcte", "ar": "الإجابة الصحيحة", "en": "Correct answer"}.get(lang, "Correct answer")
+                    st.error(f"❌ {correct_answer_label}: **{correct_ans}**")
+
+                # Show explanation
+                expl = tl(q.get("expl", {}))
+                if expl:
+                    st.info(f"📖 {expl}")
+
+                # Show all options with markers
+                for i, opt in enumerate(q["opts"]):
+                    if i == correct_idx:
+                        st.markdown(f"✅ **{['A','B','C','D'][i]}. {opt}**")
+                    elif i == selected and not is_correct:
+                        st.markdown(f"❌ ~~{['A','B','C','D'][i]}. {opt}~~")
+                    else:
+                        st.markdown(f"{'  '}{['A','B','C','D'][i]}. {opt}")
+
+                st.markdown("---")
+
+                # Next question button
+                if idx + 1 < len(order):
+                    if st.button(f"➡️ {t('next_question')}", use_container_width=True, type="primary"):
+                        st.session_state.quiz_state["current"] += 1
+                        st.session_state.quiz_state["show_result"] = False
+                        st.session_state.quiz_state["selected_answer"] = None
+                        st.rerun()
+                else:
+                    finish_label = {
+                        "fr": "🏁 Voir les résultats",
+                        "ar": "🏁 عرض النتائج",
+                        "en": "🏁 See Results"
+                    }.get(st.session_state.lang, "🏁 Results")
+
+                    if st.button(finish_label, use_container_width=True, type="primary"):
+                        st.session_state.quiz_state["finished"] = True
+                        st.session_state.quiz_state["active"] = False
+                        st.session_state.quiz_state["time_taken"] = int(time.time() - qs["start_time"])
+                        st.rerun()
+
+        else:
+            # Fallback: mark as finished
+            st.session_state.quiz_state["finished"] = True
+            st.session_state.quiz_state["active"] = False
+            st.session_state.quiz_state["time_taken"] = int(time.time() - qs["start_time"])
+            st.rerun()
+
+    # Quiz finished - show results
+    elif qs.get("finished", False):
+        score = qs.get("score", 0)
+        total_q = qs.get("total_q", 1)
+        pct = int(score / total_q * 100) if total_q > 0 else 0
+        time_taken = qs.get("time_taken", 0)
+
+        # ✅ NEW: Enhanced result display with animations
+        if pct >= 80:
+            emoji, msg, color = "🏆", t("score_excellent"), "#00ff88"
+        elif pct >= 60:
+            emoji, msg, color = "👍", t("score_good"), "#00f5ff"
+        elif pct >= 40:
+            emoji, msg, color = "📚", t("score_average"), "#ff9500"
+        else:
+            emoji, msg, color = "💪", t("score_low"), "#ff0040"
+
+        st.markdown(f"""
+        <div class='dm-card dm-card-green' style='text-align:center;'>
+        <div style='font-size:5rem;'>{emoji}</div>
+        <h2 class='dm-nt'>{t('result')}</h2>
+
+        <div style='font-size:4rem;font-weight:900;font-family:JetBrains Mono,monospace;
+            background:linear-gradient(135deg,{color},#ff00ff,#00ff88);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>
+            {score}/{total_q}
+        </div>
+
+        <p style='font-size:1.5rem;opacity:.8;'>{pct}%</p>
+
+        <div style='background:rgba(0,255,136,.1);padding:12px;border-radius:12px;margin:12px auto;max-width:80%;'>
+            {msg}
+        </div>
+
+        <p style='opacity:.6;font-size:.9rem;'>
+            Temps: {time_taken} secondes • Catégorie: {qs.get('category', 'Général')}
+        </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Save score to DB
+        try:
+            db_quiz_save(
+                st.session_state.user_id,
+                st.session_state.user_name,
+                score, total_q, pct,
+                qs.get('category', 'general'),
+                time_taken
+            )
+            db_log(st.session_state.user_id, st.session_state.user_name,
+                  "Quiz done", f"{score}/{total_q}={pct}% time={time_taken}s")
+        except Exception as e:
+            st.error(f"Error saving score: {e}")
+
+        # ✅ NEW: Performance chart with time
+        if HAS_PLOTLY and total_q > 0:
+            st.markdown("---")
+            analysis_label = {
+                "fr": "Analyse des résultats",
+                "ar": "تحليل النتائج",
+                "en": "Results Analysis"
+            }.get(st.session_state.lang, "Analysis")
+
+            st.markdown(f"### 📊 {analysis_label}")
+
+            correct_label = {
+                "fr": "Correctes",
+                "ar": "صحيحة",
+                "en": "Correct"
+            }.get(st.session_state.lang, "Correct")
+
+            incorrect_label = {
+                "fr": "Incorrectes",
+                "ar": "خاطئة",
+                "en": "Incorrect"
+            }.get(st.session_state.lang, "Incorrect")
+
+            fig = make_subplots(rows=1, cols=2, specs=[[{"type": "domain"}, {"type": "domain"}]])
+
+            # Pie chart
+            fig.add_trace(
+                go.Pie(
+                    labels=[correct_label, incorrect_label],
+                    values=[score, total_q - score],
+                    marker_colors=["#00ff88", "#ff0040"],
+                    hole=0.5,
+                    textinfo='label+percent',
+                    textfont_size=14
+                ),
+                1, 1
+            )
+
+            # Gauge for percentage
+            fig.add_trace(
+                go.Indicator(
+                    mode="gauge+number",
+                    value=pct,
+                    title={'text': "Score"},
+                    number={'font': {'color': color}},
+                    gauge={
+                        'axis': {'range': [0, 100]},
+                        'bar': {'color': color},
+                        'steps': [
+                            {'range': [0, 40], 'color': "#ff0040"},
+                            {'range': [40, 60], 'color': "#ff9500"},
+                            {'range': [60, 80], 'color': "#00f5ff"},
+                            {'range': [80, 100], 'color': "#00ff88"}
+                        ]
+                    }
+                ),
+                1, 2
+            )
+
+            fig.update_layout(
+                height=300,
+                template=plot_template,
+                margin=dict(l=20, r=20, t=20, b=20),
+                title="Performance du quiz"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+        # Wrong answers review
+        wrong = qs.get("wrong", [])
+        if wrong:
+            review_label = {
+                "fr": f"Erreurs à revoir ({len(wrong)})",
+                "ar": f"الأخطاء ({len(wrong)})",
+                "en": f"Mistakes to review ({len(wrong)})"
+            }.get(st.session_state.lang, f"Mistakes ({len(wrong)})")
+
+            with st.expander(f"❌ {review_label}"):
+                for i, w in enumerate(wrong):
+                    your_label = {
+                        "fr": "Votre réponse",
+                        "ar": "إجابتك",
+                        "en": "Your answer"
+                    }.get(st.session_state.lang, "Your answer")
+
+                    correct_label2 = {
+                        "fr": "Correcte",
+                        "ar": "الصحيحة",
+                        "en": "Correct"
+                    }.get(st.session_state.lang, "Correct")
+
+                    st.markdown(f"""
+                    <div class='dm-card' style='margin:8px 0;padding:12px;'>
+                    <b>{i + 1}. {w['q']}</b>
+                    <div style='display:flex;justify-content:space-between;margin:8px 0;'>
+                        <div>❌ {your_label}: ~~{w['your']}~~</div>
+                        <div>✅ {correct_label2}: <b>{w['correct']}</b></div>
+                    </div>
+                    <div style='opacity:.6;font-size:.8rem;'>Catégorie: {w.get('cat', 'Général')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # ✅ NEW: Category performance breakdown
+        if wrong:
+            st.markdown("#### Performance par catégorie")
+
+            # Count wrong answers by category
+            wrong_by_cat = {}
+            for w in wrong:
+                cat = w.get('cat', 'general')
+                wrong_by_cat[cat] = wrong_by_cat.get(cat, 0) + 1
+
+            # Count total questions by category
+            total_by_cat = {}
+            for qi in qs.get('order', []):
+                cat = QUIZ_QUESTIONS[qi].get('cat', 'general')
+                total_by_cat[cat] = total_by_cat.get(cat, 0) + 1
+
+            # Calculate percentages
+            cat_data = []
+            for cat in set(wrong_by_cat.keys()).union(set(total_by_cat.keys())):
+                wrong_count = wrong_by_cat.get(cat, 0)
+                total = total_by_cat.get(cat, 0)
+                pct_cat = (1 - (wrong_count / total)) * 100 if total > 0 else 100
+                cat_data.append({
+                    'category': cat,
+                    'correct': total - wrong_count,
+                    'wrong': wrong_count,
+                    'total': total,
+                    'percentage': pct_cat
+                })
+
+            # Sort by percentage
+            cat_data.sort(key=lambda x: x['percentage'], reverse=True)
+
+            # Display as cards
+            for item in cat_data:
+                color_cat = "#00ff88" if item['percentage'] >= 80 else "#00f5ff" if item['percentage'] >= 50 else "#ff9500"
+                st.markdown(f"""
+                <div class='dm-card' style='border-left:4px solid {color_cat};margin:8px 0;'>
+                    <div style='display:flex;justify-content:space-between;'>
+                        <div>
+                            <b>{item['category']}</b><br>
+                            <span style='opacity:.6;'>{item['correct']}/{item['total']} correctes</span>
+                        </div>
+                        <div style='font-weight:bold;color:{color_cat};'>
+                            {item['percentage']:.0f}%
+                        </div>
+                    </div>
+                    <div style='margin-top:8px;'>
+                        <div style='background:{color_cat};height:4px;border-radius:2px;width:{item['percentage']}%;'></div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # Restart button
+        if st.button(f"🔄 {t('restart')}", use_container_width=True, type="primary"):
             st.session_state.quiz_state = {
                 "current": 0, "score": 0, "answered": [],
                 "active": False, "order": [], "wrong": [],
@@ -3746,508 +4247,7 @@ def main():
                 "selected_answer": None, "show_result": False,
                 "start_time": None, "time_taken": 0
             }
-
-        qs = st.session_state.quiz_state
-
-        # ✅ NEW: Enhanced leaderboard with filters
-        with st.expander(f"🏆 {t('leaderboard')}"):
-            lb_col1, lb_col2 = st.columns(2)
-            with lb_col1:
-                lb_limit = st.selectbox("Nombre d'entrées", [5, 10, 20, 50], index=1)
-            with lb_col2:
-                lb_cat = st.selectbox("Catégorie", ["Toutes"] + list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS)))
-
-            lb_data = db_leaderboard(lb_limit * 2)  # Get more to filter
-
-            if lb_data:
-                # Filter by category if needed
-                if lb_cat != "Toutes":
-                    lb_data = [e for e in lb_data if e.get('category', 'general') == lb_cat]
-
-                # Display limited results
-                for i, e in enumerate(lb_data[:lb_limit]):
-                    medal = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"**#{i + 1}**"
-                    time_str = f" en {e.get('time_seconds', 0)}s" if e.get('time_seconds') else ""
-                    st.markdown(f"""
-                    <div class='dm-card' style='margin:4px 0;padding:8px;'>
-                        {medal} **{e['username']}** — {e['score']}/{e['total_questions']}
-                        ({e['percentage']:.0f}%){time_str}
-                        <div style='opacity:.6;font-size:.8rem;'>{e.get('category', 'Général')}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.info(t("no_data"))
-
-        # Quiz not started
-        if not qs.get("active", False) and not qs.get("finished", False):
-            st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-            <div style='font-size:4rem;margin-bottom:10px;'>🧠</div>
-            <h3 class='dm-nt'>{
-                {
-                    "fr": "Testez vos connaissances en parasitologie !",
-                    "ar": "اختبر معارفك في علم الطفيليات!",
-                    "en": "Test your parasitology knowledge!"
-                }.get(st.session_state.lang, "")
-            }</h3>
-            <p style='opacity:.5;'>{{
-                "fr": f"{len(QUIZ_QUESTIONS)} questions disponibles",
-                "ar": f"{len(QUIZ_QUESTIONS)} سؤال متاح",
-                "en": f"{len(QUIZ_QUESTIONS)} questions available"
-            }.get(st.session_state.lang, "")}</p>
-            </div>""", unsafe_allow_html=True)
-
-            st.markdown("---")
-
-            # ✅ NEW: Enhanced quiz configuration
-            qc1, qc2, qc3 = st.columns(3)
-            with qc1:
-                n_questions = st.slider(
-                    {
-                        "fr": "Nombre de questions:",
-                        "ar": "عدد الأسئلة:",
-                        "en": "Number of questions:"
-                    }.get(st.session_state.lang, "Questions:"),
-                    5, min(50, len(QUIZ_QUESTIONS)), 10
-                )
-            with qc2:
-                cats = list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS))
-                all_cat_label = {
-                    "fr": "Toutes les catégories",
-                    "ar": "جميع الفئات",
-                    "en": "All categories"
-                }.get(st.session_state.lang, "All")
-                cats.insert(0, all_cat_label)
-                chosen_cat = st.selectbox(
-                    {
-                        "fr": "Catégorie:",
-                        "ar": "الفئة:",
-                        "en": "Category:"
-                    }.get(st.session_state.lang, "Category:"),
-                    cats
-                )
-            with qc3:
-                time_limit = st.selectbox(
-                    {
-                        "fr": "Limite de temps:",
-                        "ar": "حد الوقت:",
-                        "en": "Time limit:"
-                    }.get(st.session_state.lang, "Time limit:"),
-                    ["Aucune", "30s", "1min", "2min"],
-                    index=0
-                )
-
-            if st.button(f"🎮 {t('start_quiz')}", use_container_width=True, type="primary"):
-                # Create question pool
-                if chosen_cat == all_cat_label:
-                    pool = list(range(len(QUIZ_QUESTIONS)))
-                else:
-                    pool = [i for i, q in enumerate(QUIZ_QUESTIONS) if q.get("cat") == chosen_cat]
-
-                if len(pool) == 0:
-                    pool = list(range(len(QUIZ_QUESTIONS)))
-
-                random.shuffle(pool)
-                final_order = pool[:min(n_questions, len(pool))]
-
-                # Start quiz
-                st.session_state.quiz_state = {
-                    "current": 0,
-                    "score": 0,
-                    "answered": [],
-                    "active": True,
-                    "order": final_order,
-                    "wrong": [],
-                    "total_q": len(final_order),
-                    "finished": False,
-                    "selected_answer": None,
-                    "show_result": False,
-                    "start_time": time.time(),
-                    "time_limit": {
-                        "Aucune": 0, "30s": 30, "1min": 60, "2min": 120
-                    }.get(time_limit, 0),
-                    "category": chosen_cat if chosen_cat != all_cat_label else "general"
-                }
-
-                db_log(st.session_state.user_id, st.session_state.user_name,
-                      "Quiz started", f"n={len(final_order)} cat={chosen_cat}")
-                st.rerun()
-
-        # Quiz active - answering questions
-        elif qs.get("active", False) and not qs.get("finished", False):
-            idx = qs["current"]
-            order = qs.get("order", [])
-            total_q = qs.get("total_q", len(order))
-
-            if idx < len(order):
-                qi = order[idx]
-                q = QUIZ_QUESTIONS[qi]
-
-                # ✅ NEW: Time tracking
-                time_elapsed = int(time.time() - qs["start_time"])
-                time_left = qs["time_limit"] - time_elapsed if qs["time_limit"] > 0 else 0
-
-                if qs["time_limit"] > 0 and time_left <= 0:
-                    st.session_state.quiz_state["finished"] = True
-                    st.session_state.quiz_state["active"] = False
-                    st.rerun()
-
-                # Progress with time
-                progress_val = idx / total_q if total_q > 0 else 0
-                st.progress(progress_val)
-
-                # Time display
-                if qs["time_limit"] > 0:
-                    mins, secs = divmod(time_left, 60)
-                    time_display = f"⏱️ {mins:02d}:{secs:02d}"
-                    st.markdown(f"""
-                    <div style='display:flex;justify-content:space-between;align-items:center;'>
-                        <h3>{{
-                            "fr": "Question",
-                            "ar": "سؤال",
-                            "en": "Question"
-                        }} {idx + 1}/{total_q}</h3>
-                        <div style='background:rgba(255,0,64,0.1);padding:4px 8px;border-radius:6px;'>
-                            {time_display}
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    sst.markdown(
-    f"### { {'fr': 'Question', 'ar': 'سؤال', 'en': 'Question'}[lang] }"
-)
-                # Category display
-                cat = q.get("cat", "")
-                if cat:
-                    st.caption(f"📂 {cat}")
-
-                # Question text
-                q_text = tl(q["q"])
-                st.markdown(f"""<div class='dm-card dm-card-purple'>
-                <h4 style='margin:0;line-height:1.6;'>{q_text}</h4>
-                </div>""", unsafe_allow_html=True)
-
-                # Check if already answered this question
-                if not qs.get("show_result", False):
-                    st.markdown("---")
-                    option_cols = st.columns(2)
-
-                    # ✅ NEW: Enhanced option buttons with letters and colors
-                    for i, opt in enumerate(q["opts"]):
-                        with option_cols[i % 2]:
-                            letter = ['A', 'B', 'C', 'D'][i]
-                            btn_key = f"quiz_opt_{idx}_{i}"
-
-                            # Color options based on selection
-                            if qs.get("selected_answer") == i:
-                                btn_style = "background:linear-gradient(135deg,#00f5ff,#0066ff);color:white;"
-                            else:
-                                btn_style = ""
-
-                            if st.button(
-                                f"<span style='{btn_style}'>"
-                                f"<span style='background:rgba(0,245,255,0.2);padding:2px 6px;border-radius:4px;margin-right:8px;'>{letter}</span>"
-                                f"{opt}</span>",
-                                key=btn_key,
-                                use_container_width=True,
-                                help=f"Option {letter}"
-                            ):
-                                correct = (i == q["ans"])
-                                st.session_state.quiz_state["selected_answer"] = i
-                                st.session_state.quiz_state["show_result"] = True
-
-                                if correct:
-                                    st.session_state.quiz_state["score"] += 1
-                                else:
-                                    st.session_state.quiz_state["wrong"].append({
-                                        "q": q_text,
-                                        "your": opt,
-                                        "correct": q["opts"][q["ans"]],
-                                        "cat": q.get("cat", "general")
-                                    })
-
-                                st.session_state.quiz_state["answered"].append(correct)
-                                st.rerun()
-
-                else:
-                    # Show result of answer
-                    selected = qs.get("selected_answer", -1)
-                    correct_idx = q["ans"]
-                    is_correct = selected == correct_idx
-
-                    # ✅ NEW: Enhanced result display
-                    if is_correct:
-                        st.success( f"✅ { {'fr': 'Bonne réponse !', 'ar': 'إجابة صحيحة!', 'en': 'Correct!'}[lang] }"
-                        )
-                    else:
-                        correct_ans = q["opts"][correct_idx]
-                        st.error(
-                            f"❌ { {'fr': 'Réponse correcte', 'ar': 'الإجابة الصحيحة', 'en': 'Correct answer'}[lang] }: **{correct_ans}**"
-                        )
-
-                    # Show explanation
-                    expl = tl(q.get("expl", {}))
-                    if expl:
-                        st.info(f"📖 {expl}")
-
-                    # Show all options with markers
-                    for i, opt in enumerate(q["opts"]):
-                        if i == correct_idx:
-                            st.markdown(f"✅ **{['A','B','C','D'][i]}. {opt}**")
-                        elif i == selected and not is_correct:
-                            st.markdown(f"❌ ~~{['A','B','C','D'][i]}. {opt}~~")
-                        else:
-                            st.markdown(f"{'  '}{['A','B','C','D'][i]}. {opt}")
-
-                    st.markdown("---")
-
-                    # Next question button
-                    if idx + 1 < len(order):
-                        if st.button(f"➡️ {t('next_question')}", use_container_width=True, type="primary"):
-                            st.session_state.quiz_state["current"] += 1
-                            st.session_state.quiz_state["show_result"] = False
-                            st.session_state.quiz_state["selected_answer"] = None
-                            st.rerun()
-                    else:
-                        finish_label = {
-                            "fr": "🏁 Voir les résultats",
-                            "ar": "🏁 عرض النتائج",
-                            "en": "🏁 See Results"
-                        }.get(st.session_state.lang, "🏁 Results")
-
-                        if st.button(finish_label, use_container_width=True, type="primary"):
-                            st.session_state.quiz_state["finished"] = True
-                            st.session_state.quiz_state["active"] = False
-                            st.session_state.quiz_state["time_taken"] = int(time.time() - qs["start_time"])
-                            st.rerun()
-
-            else:
-                # Fallback: mark as finished
-                st.session_state.quiz_state["finished"] = True
-                st.session_state.quiz_state["active"] = False
-                st.session_state.quiz_state["time_taken"] = int(time.time() - qs["start_time"])
-                st.rerun()
-
-        # Quiz finished - show results
-        elif qs.get("finished", False):
-            score = qs.get("score", 0)
-            total_q = qs.get("total_q", 1)
-            pct = int(score / total_q * 100) if total_q > 0 else 0
-            time_taken = qs.get("time_taken", 0)
-
-            # ✅ NEW: Enhanced result display with animations
-            if pct >= 80:
-                emoji, msg, color = "🏆", t("score_excellent"), "#00ff88"
-            elif pct >= 60:
-                emoji, msg, color = "👍", t("score_good"), "#00f5ff"
-            elif pct >= 40:
-                emoji, msg, color = "📚", t("score_average"), "#ff9500"
-            else:
-                emoji, msg, color = "💪", t("score_low"), "#ff0040"
-
-            st.markdown(f"""
-            <div class='dm-card dm-card-green' style='text-align:center;'>
-            <div style='font-size:5rem;'>{emoji}</div>
-            <h2 class='dm-nt'>{t('result')}</h2>
-
-            <div style='font-size:4rem;font-weight:900;font-family:JetBrains Mono,monospace;
-                background:linear-gradient(135deg,{color},#ff00ff,#00ff88);
-                -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>
-                {score}/{total_q}
-            </div>
-
-            <p style='font-size:1.5rem;opacity:.8;'>{pct}%</p>
-
-            <div style='background:rgba(0,255,136,.1);padding:12px;border-radius:12px;margin:12px auto;max-width:80%;'>
-                {msg}
-            </div>
-
-            <p style='opacity:.6;font-size:.9rem;'>
-                Temps: {time_taken} secondes • Catégorie: {qs.get('category', 'Général')}
-            </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Save score to DB
-            try:
-                db_quiz_save(
-                    st.session_state.user_id,
-                    st.session_state.user_name,
-                    score, total_q, pct,
-                    qs.get('category', 'general'),
-                    time_taken
-                )
-                db_log(st.session_state.user_id, st.session_state.user_name,
-                      "Quiz done", f"{score}/{total_q}={pct}% time={time_taken}s")
-            except Exception as e:
-                st.error(f"Error saving score: {e}")
-
-            # ✅ NEW: Performance chart with time
-            if HAS_PLOTLY and total_q > 0:
-                st.markdown("---")
-                analysis_label = {
-                    "fr": "Analyse des résultats",
-                    "ar": "تحليل النتائج",
-                    "en": "Results Analysis"
-                }.get(st.session_state.lang, "Analysis")
-
-                st.markdown(f"### 📊 {analysis_label}")
-
-                correct_label = {
-                    "fr": "Correctes",
-                    "ar": "صحيحة",
-                    "en": "Correct"
-                }.get(st.session_state.lang, "Correct")
-
-                incorrect_label = {
-                    "fr": "Incorrectes",
-                    "ar": "خاطئة",
-                    "en": "Incorrect"
-                }.get(st.session_state.lang, "Incorrect")
-
-                fig = make_subplots(rows=1, cols=2, specs=[[{"type": "domain"}, {"type": "domain"}]])
-
-                # Pie chart
-                fig.add_trace(
-                    go.Pie(
-                        labels=[correct_label, incorrect_label],
-                        values=[score, total_q - score],
-                        marker_colors=["#00ff88", "#ff0040"],
-                        hole=0.5,
-                        textinfo='label+percent',
-                        textfont_size=14
-                    ),
-                    1, 1
-                )
-
-                # Gauge for percentage
-                fig.add_trace(
-                    go.Indicator(
-                        mode="gauge+number",
-                        value=pct,
-                        title={'text': "Score"},
-                        number={'font': {'color': color}},
-                        gauge={
-                            'axis': {'range': [0, 100]},
-                            'bar': {'color': color},
-                            'steps': [
-                                {'range': [0, 40], 'color': "#ff0040"},
-                                {'range': [40, 60], 'color': "#ff9500"},
-                                {'range': [60, 80], 'color': "#00f5ff"},
-                                {'range': [80, 100], 'color': "#00ff88"}
-                            ]
-                        }
-                    ),
-                    1, 2
-                )
-
-                fig.update_layout(
-                    height=300,
-                    template=plot_template,
-                    margin=dict(l=20, r=20, t=20, b=20),
-                    title="Performance du quiz"
-                )
-
-                st.plotly_chart(fig, use_container_width=True)
-
-            # Wrong answers review
-            wrong = qs.get("wrong", [])
-            if wrong:
-                review_label = {
-                    "fr": f"Erreurs à revoir ({len(wrong)})",
-                    "ar": f"الأخطاء ({len(wrong)})",
-                    "en": f"Mistakes to review ({len(wrong)})"
-                }.get(st.session_state.lang, f"Mistakes ({len(wrong)})")
-
-                with st.expander(f"❌ {review_label}"):
-                    for i, w in enumerate(wrong):
-                        your_label = {
-                            "fr": "Votre réponse",
-                            "ar": "إجابتك",
-                            "en": "Your answer"
-                        }.get(st.session_state.lang, "Your answer")
-
-                        correct_label2 = {
-                            "fr": "Correcte",
-                            "ar": "الصحيحة",
-                            "en": "Correct"
-                        }.get(st.session_state.lang, "Correct")
-
-                        st.markdown(f"""
-                        <div class='dm-card' style='margin:8px 0;padding:12px;'>
-                        **{i + 1}. {w['q']}**
-                        <div style='display:flex;justify-content:space-between;margin:8px 0;'>
-                            <div>❌ {your_label}: ~~{w['your']}~~</div>
-                            <div>✅ {correct_label2}: **{w['correct']}**</div>
-                        </div>
-                        <div style='opacity:.6;font-size:.8rem;'>Catégorie: {w.get('cat', 'Général')}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-            st.markdown("---")
-
-            # ✅ NEW: Category performance breakdown
-            if wrong:
-                st.markdown("#### Performance par catégorie")
-
-                # Count wrong answers by category
-                wrong_by_cat = {}
-                for w in wrong:
-                    cat = w.get('cat', 'general')
-                    wrong_by_cat[cat] = wrong_by_cat.get(cat, 0) + 1
-
-                # Count total questions by category
-                total_by_cat = {}
-                for qi in qs.get('order', []):
-                    cat = QUIZ_QUESTIONS[qi].get('cat', 'general')
-                    total_by_cat[cat] = total_by_cat.get(cat, 0) + 1
-
-                # Calculate percentages
-                cat_data = []
-                for cat in set(wrong_by_cat.keys()).union(set(total_by_cat.keys())):
-                    wrong = wrong_by_cat.get(cat, 0)
-                    total = total_by_cat.get(cat, 0)
-                    pct = (1 - (wrong / total)) * 100 if total > 0 else 100
-                    cat_data.append({
-                        'category': cat,
-                        'correct': total - wrong,
-                        'wrong': wrong,
-                        'total': total,
-                        'percentage': pct
-                    })
-
-                # Sort by percentage
-                cat_data.sort(key=lambda x: x['percentage'], reverse=True)
-
-                # Display as cards
-                for item in cat_data:
-                    color = "#00ff88" if item['percentage'] >= 80 else "#00f5ff" if item['percentage'] >= 50 else "#ff9500"
-                    st.markdown(f"""
-                    <div class='dm-card' style='border-left:4px solid {color};margin:8px 0;'>
-                        <div style='display:flex;justify-content:space-between;'>
-                            <div>
-                                <b>{item['category']}</b><br>
-                                <span style='opacity:.6;'>{item['correct']}/{item['total']} correctes</span>
-                            </div>
-                            <div style='font-weight:bold;color:{color};'>
-                                {item['percentage']:.0f}%
-                            </div>
-                        </div>
-                        <div style='margin-top:8px;'>
-                            <div style='background:{color};height:4px;border-radius:2px;width:{item['percentage']}%;'></div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-            # Restart button
-            if st.button(f"🔄 {t('restart')}", use_container_width=True, type="primary"):
-                st.session_state.quiz_state = {
-                    "current": 0, "score": 0, "answered": [],
-                    "active": False, "order": [], "wrong": [],
-                    "total_q": 0, "finished": False,
-                    "selected_answer": None, "show_result": False,
-                    "start_time": None, "time_taken": 0
-                }
-                st.rerun()
+            st.rerun()
 # ============================================
 #  PAGE: CHATBOT - FULLY ENHANCED
 # ============================================
