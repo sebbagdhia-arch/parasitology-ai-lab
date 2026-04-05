@@ -3976,11 +3976,8 @@ def main():
 
                     # ✅ NEW: Enhanced result display
                     if is_correct:
-                        st.success(f"✅ {{
-                            'fr': 'Bonne réponse !',
-                            'ar': 'إجابة صحيحة!',
-                            'en': 'Correct!'
-                        }}")
+                        st.success( f"✅ { {'fr': 'Bonne réponse !', 'ar': 'إجابة صحيحة!', 'en': 'Correct!'}[lang] }"
+                        )
                     else:
                         correct_ans = q["opts"][correct_idx]
                         st.error(f"❌ {{
