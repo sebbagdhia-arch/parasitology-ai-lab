@@ -3734,7 +3734,7 @@ def main():
 # ============================================
 #  PAGE: QUIZ - ENHANCED
 # ============================================
-elif pg == "quiz":
+if pg == "quiz":  # ← تم التغيير من elif إلى if
     st.title(f"🧠 {t('quiz')}")
 
     # Initialize quiz state
