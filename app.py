@@ -3980,11 +3980,9 @@ def main():
                         )
                     else:
                         correct_ans = q["opts"][correct_idx]
-                        st.error(f"❌ {{
-                            'fr': 'Réponse correcte',
-                            'ar': 'الإجابة الصحيحة',
-                            'en': 'Correct answer'
-                        }}: **{correct_ans}**")
+                        st.error(
+                            f"❌ { {'fr': 'Réponse correcte', 'ar': 'الإجابة الصحيحة', 'en': 'Correct answer'}[lang] }: **{correct_ans}**"
+                        )
 
                     # Show explanation
                     expl = tl(q.get("expl", {}))
