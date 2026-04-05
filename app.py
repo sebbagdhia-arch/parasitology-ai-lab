@@ -2103,17 +2103,17 @@ def make_pdf(pat, lab, result, lbl, lang="fr"):
         pdf.set_font("DejaVu", "B", 10)
 
     pdf.set_text_color(*rel_color)
-pdf.cell(
-    0, 8,
-    {
-        'fr': 'Fiabilité: {0} ({1}%)',
-        'ar': 'موثوقية: {0} ({1}%)',
-        'en': 'Reliability: {0} ({1}%)'
-    }[lang].format(rel_text, cf),
-    0, 1, "C"
-)
+    pdf.cell(
+        0, 8,
+        {
+            'fr': 'Fiabilité: {0} ({1}%)',
+            'ar': 'موثوقية: {0} ({1}%)',
+            'en': 'Reliability: {0} ({1}%)'
+        }[lang].format(rel_text, cf),
+        0, 1, "C"
+    )
 
-pdf.set_text_color(0, 0, 0)
+    pdf.set_text_color(0, 0, 0)
     # QR Code
     if HAS_QRCODE:
         try:
