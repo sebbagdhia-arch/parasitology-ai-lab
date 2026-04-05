@@ -1270,10 +1270,10 @@ def db_chat_save(uid, un, msg, resp):
 # Initialize database
 init_database()
 # ============================================
-#  UTILITY FUNCTIONS - ENHANCED WITH STREAMLIT FIXES
+#  UTILITY FUNCTIONS - ENHANCED
 # ============================================
 def has_role(lvl):
-    """Check user role level - Fixed for session state"""
+    """Check user role level"""
     return ROLES.get(st.session_state.get("user_role", "viewer"), {}).get("level", 0) >= lvl
 
 def risk_color(lv):
@@ -1293,23 +1293,17 @@ def risk_pct(lv):
     }.get(lv, 0)
 
 def get_client_ip():
-    """Get client IP address - Fixed for Streamlit Cloud"""
+    """Get client IP address"""
     try:
-        # Works in Streamlit Cloud
         return st.experimental_connection_info().client.ip
     except:
-        try:
-            # Fallback for local development
-            import socket
-            return socket.gethostbyname(socket.gethostname())
-        except:
-            return "unknown"
+        return "unknown"
 
 # ============================================
-#  IMAGE PROCESSING - FIXED FOR STREAMLIT
+#  IMAGE PROCESSING - ENHANCED
 # ============================================
 def safe_image_open(img_data):
-    """Safely open image from various sources - Fixed for Streamlit uploads"""
+    """Safely open image from various sources"""
     try:
         if isinstance(img_data, str):
             # Base64 or file path
@@ -1322,7 +1316,7 @@ def safe_image_open(img_data):
                 # File path
                 return Image.open(img_data)
         elif hasattr(img_data, 'read'):
-            # File-like object (Streamlit upload)
+            # File-like object
             return Image.open(img_data)
         elif isinstance(img_data, bytes):
             # Raw bytes
@@ -1331,11 +1325,11 @@ def safe_image_open(img_data):
             # PIL Image
             return img_data
     except Exception as e:
-        st.error(f"❌ Erreur de chargement de l'image: {e}")
+        st.error(f"Error opening image: {e}")
         return None
 
 def resize_image(img, max_size=(1200, 1200)):
-    """Resize image while maintaining aspect ratio - Fixed for large images"""
+    """Resize image while maintaining aspect ratio"""
     if img is None:
         return None
 
@@ -1349,11 +1343,11 @@ def resize_image(img, max_size=(1200, 1200)):
             img.thumbnail(max_size, Image.Resampling.LANCZOS)
         return img
     except Exception as e:
-        st.error(f"❌ Erreur de redimensionnement: {e}")
+        st.error(f"Error resizing image: {e}")
         return None
 
 def gen_heatmap(img, seed=None):
-    """Generate AI heatmap overlay - Fixed for Streamlit display"""
+    """Generate AI heatmap overlay - ENHANCED"""
     if img is None:
         return None
 
@@ -1402,86 +1396,208 @@ def gen_heatmap(img, seed=None):
         return Image.alpha_composite(im.convert('RGBA'), hm).convert('RGB')
 
     except Exception as e:
-        st.error(f"❌ Erreur de génération de heatmap: {e}")
+        st.error(f"Error generating heatmap: {e}")
         return img
 
-# ✅ NEW: Fallback functions for unsupported features
-def thermal_filter_fallback(img):
-    """Fallback thermal filter using simple color manipulation"""
+def thermal_filter(img):
+    """Thermal camera effect"""
     if img is None:
         return None
+
     try:
-        # Simple red color overlay for fallback
-        overlay = Image.new('RGB', img.size, (255, 0, 0, 128))
-        return Image.blend(img.convert('RGB'), overlay, 0.3)
-    except:
+        return ImageOps.colorize(
+            ImageOps.grayscale(ImageEnhance.Contrast(img).enhance(1.5)).filter(ImageFilter.GaussianBlur(1)),
+            black="navy", white="yellow", mid="red")
+    except Exception as e:
+        st.error(f"Error applying thermal filter: {e}")
         return img
 
-def edges_filter_fallback(img):
-    """Fallback edge detection using simple sobel"""
+def edges_filter(img):
+    """Edge detection filter"""
     if img is None:
         return None
+
     try:
-        # Simple sobel edge detection
-        img = img.convert('L')
-        arr = np.array(img)
-        gx = cv2.Sobel(arr, cv2.CV_64F, 1, 0, ksize=3)
-        gy = cv2.Sobel(arr, cv2.CV_64F, 0, 1, ksize=3)
-        edges = np.sqrt(gx**2 + gy**2)
-        edges = (edges / edges.max() * 255).astype(np.uint8)
-        return Image.fromarray(edges)
-    except:
-        return img.convert('L')
+        return ImageOps.grayscale(img).filter(ImageFilter.FIND_EDGES)
+    except Exception as e:
+        st.error(f"Error applying edges filter: {e}")
+        return img
+
+def enhanced_filter(img):
+    """Enhanced contrast and sharpness"""
+    if img is None:
+        return None
+
+    try:
+        return ImageEnhance.Contrast(ImageEnhance.Sharpness(img).enhance(2.0)).enhance(2.0)
+    except Exception as e:
+        st.error(f"Error applying enhanced filter: {e}")
+        return img
+
+def negative_filter(img):
+    """Negative/Invert filter"""
+    if img is None:
+        return None
+
+    try:
+        return ImageOps.invert(img.convert("RGB"))
+    except Exception as e:
+        st.error(f"Error applying negative filter: {e}")
+        return img
+
+def emboss_filter(img):
+    """Emboss filter"""
+    if img is None:
+        return None
+
+    try:
+        return img.filter(ImageFilter.EMBOSS)
+    except Exception as e:
+        st.error(f"Error applying emboss filter: {e}")
+        return img
+
+def adjust_image(img, br=1.0, co=1.0, sa=1.0):
+    """Adjust brightness, contrast, saturation"""
+    if img is None:
+        return None
+
+    try:
+        r = img.copy()
+        if br != 1.0:
+            r = ImageEnhance.Brightness(r).enhance(br)
+        if co != 1.0:
+            r = ImageEnhance.Contrast(r).enhance(co)
+        if sa != 1.0:
+            r = ImageEnhance.Color(r).enhance(sa)
+        return r
+    except Exception as e:
+        st.error(f"Error adjusting image: {e}")
+        return img
+
+def zoom_img(img, lv):
+    """Zoom image with center crop"""
+    if img is None or lv <= 1.0:
+        return img
+
+    try:
+        w, h = img.size
+        nw, nh = int(w / lv), int(h / lv)
+        l, tp = (w - nw) // 2, (h - nh) // 2
+        return img.crop((l, tp, l + nw, tp + nh)).resize((w, h), Image.Resampling.LANCZOS)
+    except Exception as e:
+        st.error(f"Error zooming image: {e}")
+        return img
+
+def compare_imgs(i1, i2):
+    """Compare two images with multiple metrics"""
+    if i1 is None or i2 is None:
+        return {"mse": 0, "ssim": 0, "sim": 0}
+
+    try:
+        # Resize to same dimensions
+        i1 = i1.resize((256, 256))
+        i2 = i2.resize((256, 256))
+
+        a1 = np.array(i1.convert("RGB")).astype(float)
+        a2 = np.array(i2.convert("RGB")).astype(float)
+
+        # Mean Squared Error
+        mse = np.mean((a1 - a2) ** 2)
+
+        # Structural Similarity Index
+        m1, m2 = np.mean(a1), np.mean(a2)
+        s1, s2 = np.std(a1), np.std(a2)
+        s12 = np.mean((a1 - m1) * (a2 - m2))
+        c1, c2 = (0.01 * 255) ** 2, (0.03 * 255) ** 2
+        ssim = ((2 * m1 * m2 + c1) * (2 * s12 + c2)) / ((m1 ** 2 + m2 ** 2 + c1) * (s1 ** 2 + s2 ** 2 + c2))
+
+        return {
+            "mse": round(mse, 2),
+            "ssim": round(float(ssim), 4),
+            "sim": round(float(ssim) * 100, 1)
+        }
+    except Exception as e:
+        st.error(f"Error comparing images: {e}")
+        return {"mse": 0, "ssim": 0, "sim": 0}
+
+def pixel_diff(i1, i2):
+    """Generate pixel difference image"""
+    if i1 is None or i2 is None:
+        return None
+
+    try:
+        a1 = np.array(i1.convert("RGB").resize((256, 256))).astype(float)
+        a2 = np.array(i2.convert("RGB").resize((256, 256))).astype(float)
+        diff = np.abs(a1 - a2).astype(np.uint8)
+        diff = np.clip(diff * 3, 0, 255).astype(np.uint8)
+        return Image.fromarray(diff)
+    except Exception as e:
+        st.error(f"Error generating pixel difference: {e}")
+        return None
+
+def histogram(img):
+    """Generate image histogram data"""
+    if img is None:
+        return {"red": [], "green": [], "blue": []}
+
+    try:
+        r, g, b = img.convert("RGB").split()
+        return {
+            "red": list(r.histogram()),
+            "green": list(g.histogram()),
+            "blue": list(b.histogram())
+        }
+    except Exception as e:
+        st.error(f"Error generating histogram: {e}")
+        return {"red": [], "green": [], "blue": []}
 
 # ============================================
-#  VOICE SYSTEM - COMPLETELY REWRITTEN FOR STREAMLIT
+#  VOICE SYSTEM - FIXED FOR STREAMLIT
 # ============================================
 def render_voice_player():
-    """Render voice player using HTML5 Audio as fallback"""
+    """Render voice player using HTML5 Audio"""
     if not st.session_state.get("voice_text"):
         return
 
-    text = st.session_state.voice_text.replace("'", "\\'").replace('"', '\\"')
+    text = st.session_state.voice_text.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
     lang_code = {"fr": "fr-FR", "ar": "ar-SA", "en": "en-US"}.get(
         st.session_state.get("voice_lang", st.session_state.get("lang", "fr")), "fr-FR")
 
-    # ✅ NEW: HTML5 Audio fallback for browsers without Web Speech API
+    # ✅ NEW: Use HTML5 Audio with Web Speech API fallback
     html_code = f"""
     <div style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
-        <audio id="voiceAudio" style="display: none;" controls>
-            <source src="data:audio/mpeg;base64,{base64.b64encode(b'').decode()}" type="audio/mpeg">
-        </audio>
-
-        <div style="display: flex; gap: 8px;">
-            <button id="playBtn" onclick="playVoice()" style="
-                background: linear-gradient(135deg, #00f5ff, #0066ff);
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
-                cursor: pointer;
-                box-shadow: 0 2px 10px rgba(0,245,255,0.3);
-            ">🔊</button>
-
-            <button id="stopBtn" onclick="stopVoice()" style="
-                background: #ff0040;
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
-                cursor: pointer;
-                box-shadow: 0 2px 10px rgba(255,0,64,0.3);
-                display: none;
-            ">🛑</button>
-        </div>
+        <audio id="voiceAudio" style="display: none;"></audio>
+        <button id="playBtn" onclick="playVoice()" style="
+            background: linear-gradient(135deg, #00f5ff, #0066ff);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,245,255,0.3);
+            transition: all 0.3s ease;
+        ">🔊</button>
+        <button id="stopBtn" onclick="stopVoice()" style="
+            background: #ff0040;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255,0,64,0.3);
+            transition: all 0.3s ease;
+            display: none;
+        ">🛑</button>
     </div>
 
     <script>
-        // Text-to-speech using Web Speech API
+        let utterance = null;
+        let audio = document.getElementById('voiceAudio');
+
         function playVoice() {{
             document.getElementById('playBtn').style.display = 'none';
             document.getElementById('stopBtn').style.display = 'block';
@@ -1489,10 +1605,11 @@ def render_voice_player():
             if ('speechSynthesis' in window) {{
                 window.speechSynthesis.cancel();
 
-                const utterance = new SpeechSynthesisUtterance(`{text}`);
+                utterance = new SpeechSynthesisUtterance(`{text}`);
                 utterance.lang = '{lang_code}';
                 utterance.rate = 0.9;
                 utterance.pitch = 1.0;
+                utterance.volume = 1.0;
 
                 // Set voice if available
                 const voices = window.speechSynthesis.getVoices();
@@ -1508,10 +1625,21 @@ def render_voice_player():
 
                 window.speechSynthesis.speak(utterance);
             }} else {{
-                // Fallback: Show message if not supported
-                alert('La synthèse vocale n\'est pas supportée par votre navigateur. Utilisez Chrome/Edge pour une meilleure expérience.');
-                document.getElementById('playBtn').style.display = 'block';
-                document.getElementById('stopBtn').style.display = 'none';
+                // Fallback to HTML5 Audio (for mobile)
+                try {{
+                    const blob = new Blob([new TextEncoder().encode(`{text}`)], {{type: 'audio/mpeg'}});
+                    const url = URL.createObjectURL(blob);
+                    audio.src = url;
+                    audio.play();
+                    audio.onended = function() {{
+                        document.getElementById('playBtn').style.display = 'block';
+                        document.getElementById('stopBtn').style.display = 'none';
+                    }};
+                }} catch(e) {{
+                    alert('Voice not supported on this device');
+                    document.getElementById('playBtn').style.display = 'block';
+                    document.getElementById('stopBtn').style.display = 'none';
+                }}
             }}
         }}
 
@@ -1521,6 +1649,9 @@ def render_voice_player():
 
             if ('speechSynthesis' in window) {{
                 window.speechSynthesis.cancel();
+            }} else {{
+                audio.pause();
+                audio.currentTime = 0;
             }}
         }}
     </script>
@@ -1531,48 +1662,2596 @@ def render_voice_player():
     st.session_state.voice_lang = None
 
 def speak(text, lang=None):
-    """Queue text for speaking - Fixed for Streamlit rerun"""
+    """Queue text for speaking"""
     st.session_state.voice_text = text
     st.session_state.voice_lang = lang or st.session_state.get("lang", "fr")
     st.rerun()
 
 def stop_speech():
-    """Stop speech - Fixed for Streamlit"""
+    """Stop speech"""
     st.session_state.voice_text = None
     st.session_state.voice_lang = None
     st.rerun()
 
 # ============================================
-#  AI ENGINE - ENHANCED WITH FALLBACKS
+#  AI ENGINE - ENHANCED
 # ============================================
 @st.cache_resource(show_spinner=False)
 def load_model():
-    """Load AI model with enhanced error handling and fallbacks"""
+    """Load AI model with enhanced error handling"""
     m, mn, mt = None, None, None
     try:
         import tensorflow as tf
         from tensorflow.keras.models import load_model
 
         # Check for different model formats
-        model_dirs = ["models", "."]  # Look in models/ directory first
-        for dir in model_dirs:
-            if os.path.exists(dir):
-                for ext in [".keras", ".h5"]:
-                    files = [f for f in os.listdir(dir) if f.endswith(ext)]
-                    if files:
-                        mn = os.path.join(dir, files[0])
-                        m = load_model(mn, compile=False)
-                        mt = "keras"
-                        break
-                if m is not None:
-                    break
+        for ext in [".keras", ".h5"]:
+            ff = [f for f in os.listdir(".") if f.endswith(ext) and os.path.isfile(f)]
+            if ff:
+                mn = ff[0]
+                m = load_model(mn, compile=False)
+                mt = "keras"
+                break
 
         if m is None:
-            for dir in model_dirs:
-                if os.path.exists(dir):
-                    files = [f for f in os.listdir(dir) if f.endswith(".tflite")]
-                    if files:
-                        mn = os.path.join(dir,
+            ff = [f for f in os.listdir(".") if f.endswith(".tflite") and os.path.isfile(f)]
+            if ff:
+                mn = ff[0]
+                from tensorflow.lite.python.interpreter import Interpreter
+                m = Interpreter(model_path=mn)
+                m.allocate_tensors()
+                mt = "tflite"
+
+        # Test model with dummy input
+        if m and mt == "keras":
+            test_input = np.zeros((1, *MODEL_INPUT_SIZE, 3), dtype=np.float32)
+            m.predict(test_input, verbose=0)
+
+    except Exception as e:
+        st.warning(f"⚠️ Model loading error: {e}")
+
+    return m, mn, mt
+
+def predict(model, mt, img, seed=None):
+    """Run prediction with enhanced error handling"""
+    res = {
+        "label": "Negative",
+        "conf": 0,
+        "preds": {},
+        "rel": False,
+        "demo": False,
+        "risk": "none",
+        "proc_time": 0
+    }
+
+    rm = {
+        "Plasmodium": "critical", "Amoeba (E. histolytica)": "high",
+        "Leishmania": "high", "Trypanosoma": "high",
+        "Giardia": "medium", "Schistosoma": "medium",
+        "Negative": "none"
+    }
+
+    if model is None:
+        res["demo"] = True
+        if seed is None:
+            seed = random.randint(0, 999999)
+        rng = random.Random(seed)
+        lb = rng.choice(CLASS_NAMES)
+        cf = rng.randint(55, 98)
+        ap = {}
+        rem = 100.0 - cf
+        for c in CLASS_NAMES:
+            ap[c] = float(cf) if c == lb else round(rng.uniform(0, rem / max(1, len(CLASS_NAMES) - 1)), 1)
+        res.update({
+            "label": lb,
+            "conf": cf,
+            "preds": ap,
+            "rel": cf >= CONFIDENCE_THRESHOLD,
+            "risk": rm.get(lb, "none"),
+            "proc_time": rng.randint(500, 2000)
+        })
+        return res
+
+    try:
+        import tensorflow as tf
+        start_time = time.time()
+
+        # Preprocess image
+        im = ImageOps.fit(img.convert("RGB"), MODEL_INPUT_SIZE, Image.Resampling.LANCZOS)
+        arr = np.expand_dims(np.asarray(im).astype(np.float32) / 127.5 - 1.0, 0)
+
+        # Run prediction
+        if mt == "tflite":
+            inp, out = model.get_input_details(), model.get_output_details()
+            model.set_tensor(inp[0]['index'], arr)
+            model.invoke()
+            pr = model.get_tensor(out[0]['index'])[0]
+        else:
+            pr = model.predict(arr, verbose=0)[0]
+
+        # Process results
+        ix = int(np.argmax(pr))
+        cf = int(pr[ix] * 100)
+        lb = CLASS_NAMES[ix] if ix < len(CLASS_NAMES) else "Negative"
+        ap = {CLASS_NAMES[i]: round(float(pr[i]) * 100, 1) for i in range(min(len(pr), len(CLASS_NAMES)))}
+
+        res.update({
+            "label": lb,
+            "conf": cf,
+            "preds": ap,
+            "rel": cf >= CONFIDENCE_THRESHOLD,
+            "risk": rm.get(lb, "none"),
+            "proc_time": int((time.time() - start_time) * 1000)
+        })
+
+    except Exception as e:
+        st.error(f"Prediction error: {e}")
+        res["demo"] = True
+
+    return res
+
+# ============================================
+#  PDF GENERATION - ENHANCED
+# ============================================
+class PDF(FPDF):
+    """Enhanced PDF with Arabic support"""
+    def __init__(self, lang="fr"):
+        super().__init__()
+        self.lang = lang
+        self.set_auto_page_break(True, 25)
+        self.add_font('DejaVu', '', 'fonts/DejaVuSansCondensed.ttf', uni=True)
+        self.add_font('DejaVu', 'B', 'fonts/DejaVuSansCondensed-Bold.ttf', uni=True)
+        self.add_font('Amiri', '', 'fonts/Amiri-Regular.ttf', uni=True)
+        self.add_font('Amiri', 'B', 'fonts/Amiri-Bold.ttf', uni=True)
+
+    def header(self):
+        """Enhanced header with gradient"""
+        # Gradient background
+        self.set_fill_color(0, 20, 60)
+        self.rect(0, 0, 210, 4, 'F')
+        self.set_fill_color(0, 180, 255)
+        self.rect(0, 4, 210, 1, 'F')
+        self.set_fill_color(0, 255, 136)
+        self.rect(0, 5, 210, 0.5, 'F')
+        self.ln(8)
+
+        # Logo and title
+        self.set_font("DejaVu", "B", 14)
+        self.set_text_color(0, 60, 150)
+        self.cell(0, 8, f"DM SMART LAB AI v{APP_VERSION}", 0, 0, "L")
+
+        self.set_font("DejaVu", "", 8)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 8, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), 0, 1, "R")
+
+        # Subtitle
+        self.set_font("DejaVu", "I", 7)
+        self.set_text_color(120, 120, 120)
+        self.cell(0, 4, "Système de Diagnostic Parasitologique par Intelligence Artificielle", 0, 1, "L")
+        self.cell(0, 4, "INFSPM - Ouargla, Algérie", 0, 1, "L")
+
+        # Line separator
+        self.set_draw_color(0, 180, 255)
+        self.set_line_width(0.5)
+        self.line(10, self.get_y() + 2, 200, self.get_y() + 2)
+        self.ln(6)
+
+    def footer(self):
+        """Enhanced footer with warnings"""
+        self.set_y(-20)
+        self.set_fill_color(0, 20, 60)
+        self.rect(0, 282, 210, 15, 'F')
+        self.set_y(-15)
+        self.set_font("DejaVu", "I", 7)
+        self.set_text_color(200, 200, 200)
+
+        # Arabic/English warning based on language
+        if self.lang == "ar":
+            warning = "تحذير: هذا التقرير تم إنشاؤه بواسطة ذكاء اصطناعي - يجب التحقق من قبل متخصص"
+        else:
+            warning = "AVERTISSEMENT: Ce rapport est généré par IA - Validation par un professionnel de santé requise"
+
+        self.cell(0, 4, warning, 0, 1, "C")
+        self.set_font("DejaVu", "", 6)
+        self.cell(0, 4, f"Page {self.page_no()}/{{nb}} | DM Smart Lab AI | INFSPM Ouargla", 0, 0, "C")
+
+    def section(self, title, color=(0, 60, 150)):
+        """Enhanced section header"""
+        self.set_fill_color(*color)
+        self.set_text_color(255, 255, 255)
+
+        # Use appropriate font based on language
+        if self.lang == "ar":
+            self.set_font("Amiri", "B", 10)
+        else:
+            self.set_font("DejaVu", "B", 10)
+
+        self.cell(0, 8, f"  {title}", 0, 1, "L", True)
+        self.ln(2)
+        self.set_text_color(0, 0, 0)
+
+    def field(self, label, val):
+        """Enhanced field display"""
+        if self.lang == "ar":
+            self.set_font("Amiri", "B", 9)
+        else:
+            self.set_font("DejaVu", "B", 9)
+
+        self.set_text_color(60, 60, 60)
+        self.cell(55, 6, label, 0, 0)
+
+        if self.lang == "ar":
+            self.set_font("Amiri", "", 9)
+        else:
+            self.set_font("DejaVu", "", 9)
+
+        self.set_text_color(0, 0, 0)
+        self.cell(0, 6, f"  {val}", 0, 1)
+
+    def add_separator(self):
+        """Add separator line"""
+        self.set_draw_color(200, 200, 200)
+        self.set_line_width(0.2)
+        self.line(10, self.get_y(), 200, self.get_y())
+        self.ln(3)
+
+def make_pdf(pat, lab, result, lbl, lang="fr"):
+    """Generate enhanced PDF report"""
+    pdf = PDF(lang)
+    pdf.alias_nb_pages()
+    pdf.add_page()
+
+    # Title
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 18)
+    else:
+        pdf.set_font("DejaVu", "B", 18)
+
+    pdf.set_text_color(0, 40, 100)
+    pdf.cell(0, 12, {
+        "fr": "RAPPORT D'ANALYSE PARASITOLOGIQUE",
+        "ar": "تقرير تحليل طفيلي",
+        "en": "PARASITOLOGICAL ANALYSIS REPORT"
+    }[lang], 0, 1, "C")
+
+    # Reference ID
+    rid = hashlib.md5(f"{pat.get('Nom', '')}{datetime.now().isoformat()}".encode()).hexdigest()[:10].upper()
+    pdf.set_font("DejaVu", "", 8)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 5, f"Reference: DM-{rid} | Date: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 0, 1, "R")
+    pdf.ln(3)
+
+    # Patient section
+    pdf.section({
+        "fr": "INFORMATIONS DU PATIENT",
+        "ar": "معلومات المريض",
+        "en": "PATIENT INFORMATION"
+    }[lang])
+
+    for k, v in pat.items():
+        if v:
+            pdf.field(f"{k}:", v)
+    pdf.add_separator()
+
+    # Lab section
+    pdf.section({
+        "fr": "INFORMATIONS LABORATOIRE",
+        "ar": "معلومات المخبر",
+        "en": "LABORATORY INFORMATION"
+    }[lang], (0, 100, 80))
+
+    for k, v in lab.items():
+        if v:
+            pdf.field(f"{k}:", v)
+    pdf.add_separator()
+
+    # Result section
+    cf = result.get("conf", 0)
+    if lbl == "Negative":
+        pdf.section({
+            "fr": "RÉSULTAT DE L'ANALYSE IA",
+            "ar": "نتيجة التحليل بالذكاء الاصطناعي",
+            "en": "AI ANALYSIS RESULT"
+        }[lang], (0, 150, 80))
+    else:
+        pdf.section({
+            "fr": "RÉSULTAT DE L'ANALYSE IA",
+            "ar": "نتيجة التحليل بالذكاء الاصطناعي",
+            "en": "AI ANALYSIS RESULT"
+        }[lang], (180, 0, 0))
+
+    pdf.ln(2)
+
+    # Result box
+    if lbl == "Negative":
+        pdf.set_fill_color(220, 255, 220)
+        pdf.set_text_color(0, 100, 0)
+    else:
+        pdf.set_fill_color(255, 220, 220)
+        pdf.set_text_color(180, 0, 0)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 16)
+    else:
+        pdf.set_font("DejaVu", "B", 16)
+
+    pdf.cell(0, 12, f"  {lbl} - {cf}%", 1, 1, "C", True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(3)
+
+    # Parasite details
+    info = PARASITE_DB.get(lbl, PARASITE_DB["Negative"])
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 9)
+    else:
+        pdf.set_font("DejaVu", "B", 9)
+
+    pdf.cell(0, 6, {
+        "fr": "Nom Scientifique:",
+        "ar": "الاسم العلمي:",
+        "en": "Scientific Name:"
+    }[lang], 0, 0)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "I", 9)
+    else:
+        pdf.set_font("DejaVu", "I", 9)
+
+    pdf.cell(0, 6, f"  {info.get('sci', 'N/A')}", 0, 1)
+
+    pdf.ln(2)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 9)
+    else:
+        pdf.set_font("DejaVu", "B", 9)
+
+    pdf.cell(0, 6, {
+        "fr": "Morphologie:",
+        "ar": "المورفولوجيا:",
+        "en": "Morphology:"
+    }[lang], 0, 1)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "", 8)
+    else:
+        pdf.set_font("DejaVu", "", 8)
+
+    pdf.multi_cell(0, 5, info['morph'].get(lang, info['morph'].get('fr', '')))
+
+    pdf.ln(2)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 9)
+    else:
+        pdf.set_font("DejaVu", "B", 9)
+
+    pdf.cell(0, 6, {
+        "fr": "Description:",
+        "ar": "الوصف:",
+        "en": "Description:"
+    }[lang], 0, 1)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "", 8)
+    else:
+        pdf.set_font("DejaVu", "", 8)
+
+    pdf.multi_cell(0, 5, info['desc'].get(lang, info['desc'].get('fr', '')))
+
+    pdf.ln(2)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 9)
+    else:
+        pdf.set_font("DejaVu", "B", 9)
+
+    pdf.set_text_color(0, 100, 0)
+    pdf.cell(0, 6, {
+        "fr": "Conseil Médical:",
+        "ar": "النصيحة الطبية:",
+        "en": "Medical Advice:"
+    }[lang], 0, 1)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "", 8)
+    else:
+        pdf.set_font("DejaVu", "", 8)
+
+    pdf.set_text_color(0, 0, 0)
+    pdf.multi_cell(0, 5, info['advice'].get(lang, info['advice'].get('fr', '')))
+
+    # Tests
+    if info.get("tests"):
+        pdf.ln(2)
+        if lang == "ar":
+            pdf.set_font("Amiri", "B", 9)
+        else:
+            pdf.set_font("DejaVu", "B", 9)
+
+        pdf.cell(0, 6, {
+            "fr": "Examens Complementaires Suggérés:",
+            "ar": "الفحوصات الإضافية المقترحة:",
+            "en": "Suggested Additional Tests:"
+        }[lang], 0, 1)
+
+        if lang == "ar":
+            pdf.set_font("Amiri", "", 8)
+        else:
+            pdf.set_font("DejaVu", "", 8)
+
+        for test in info["tests"]:
+            pdf.cell(10, 5, "", 0, 0)
+            pdf.cell(0, 5, f"- {test}", 0, 1)
+
+    # Reliability indicator
+    pdf.ln(3)
+    pdf.add_separator()
+
+    rel_text = {
+        "fr": "FIABLE" if result.get("rel", False) else "À VÉRIFIER",
+        "ar": "موثوق" if result.get("rel", False) else "للتحقق",
+        "en": "RELIABLE" if result.get("rel", False) else "TO VERIFY"
+    }[lang]
+
+    rel_color = (0, 150, 0) if result.get("rel", False) else (200, 100, 0)
+
+    if lang == "ar":
+        pdf.set_font("Amiri", "B", 10)
+    else:
+        pdf.set_font("DejaVu", "B", 10)
+
+    pdf.set_text_color(*rel_color)
+    pdf.cell(0, 8, f"{{
+        'fr': 'Fiabilité: {0} ({1}%)',
+        'ar': 'موثوقية: {0} ({1}%)',
+        'en': 'Reliability: {0} ({1}%)'
+    }}[lang].format(rel_text, cf)}, 0, 1, "C")
+    pdf.set_text_color(0, 0, 0)
+
+    # QR Code
+    if HAS_QRCODE:
+        try:
+            qr = qrcode.QRCode(box_size=3, border=1)
+            qr.add_data(f"DM-SmartLab|{lbl}|{cf}%|{rid}|{datetime.now().isoformat()}")
+            qr.make(fit=True)
+            qp = f"_qr_{rid}.png"
+            qr.make_image().save(qp)
+            pdf.image(qp, x=170, y=pdf.get_y() - 30, w=28)
+            try:
+                os.remove(qp)
+            except:
+                pass
+        except:
+            pass
+
+    # Signatures section
+    pdf.ln(8)
+    pdf.section({
+        "fr": "SIGNATURES ET VALIDATION",
+        "ar": "التوقيعات والمصادقة",
+        "en": "SIGNATURES & VALIDATION"
+    }[lang], (80, 80, 80))
+
+    pdf.ln(5)
+    if lang == "ar":
+        pdf.set_font("Amiri", "", 9)
+    else:
+        pdf.set_font("DejaVu", "", 9)
+
+    pdf.cell(95, 5, {
+        "fr": "Technicien 1: ___________________",
+        "ar": "التقني 1: ___________________",
+        "en": "Technician 1: ___________________"
+    }[lang], 0, 0)
+
+    pdf.cell(95, 5, {
+        "fr": "Technicien 2: ___________________",
+        "ar": "التقني 2: ___________________",
+        "en": "Technician 2: ___________________"
+    }[lang], 0, 1)
+
+    pdf.ln(8)
+    pdf.cell(95, 5, {
+        "fr": "Date: ___/___/______",
+        "ar": "التاريخ: ___/___/______",
+        "en": "Date: ___/___/______"
+    }[lang], 0, 0)
+
+    pdf.cell(95, 5, {
+        "fr": "Cachet du Laboratoire:",
+        "ar": "ختم المخبر:",
+        "en": "Lab Seal:"
+    }[lang], 0, 1)
+
+    pdf.ln(10)
+    pdf.cell(0, 5, {
+        "fr": "Validation Biologiste: ___________________",
+        "ar": "مصادقة أخصائي: ___________________",
+        "en": "Biologist Validation: ___________________"
+    }[lang], 0, 1)
+
+    return bytes(pdf.output())
+
+# ============================================
+#  CSS - ENHANCED SPACE THEME
+# ============================================
+def apply_css():
+    """Apply enhanced CSS theme"""
+    rtl = st.session_state.get("lang") == "ar"
+    d = "rtl" if rtl else "ltr"
+
+    # Space dark theme
+    bg = "#030614"
+    cbg = "rgba(10,15,46,0.85)"
+    tx = "#e0e8ff"
+    pr = "#00f5ff"
+    mu = "#6b7fa0"
+    ac = "#ff00ff"
+    ac2 = "#00ff88"
+    sbg = "#020410"
+    btn_bg = "linear-gradient(135deg,#00f5ff,#0066ff)"
+    brd = "rgba(0,245,255,0.15)"
+    ibg = "rgba(10,15,46,0.6)"
+
+    # ✅ NEW: Enhanced CSS with better RTL support
+    st.markdown(f"""<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&family=Tajawal:wght@400;500;700;800&display=swap');
+
+    html {{ direction: {d}; }}
+
+    /* ====== ANIMATED SPACE BACKGROUND ====== */
+    .stApp {{
+        background: {bg} !important;
+        color: {tx} !important;
+        background-image:
+            radial-gradient(2px 2px at 20px 30px, rgba(0,245,255,0.3), transparent),
+            radial-gradient(2px 2px at 40px 70px, rgba(255,0,255,0.2), transparent),
+            radial-gradient(1px 1px at 90px 40px, rgba(0,255,136,0.3), transparent),
+            radial-gradient(1px 1px at 130px 80px, rgba(0,245,255,0.2), transparent),
+            radial-gradient(2px 2px at 160px 30px, rgba(255,0,255,0.15), transparent),
+            radial-gradient(1px 1px at 200px 60px, rgba(0,255,136,0.2), transparent),
+            radial-gradient(2px 2px at 60px 100px, rgba(0,102,255,0.2), transparent),
+            radial-gradient(1px 1px at 180px 120px, rgba(255,105,180,0.15), transparent);
+        background-size: 250px 150px;
+        animation: sparkle 8s linear infinite;
+    }}
+
+    @keyframes sparkle {{
+        0% {{ background-position: 0 0; }}
+        100% {{ background-position: 250px 150px; }}
+    }}
+
+    /* ====== FLOATING PARTICLES OVERLAY ====== */
+    .stApp::before {{
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        background:
+            radial-gradient(circle at 15% 25%, rgba(0,245,255,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 85% 75%, rgba(255,0,255,0.03) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(0,255,136,0.02) 0%, transparent 50%);
+        animation: nebula 20s ease-in-out infinite;
+    }}
+
+    @keyframes nebula {{
+        0%, 100% {{ opacity: 0.5; }}
+        50% {{ opacity: 1; }}
+    }}
+
+    /* ====== SIDEBAR ====== */
+    section[data-testid="stSidebar"] {{
+        background: linear-gradient(180deg, {sbg} 0%, rgba(5,10,30,0.98) 100%) !important;
+        border-right: 1px solid rgba(0,245,255,0.1) !important;
+        width: 320px !important;
+    }}
+
+    section[data-testid="stSidebar"] * {{ color: {tx} !important; }}
+
+    /* ====== TEXT COLORS ====== */
+    .stApp p, .stApp span, .stApp label, .stApp div {{ color: {tx} !important; }}
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{ color: {tx} !important; }}
+
+    /* ====== INPUTS ====== */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stNumberInput > div > div > input {{
+        background: {ibg} !important;
+        color: {tx} !important;
+        border: 1px solid {brd} !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+        padding: 12px !important;
+    }}
+
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus {{
+        border-color: {pr} !important;
+        box-shadow: 0 0 15px rgba(0,245,255,0.2) !important;
+    }}
+
+    /* ====== SELECTBOX ====== */
+    .stSelectbox > div > div {{
+        background: {ibg} !important;
+        border: 1px solid {brd} !important;
+        border-radius: 12px !important;
+        padding: 8px !important;
+    }}
+
+    /* ====== CARDS ====== */
+    .dm-card {{
+        background: {cbg};
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid {brd};
+        border-radius: 20px;
+        padding: 24px;
+        margin: 12px 0;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        color: {tx} !important;
+        position: relative;
+        overflow: hidden;
+    }}
+
+    .dm-card::before {{
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(0,245,255,0.03), transparent);
+        transition: left 0.6s ease;
+    }}
+
+    .dm-card:hover::before {{
+        left: 100%;
+    }}
+
+    .dm-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0,245,255,0.1), 0 4px 15px rgba(255,0,255,0.05);
+        border-color: rgba(0,245,255,0.3);
+    }}
+
+    .dm-card * {{ color: {tx} !important; }}
+
+    .dm-card-cyan {{ border-left: 3px solid {pr}; }}
+    .dm-card-green {{ border-left: 3px solid {ac2}; }}
+    .dm-card-red {{ border-left: 3px solid #ff0040; }}
+    .dm-card-purple {{ border-left: 3px solid #9933ff; }}
+
+    /* ====== METRIC CARDS ====== */
+    .dm-m {{
+        background: {cbg};
+        border: 1px solid {brd};
+        border-radius: 18px;
+        padding: 20px 12px;
+        text-align: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }}
+
+    .dm-m:hover {{
+        border-color: {pr};
+        box-shadow: 0 0 20px rgba(0,245,255,0.1);
+    }}
+
+    .dm-m-i {{ font-size: 1.6rem; }}
+    .dm-m-v {{
+        font-size: 1.8rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace !important;
+        background: linear-gradient(135deg, {pr}, {ac});
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: glow-text 3s ease-in-out infinite;
+    }}
+
+    @keyframes glow-text {{
+        0%, 100% {{ filter: brightness(1); }}
+        50% {{ filter: brightness(1.3); }}
+    }}
+
+    .dm-m-l {{
+        font-size: .7rem;
+        font-weight: 600;
+        color: {mu} !important;
+        -webkit-text-fill-color: {mu} !important;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        margin-top: 6px;
+    }}
+
+    /* ====== BUTTONS ====== */
+    div.stButton > button {{
+        background: {btn_bg} !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 14px !important;
+        padding: 12px 28px !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        letter-spacing: 0.03em !important;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        position: relative !important;
+        overflow: hidden !important;
+        height: 48px !important;
+    }}
+
+    div.stButton > button::before {{
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) !important;
+        transition: left 0.5s ease !important;
+    }}
+
+    div.stButton > button:hover::before {{
+        left: 100% !important;
+    }}
+
+    div.stButton > button:hover {{
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 25px rgba(0,245,255,0.3), 0 0 40px rgba(0,102,255,0.15) !important;
+    }}
+
+    div.stButton > button * {{ color: white !important; }}
+
+    /* ====== NEON TITLE ====== */
+    .dm-nt {{
+        font-family: 'Orbitron', sans-serif;
+        font-weight: 900;
+        background: linear-gradient(135deg, {pr}, {ac}, {ac2});
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: gradient-shift 4s ease infinite;
+    }}
+
+    @keyframes gradient-shift {{
+        0% {{ background-position: 0% center; }}
+        50% {{ background-position: 100% center; }}
+        100% {{ background-position: 0% center; }}
+    }}
+
+    /* ====== CHAT BUBBLES ====== */
+    .dm-ch {{
+        padding: 14px 18px;
+        border-radius: 18px;
+        margin: 8px 0;
+        max-width: 85%;
+        font-size: .9rem;
+        line-height: 1.6;
+        animation: fadeInUp 0.3s ease;
+    }}
+
+    @keyframes fadeInUp {{
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+
+    .dm-cu {{
+        background: linear-gradient(135deg, #0066ff, #0044cc) !important;
+        color: white !important;
+        margin-left: auto;
+        border-bottom-right-radius: 4px;
+    }}
+
+    .dm-cu * {{ color: white !important; -webkit-text-fill-color: white !important; }}
+
+    .dm-cb {{
+        background: {cbg};
+        border: 1px solid {brd};
+        border-bottom-left-radius: 4px;
+    }}
+
+    /* ====== HEADINGS ====== */
+    h1 {{ font-family: 'Orbitron', sans-serif !important; }}
+
+    /* ====== RTL Support ====== */
+    {"body, p, span, div, label { font-family: 'Tajawal', sans-serif !important; }" if rtl else ""}
+
+    /* ====== LOGO CONTAINER ====== */
+    .dm-logo {{
+        text-align: center;
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(0,245,255,0.05), rgba(255,0,255,0.05));
+        border-radius: 24px;
+        border: 1px solid {brd};
+        margin-bottom: 12px;
+        position: relative;
+        overflow: hidden;
+    }}
+
+    .dm-logo::after {{
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: conic-gradient(from 0deg, transparent, rgba(0,245,255,0.05), transparent, rgba(255,0,255,0.05), transparent);
+        animation: logo-rotate 10s linear infinite;
+    }}
+
+    @keyframes logo-rotate {{
+        100% {{ transform: rotate(360deg); }}
+    }}
+
+    /* ====== EXPANDER ====== */
+    .streamlit-expanderHeader {{
+        background: rgba(10,15,46,0.5) !important;
+        border-radius: 12px !important;
+        border: 1px solid {brd} !important;
+        padding: 12px !important;
+    }}
+
+    /* ====== TABS ====== */
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 4px;
+        background: rgba(10,15,46,0.5);
+        border-radius: 14px;
+        padding: 4px;
+    }}
+
+    .stTabs [data-baseweb="tab"] {{
+        border-radius: 10px;
+        color: {tx} !important;
+        padding: 10px 16px !important;
+        font-weight: 600 !important;
+    }}
+
+    .stTabs [aria-selected="true"] {{
+        background: linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,102,255,0.2)) !important;
+    }}
+
+    /* ====== PROGRESS BAR ====== */
+    .stProgress > div > div > div > div {{
+        background: linear-gradient(90deg, {pr}, {ac}, {ac2}) !important;
+        border-radius: 10px !important;
+        animation: progress-glow 2s ease infinite;
+    }}
+
+    @keyframes progress-glow {{
+        0%, 100% {{ box-shadow: 0 0 5px rgba(0,245,255,0.3); }}
+        50% {{ box-shadow: 0 0 15px rgba(0,245,255,0.5); }}
+    }}
+
+    /* ====== DATAFRAME ====== */
+    .stDataFrame {{
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        background: {cbg} !important;
+        border: 1px solid {brd} !important;
+    }}
+
+    /* ====== RADIO ====== */
+    .stRadio > div {{
+        gap: 4px;
+    }}
+
+    /* ====== SCROLLBAR ====== */
+    ::-webkit-scrollbar {{
+        width: 6px;
+        height: 6px;
+    }}
+
+    ::-webkit-scrollbar-track {{
+        background: {bg};
+    }}
+
+    ::-webkit-scrollbar-thumb {{
+        background: linear-gradient(180deg, {pr}, {ac});
+        border-radius: 10px;
+    }}
+
+    /* ====== FILE UPLOADER ====== */
+    .stFileUploader > div > div > div > div {{
+        background: {ibg} !important;
+        border: 1px solid {brd} !important;
+        border-radius: 12px !important;
+    }}
+
+    /* ====== CAMERA INPUT ====== */
+    .stCameraInput > div > div > div > div {{
+        background: {ibg} !important;
+        border: 1px solid {brd} !important;
+        border-radius: 12px !important;
+    }}
+
+    /* ====== DOWNLOAD BUTTON ====== */
+    .stDownloadButton > button {{
+        background: linear-gradient(135deg, #00f5ff, #0066ff) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 14px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+    }}
+
+    /* ====== FORM SUBMIT BUTTON ====== */
+    .stForm > form > div > button {{
+        background: linear-gradient(135deg, #00f5ff, #0066ff) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 14px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        height: 48px !important;
+    }}
+
+    /* ====== ALERT BOXES ====== */
+    .stAlert {{
+        border-radius: 12px !important;
+        padding: 16px !important;
+    }}
+
+    /* ====== CODE BLOCKS ====== */
+    .stCodeBlock {{
+        background: {cbg} !important;
+        border: 1px solid {brd} !important;
+        border-radius: 12px !important;
+    }}
+
+    /* ====== MARKDOWN ====== */
+    .stMarkdown {{
+        line-height: 1.7 !important;
+    }}
+
+    /* ====== CAPTION ====== */
+    .stCaption {{
+        color: {mu} !important;
+        font-size: 0.8rem !important;
+    }}
+
+    /* ====== DIVIDER ====== */
+    hr {{
+        border: none !important;
+        border-top: 1px solid {brd} !important;
+        margin: 20px 0 !important;
+    }}
+
+    /* ====== EMPTY CONTAINER ====== */
+    .empty {{
+        display: none !important;
+    }}
+
+    /* ====== HIDDEN ELEMENTS ====== */
+    .stHidden {{
+        display: none !important;
+    }}
+
+    /* ====== FULL WIDTH ELEMENTS ====== */
+    .stFullWidth {{
+        width: 100% !important;
+    }}
+
+    </style>""", unsafe_allow_html=True)
+
+    # ✅ NEW: Return plotly template name
+    return "plotly_dark" if HAS_PLOTLY else "default"
+
+# ============================================
+#  ANIMATED LOGO - ENHANCED
+# ============================================
+def render_logo():
+    """Render enhanced animated logo"""
+    st.markdown("""<div class="dm-logo">
+    <svg width="75" height="75" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#00f5ff">
+                <animate attributeName="stop-color" values="#00f5ff;#ff00ff;#00ff88;#00f5ff" dur="4s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="50%" style="stop-color:#ff00ff">
+                <animate attributeName="stop-color" values="#ff00ff;#00ff88;#00f5ff;#ff00ff" dur="4s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" style="stop-color:#00ff88">
+                <animate attributeName="stop-color" values="#00ff88;#00f5ff;#ff00ff;#00ff88" dur="4s" repeatCount="indefinite"/>
+            </stop>
+        </linearGradient>
+        <filter id="gl">
+            <feGaussianBlur stdDeviation="2" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="gl2">
+            <feGaussianBlur stdDeviation="1" result="b"/>
+            <feComposite in="SourceGraphic" in2="b" operator="over"/>
+        </filter>
+    </defs>
+
+    <!-- Outer circle with animation -->
+    <circle cx="50" cy="50" r="45" fill="none" stroke="url(#g1)" stroke-width="2.5" filter="url(#gl)" opacity=".8">
+        <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="20s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Inner circle -->
+    <circle cx="50" cy="50" r="38" fill="none" stroke="url(#g1)" stroke-width="1" opacity=".3">
+        <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="15s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Static circle -->
+    <circle cx="50" cy="50" r="30" fill="none" stroke="url(#g1)" stroke-width="0.5" opacity=".2"/>
+
+    <!-- Text -->
+    <text x="50" y="42" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="14" font-weight="900" fill="url(#g1)" filter="url(#gl2)">DM</text>
+    <text x="50" y="58" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="8" font-weight="600" fill="url(#g1)">SMART LAB</text>
+    <text x="50" y="68" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="7" font-weight="400" fill="#00f5ff" opacity=".6">AI</text>
+
+    <!-- DNA helix dots with animation -->
+    <circle cx="25" cy="35" r="2" fill="#00f5ff" opacity=".4">
+        <animate attributeName="cy" values="35;65;35" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="75" cy="65" r="2" fill="#ff00ff" opacity=".4">
+        <animate attributeName="cy" values="65;35;65" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="30" cy="50" r="1.5" fill="#00ff88" opacity=".3">
+        <animate attributeName="cx" values="30;70;30" dur="4s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Additional particles -->
+    <circle cx="40" cy="20" r="1" fill="#ff9500" opacity=".2">
+        <animate attributeName="cx" values="40;60;40" dur="5s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="20;40;20" dur="7s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="60" cy="80" r="1" fill="#9933ff" opacity=".2">
+        <animate attributeName="cx" values="60;40;60" dur="6s" repeatCount="indefinite"/>
+        <animate attributeName="cy" values="80;60;80" dur="4s" repeatCount="indefinite"/>
+    </circle>
+    </svg>
+
+    <h3 style="font-family:Orbitron,sans-serif;margin:6px 0;background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.1rem;position:relative;z-index:1;">
+        DM SMART LAB AI
+    </h3>
+    <p style="font-size:.55rem;opacity:.35;letter-spacing:.35em;text-transform:uppercase;margin:0;position:relative;z-index:1;">
+        v{APP_VERSION} - Space Enhanced Edition
+    </p>
+    </div>""", unsafe_allow_html=True)
+
+# ============================================
+#  SIDEBAR - ENHANCED
+# ============================================
+def render_sidebar():
+    """Render enhanced sidebar with user info and navigation"""
+    with st.sidebar:
+        # Logo
+        render_logo()
+
+        # User info
+        if st.session_state.logged_in:
+            ri = ROLES.get(st.session_state.user_role, ROLES["viewer"])
+            st.markdown(f"""
+            <div class='dm-card dm-card-cyan' style='text-align:center;'>
+                <h4 style='margin:0;color:{NEON["cyan"]}!important;'>
+                    {ri['icon']} {st.session_state.user_full_name}
+                </h4>
+                <p style='margin:0;opacity:.6;font-size:.8rem;'>
+                    @{st.session_state.user_name} | {tl(ri['label'])}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Daily tip
+            tips = TIPS.get(st.session_state.lang, TIPS["fr"])
+            st.markdown(f"""
+            <div class='dm-card' style='background:rgba(0,255,136,.06);'>
+                <p style='margin:0;opacity:.8;'>
+                    <b>💡 {t('daily_tip')}:</b><br>
+                    {tips[datetime.now().timetuple().tm_yday % len(tips)]}
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # Language selector
+            st.markdown(f"<p style='margin:0;opacity:.6;'>{t('language')}</p>", unsafe_allow_html=True)
+            lc = st.radio("lang_select", ["FR Francais", "AR العربية", "EN English"],
+                         label_visibility="collapsed",
+                         index=["fr", "ar", "en"].index(st.session_state.lang),
+                         horizontal=True)
+
+            nl = "fr" if "FR" in lc else ("ar" if "AR" in lc else "en")
+            if nl != st.session_state.lang:
+                st.session_state.lang = nl
+                st.rerun()
+
+            st.markdown("---")
+
+            # Navigation
+            navs = [
+                f"🏠 {t('home')}",
+                f"🔬 {t('scan')}",
+                f"📘 {t('encyclopedia')}",
+                f"📊 {t('dashboard')}",
+                f"🧠 {t('quiz')}",
+                f"💬 {t('chatbot')}",
+                f"🔄 {t('compare')}",
+            ]
+
+            keys = ["home", "scan", "enc", "dash", "quiz", "chat", "cmp"]
+
+            if has_role(3):
+                navs.append(f"⚙️ {t('admin')}")
+                keys.append("admin")
+
+            navs.append(f"ℹ️ {t('about')}")
+            keys.append("about")
+
+            menu = st.radio("Navigation", navs, label_visibility="collapsed")
+
+            st.markdown("---")
+
+            # Logout button
+            if st.button(f"🚪 {t('logout')}", use_container_width=True):
+                db_log(st.session_state.user_id, st.session_state.user_name, "Logout")
+                for k in DEFAULTS:
+                    st.session_state[k] = DEFAULTS[k]
+                st.rerun()
+
+            return keys[navs.index(menu)]
+
+        else:
+            # Login form will be rendered in main page
+            return "login"
+
+# ============================================
+#  LOGIN PAGE - ENHANCED
+# ============================================
+def render_login():
+    """Render enhanced login page"""
+    lc1, lc2, lc3 = st.columns([1, 2, 1])
+
+    with lc2:
+        # Language selector
+        ll = st.selectbox("Language", ["FR Francais", "AR العربية", "EN English"],
+                         label_visibility="collapsed")
+        st.session_state.lang = "fr" if "FR" in ll else ("ar" if "AR" in ll else "en")
+
+        # Logo
+        render_logo()
+
+        # Login card with animated border
+        st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
+        <div style='font-size:3.5rem;margin-bottom:10px;'>
+            <span style='animation: pulse 2s ease-in-out infinite;display:inline-block;'>🔐</span>
+        </div>
+        <h2 class='dm-nt'>{t('login_title')}</h2>
+        <p style='opacity:.4;font-size:.85rem;'>{t('login_subtitle')}</p>
+        </div>
+        <style>
+        @keyframes pulse {{
+            0%, 100% {{ transform: scale(1); }}
+            50% {{ transform: scale(1.1); }}
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
+        with st.form("login"):
+            u = st.text_input(f"{t('username')}", placeholder="admin / dhia / demo")
+            p = st.text_input(f"{t('password')}", type="password")
+            if st.form_submit_button(f"{t('connect')}", use_container_width=True):
+                if u.strip():
+                    r = db_login(u.strip(), p)
+                    if r is None:
+                        st.error("❌ Utilisateur non trouvé")
+                    elif isinstance(r, dict) and "error" in r:
+                        if r["error"] == "locked":
+                            until = datetime.fromisoformat(r["until"])
+                            st.error(f"⏳ Compte verrouillé jusqu'à {until.strftime('%H:%M:%S')}")
+                        else:
+                            st.error(f"❌ Mot de passe incorrect. {r.get('left', 0)} tentatives restantes")
+                    else:
+                        st.session_state.logged_in = True
+                        st.session_state.user_id = r["id"]
+                        st.session_state.user_name = r["username"]
+                        st.session_state.user_role = r["role"]
+                        st.session_state.user_full_name = r["full_name"]
+
+                        # Log login with IP
+                        ip = get_client_ip()
+                        db_log(r["id"], r["username"], "Login", f"IP: {ip}")
+
+                        st.rerun()
+
+        st.markdown("""<div style='text-align:center;opacity:.3;font-size:.72rem;margin-top:16px;'>
+        admin/admin2026 | dhia/dhia2026 | demo/demo123
+        </div>""", unsafe_allow_html=True)
+
+    st.stop()
+
+# ============================================
+#  MAIN APP STRUCTURE
+# ============================================
+def main():
+    """Main application entry point"""
+    # Initialize session state
+    DEFAULTS = {
+        "logged_in": False, "user_id": None, "user_name": "", "user_role": "viewer",
+        "user_full_name": "", "lang": "fr",
+        "demo_seed": None, "heatmap_seed": None,
+        "quiz_state": {
+            "current": 0, "score": 0, "answered": [], "active": False,
+            "order": [], "wrong": [], "total_q": 0, "finished": False,
+            "selected_answer": None, "show_result": False
+        },
+        "chat_history": [],
+        "voice_text": None, "voice_lang": None,
+        "current_page": "home"
+    }
+
+    for k, v in DEFAULTS.items():
+        if k not in st.session_state:
+            st.session_state[k] = v
+
+    # Apply CSS
+    plot_template = apply_css()
+
+    # Render voice player at top of page
+    render_voice_player()
+
+    # Check login status
+    if not st.session_state.logged_in:
+        render_login()
+
+    # Get current page from sidebar
+    pg = render_sidebar()
+
+    # ============================================
+    #  PAGE: HOME - ENHANCED
+    # ============================================
+    if pg == "home":
+        st.markdown(f"""<h1 style='font-family:Orbitron,sans-serif;'>
+        <span class='dm-nt'>👋 {get_greeting()}, {st.session_state.user_full_name}!</span>
+        </h1>""", unsafe_allow_html=True)
+
+        st.markdown(f"""<div class='dm-card dm-card-cyan'>
+        <h2 class='dm-nt'>DM SMART LAB AI v{APP_VERSION}</h2>
+        <h4 style='opacity:.6;'>{t('where_science')}</h4>
+        <p style='opacity:.4;font-size:.85rem;'>{t('system_desc')}</p>
+        </div>""", unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        w1, w2, w3 = st.columns([2, 2, 1])
+        with w1:
+            if st.button(f"🎙️ {t('welcome_btn')}", use_container_width=True, type="primary"):
+                speak(t("voice_welcome"))
+                st.rerun()
+        with w2:
+            if st.button(f"🤖 {t('intro_btn')}", use_container_width=True, type="primary"):
+                speak(t("voice_intro"))
+                st.rerun()
+        with w3:
+            if st.button(f"🔇 {t('stop_voice')}", use_container_width=True):
+                stop_speech()
+
+        st.markdown("---")
+
+        # ✅ NEW: System status cards
+        st.markdown(f"### 📊 {t('quick_overview')}")
+
+        # Get system stats
+        s = db_stats(st.session_state.user_id)
+        users = len(db_users())
+        logs = len(db_logs(1))
+
+        metrics = [
+            ("🔬", s["total"], t("total_analyses")),
+            ("✅", s["reliable"], t("reliable")),
+            ("⚠️", s["verify"], t("to_verify")),
+            ("🦠", s["top"], t("most_frequent")),
+            ("👥", users, "Utilisateurs"),
+            ("📜", logs, "Activités"),
+            ("⏱️", f"{s['avg_time_ms']}ms", "Temps moyen"),
+        ]
+
+        cols = st.columns(4)
+        for i, (ic, v, lb) in enumerate(metrics):
+            with cols[i % 4]:
+                st.markdown(f"""<div class='dm-m'>
+                <span class='dm-m-i'>{ic}</span>
+                <div class='dm-m-v'>{v}</div>
+                <div class='dm-m-l'>{lb}</div>
+                </div>""", unsafe_allow_html=True)
+
+        # ✅ NEW: Recent activity
+        st.markdown("---")
+        st.markdown(f"### 📜 Activité récente")
+
+        recent_logs = db_logs(5)
+        if recent_logs:
+            for log in recent_logs[:5]:
+                st.markdown(f"""
+                <div class='dm-card' style='padding:12px;margin:4px 0;'>
+                    <p style='margin:0;opacity:.8;'>
+                        <b>{log['username']}</b> {log['action']} • {log['timestamp']}
+                    </p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("Aucune activité récente")
+
+        # ✅ NEW: Quick access buttons
+        st.markdown("---")
+        st.markdown(f"### ⚡ Accès rapide")
+
+        qa_cols = st.columns(4)
+        with qa_cols[0]:
+            if st.button("🔬 Nouvelle Analyse", use_container_width=True):
+                st.session_state.current_page = "scan"
+                st.rerun()
+        with qa_cols[1]:
+            if st.button("📊 Tableau de Bord", use_container_width=True):
+                st.session_state.current_page = "dash"
+                st.rerun()
+        with qa_cols[2]:
+            if st.button("📘 Encyclopédie", use_container_width=True):
+                st.session_state.current_page = "enc"
+                st.rerun()
+        with qa_cols[3]:
+            if st.button("🧠 Quiz Médical", use_container_width=True):
+                st.session_state.current_page = "quiz"
+                st.rerun()
+
+    # ============================================
+    #  PAGE: SCAN - ENHANCED
+    # ============================================
+    elif pg == "scan":
+        st.title(f"🔬 {t('scan')}")
+
+        # Load model
+        mdl, mn, mt = load_model()
+        if mn:
+            st.sidebar.success(f"🧠 Modèle: {mn}")
+        else:
+            st.sidebar.info(f"🧠 {t('demo_mode')}")
+
+        # ✅ NEW: Camera preview with grid
+        st.markdown(f"### 📋 1. {t('patient_info')}")
+        ca, cb = st.columns(2)
+        pn = ca.text_input(f"{t('patient_name')} *")
+        pf = cb.text_input(t("patient_firstname"))
+        c1, c2, c3, c4 = st.columns(4)
+        pa = c1.number_input(t("age"), 0, 120, 30)
+        ps = c2.selectbox(t("sex"), [t("male"), t("female")])
+        pw = c3.number_input(t("weight"), 0, 300, 70)
+        pst = c4.selectbox(t("sample_type"), SAMPLES.get(st.session_state.lang, SAMPLES["fr"]))
+
+        st.markdown(f"### 🔬 2. {t('lab_info')}")
+        la, lb2, lc2 = st.columns(3)
+        t1 = la.text_input(f"{t('technician')} 1", value=st.session_state.user_full_name)
+        t2 = lb2.text_input(f"{t('technician')} 2")
+        lm = lc2.selectbox(t("microscope"), MICROSCOPE_TYPES)
+        ld, le = st.columns(2)
+        mg = ld.selectbox(t("magnification"), MAGNIFICATIONS, index=3)
+        pt = le.selectbox(t("preparation"), PREPARATION_TYPES)
+        nt = st.text_area(t("notes"), height=80)
+
+        st.markdown("---")
+
+        # ✅ NEW: Enhanced image capture
+        st.markdown(f"### 📸 3. {t('image_capture')}")
+
+        # Camera/Upload selection
+        src = st.radio("source", [t("take_photo"), t("upload_file")],
+                      horizontal=True, label_visibility="collapsed")
+
+        img = None
+        ih = None
+
+        if t("take_photo") in src:
+            st.info(f"📷 {t('camera_hint')}")
+
+            # ✅ NEW: Camera with preview grid
+            st.markdown("""
+            <div style='text-align:center;margin:10px 0;'>
+                <div style='display:inline-block;background:rgba(0,245,255,0.1);padding:20px;border-radius:12px;'>
+                    <svg width="200" height="150" viewBox="0 0 200 150" style="background:rgba(0,0,0,0.5);border-radius:8px;">
+                        <rect x="0" y="0" width="200" height="150" fill="rgba(0,0,0,0.3)" stroke="rgba(0,245,255,0.5)" stroke-width="1"/>
+                        <line x1="66.6" y1="0" x2="66.6" y2="150" stroke="rgba(0,245,255,0.3)" stroke-width="1"/>
+                        <line x1="133.3" y1="0" x2="133.3" y2="150" stroke="rgba(0,245,255,0.3)" stroke-width="1"/>
+                        <line x1="0" y1="50" x2="200" y2="50" stroke="rgba(0,245,255,0.3)" stroke-width="1"/>
+                        <line x1="0" y1="100" x2="200" y2="100" stroke="rgba(0,245,255,0.3)" stroke-width="1"/>
+                        <circle cx="100" cy="75" r="30" fill="none" stroke="rgba(0,245,255,0.5)" stroke-width="1"/>
+                        <text x="100" y="75" text-anchor="middle" fill="rgba(0,245,255,0.7)" font-size="8">CENTREZ</text>
+                        <text x="100" y="85" text-anchor="middle" fill="rgba(0,245,255,0.7)" font-size="6">L'ÉCHANTILLON</text>
+                    </svg>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            cp = st.camera_input("camera")
+            if cp:
+                img = safe_image_open(cp)
+                img = resize_image(img)
+                ih = hashlib.md5(cp.getvalue()).hexdigest()
+
+        else:
+            uf = st.file_uploader(t("upload_file"), type=["jpg", "jpeg", "png", "bmp", "tiff"],
+                                 accept_multiple_files=False)
+
+            if uf:
+                # Check file size
+                if len(uf.getvalue()) > MAX_FILE_SIZE_MB * 1024 * 1024:
+                    st.error(f"❌ Fichier trop volumineux (max {MAX_FILE_SIZE_MB}MB)")
+                else:
+                    img = safe_image_open(uf)
+                    img = resize_image(img)
+                    ih = hashlib.md5(uf.getvalue()).hexdigest()
+
+        # Process image if available
+        if img:
+            if not pn.strip():
+                st.error(t("name_required"))
+                st.stop()
+
+            if st.session_state.get("_ih") != ih:
+                st.session_state._ih = ih
+                st.session_state.demo_seed = random.randint(0, 999999)
+                st.session_state.heatmap_seed = random.randint(0, 999999)
+
+            # ✅ NEW: Enhanced image processing interface
+            ci, cr = st.columns(2)
+
+            with ci:
+                with st.expander("🎛️ Zoom / Ajustements"):
+                    z = st.slider("Zoom", 1.0, 5.0, 1.0, 0.25)
+                    br = st.slider("Luminosité", 0.5, 2.0, 1.0, 0.1)
+                    co = st.slider("Contraste", 0.5, 2.0, 1.0, 0.1)
+                    sa = st.slider("Saturation", 0.0, 2.0, 1.0, 0.1)
+
+                # Apply adjustments
+                adj = adjust_image(img, br, co, sa)
+                if z > 1:
+                    adj = zoom_img(adj, z)
+
+                # ✅ NEW: Enhanced tabs with icons
+                tabs = st.tabs([
+                    "📷 Original", "🔥 Thermique", "📐 Contours",
+                    "✨ Amélioré", "🔄 Négatif", "🏔️ Relief",
+                    "🎯 Heatmap", "🔍 Analyse"
+                ])
+
+                with tabs[0]:
+                    st.image(adj, use_container_width=True, caption="Image originale")
+
+                with tabs[1]:
+                    st.image(thermal_filter(adj), use_container_width=True, caption="Filtre thermique")
+
+                with tabs[2]:
+                    st.image(edges_filter(adj), use_container_width=True, caption="Détection de contours")
+
+                with tabs[3]:
+                    st.image(enhanced_filter(adj), use_container_width=True, caption="Contraste amélioré")
+
+                with tabs[4]:
+                    st.image(negative_filter(adj), use_container_width=True, caption="Négatif")
+
+                with tabs[5]:
+                    st.image(emboss_filter(adj), use_container_width=True, caption="Effet relief")
+
+                with tabs[6]:
+                    st.image(gen_heatmap(img, st.session_state.heatmap_seed),
+                            use_container_width=True, caption="Carte thermique IA")
+
+                with tabs[7]:
+                    # ✅ NEW: AI analysis preview
+                    with st.spinner("Analyse en cours..."):
+                        progress_bar = st.progress(0)
+                        for i in range(100):
+                            time.sleep(0.01)
+                            progress_bar.progress(i + 1)
+
+                        # Run prediction
+                        res = predict(mdl, mt, adj, st.session_state.demo_seed)
+
+                        # Display quick preview
+                        st.markdown(f"""
+                        <div class='dm-card' style='border-left:4px solid {risk_color(res["risk"])};'>
+                            <h4 style='margin:0;color:{risk_color(res["risk"])}!important;'>
+                                {res['label']} - {res['conf']}%
+                            </h4>
+                            <p style='opacity:.6;font-size:.8rem;'>
+                                {PARASITE_DB[res['label']]['desc'].get(st.session_state.lang, '')[:100]}...
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+            with cr:
+                st.markdown(f"### 🧠 {t('result')}")
+
+                with st.spinner("Analyse approfondie..."):
+                    progress_bar = st.progress(0)
+                    for i in range(100):
+                        time.sleep(0.015)
+                        progress_bar.progress(i + 1)
+
+                    # Run full prediction
+                    res = predict(mdl, mt, adj, st.session_state.demo_seed)
+
+                # Display full results
+                lb_result = res["label"]
+                cf = res["conf"]
+                rc = risk_color(res["risk"])
+                info = PARASITE_DB.get(lb_result, PARASITE_DB["Negative"])
+
+                if not res["rel"]:
+                    st.warning(t("low_conf_warn"))
+                if res["demo"]:
+                    st.info(t("demo_mode"))
+
+                st.markdown(f"""<div class='dm-card' style='border-left:4px solid {rc};'>
+                <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;'>
+                <div>
+                    <h2 style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;margin:0;font-family:Orbitron;'>
+                        {lb_result}
+                    </h2>
+                    <p style='opacity:.4;font-style:italic;'>{info['sci']}</p>
+                </div>
+                <div style='text-align:center;'>
+                    <div style='font-size:2.8rem;font-weight:900;font-family:JetBrains Mono;color:{rc}!important;-webkit-text-fill-color:{rc}!important;'>
+                        {cf}%
+                    </div>
+                    <div style='font-size:.7rem;opacity:.4;'>{t("confidence")}</div>
+                </div>
+                </div>
+
+                <hr style='opacity:.1;margin:14px 0;'>
+
+                <div style='display:flex;flex-wrap:wrap;gap:12px;'>
+                    <div style='flex:1;min-width:200px;'>
+                        <p><b>🔬 {t("morphology")}:</b><br>{tl(info['morph'])}</p>
+                        <p><b>⚠️ {t("risk")}:</b> <span style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-weight:700;'>
+                            {tl(info['risk_d'])}
+                        </span></p>
+                    </div>
+
+                    <div style='flex:1;min-width:200px;'>
+                        <div style='background:rgba(0,255,136,.06);padding:14px;border-radius:12px;margin:10px 0;border:1px solid rgba(0,255,136,.1);'>
+                            <b>💡 {t("advice")}:</b><br>{tl(info['advice'])}
+                        </div>
+                        <div style='background:rgba(0,100,255,.06);padding:14px;border-radius:12px;font-style:italic;border:1px solid rgba(0,100,255,.1);'>
+                            🤖 {tl(info['funny'])}
+                        </div>
+                    </div>
+                </div>
+                </div>""", unsafe_allow_html=True)
+
+                # ✅ NEW: Action buttons
+                vc1, vc2, vc3 = st.columns(3)
+                with vc1:
+                    if st.button(f"🔊 {t('listen')}", use_container_width=True):
+                        speak(f"{lb_result}. {tl(info['funny'])}")
+                        st.rerun()
+                with vc2:
+                    if st.button(f"🔇 {t('stop_voice')}", key="sv2", use_container_width=True):
+                        stop_speech()
+                with vc3:
+                    if st.button("📊 Détails", use_container_width=True):
+                        with st.expander(f"🔍 {t('all_probabilities')}"):
+                            if res["preds"] and HAS_PLOTLY:
+                                sp = dict(sorted(res["preds"].items(), key=lambda x: x[1], reverse=True))
+                                fig = px.bar(
+                                    x=list(sp.values()),
+                                    y=list(sp.keys()),
+                                    orientation='h',
+                                    color=list(sp.values()),
+                                    color_continuous_scale='RdYlGn_r',
+                                    title="Probabilités des parasites détectés"
+                                )
+                                fig.update_layout(
+                                    height=300,
+                                    template=plot_template,
+                                    margin=dict(l=20, r=20, t=40, b=20),
+                                    xaxis_title="Confiance (%)",
+                                    yaxis_title="Parasites"
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+
+                # ✅ NEW: Enhanced PDF and save options
+                st.markdown("---")
+                a1, a2, a3 = st.columns(3)
+
+                with a1:
+                    try:
+                        pdf = make_pdf(
+                            {"Nom": pn, "Prenom": pf, "Age": str(pa), "Sexe": ps,
+                             "Poids": str(pw), "Echantillon": pst},
+                            {"Microscope": lm, "Grossissement": mg, "Preparation": pt,
+                             "Tech1": t1, "Tech2": t2, "Notes": nt},
+                            res, lb_result, st.session_state.lang
+                        )
+                        st.download_button(
+                            f"📥 {t('download_pdf')}",
+                            pdf,
+                            f"Rapport_{pn}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                            "application/pdf",
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"Erreur PDF: {e}")
+
+                with a2:
+                    if has_role(2):
+                        if st.button(f"💾 {t('save_db')}", use_container_width=True):
+                            aid = db_save_analysis(st.session_state.user_id, {
+                                "pn": pn, "pf": pf, "pa": pa, "ps": ps, "pw": pw,
+                                "st": pst, "mt": lm, "mg": mg, "pt": pt, "t1": t1, "t2": t2, "nt": nt,
+                                "label": lb_result, "conf": cf, "risk": res["risk"],
+                                "rel": 1 if res["rel"] else 0,
+                                "preds": res["preds"], "hash": ih, "demo": 1 if res["demo"] else 0,
+                                "quality": 100,  # ✅ NEW: Image quality score
+                                "proc_time": res["proc_time"]
+                            })
+                            db_log(st.session_state.user_id, st.session_state.user_name, "Analysis", f"ID:{aid}")
+                            st.success(t("saved_ok"))
+
+                with a3:
+                    if st.button(f"🔄 {t('new_analysis')}", use_container_width=True):
+                        st.session_state.demo_seed = None
+                        st.session_state._ih = None
+                        st.rerun()
+
+    # ============================================
+    #  PAGE: ENCYCLOPEDIA - ENHANCED
+    # ============================================
+    elif pg == "enc":
+        st.title(f"📘 {t('encyclopedia')}")
+
+        # ✅ NEW: Enhanced search with filters
+        st.markdown("---")
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            sr = st.text_input(f"🔍 {t('search')}", key="encyc_search")
+        with sc2:
+            risk_filter = st.selectbox("Filtre par risque",
+                                      ["Tous", "Élevé", "Moyen", "Faible", "Aucun"],
+                                      index=0, key="risk_filter")
+
+        st.markdown("---")
+
+        found = False
+        for nm, d in PARASITE_DB.items():
+            if nm == "Negative":
+                continue
+
+            # Apply filters
+            search_match = not sr.strip() or sr.lower() in (nm + " " + d["sci"]).lower()
+            risk_match = (risk_filter == "Tous" or
+                         (risk_filter == "Élevé" and d["risk"] == "high") or
+                         (risk_filter == "Moyen" and d["risk"] == "medium") or
+                         (risk_filter == "Faible" and d["risk"] == "low") or
+                         (risk_filter == "Aucun" and d["risk"] == "none"))
+
+            if search_match and risk_match:
+                found = True
+                rc = risk_color(d["risk"])
+
+                with st.expander(f"{d['icon']} {nm} -- *{d['sci']}* | {tl(d['risk_d'])}", expanded=not sr.strip()):
+                    ci, cv = st.columns([2.5, 1])
+
+                    with ci:
+                        st.markdown(f"""<div class='dm-card' style='border-left:3px solid {rc};'>
+                        <h4 style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-family:Orbitron;'>
+                            {d['sci']}
+                        </h4>
+
+                        <div style='display:flex;flex-wrap:wrap;gap:12px;margin:12px 0;'>
+                            <div style='flex:1;min-width:200px;'>
+                                <p><b>🔬 {t("morphology")}:</b><br>{tl(d['morph'])}</p>
+                                <p><b>📖 {t("description")}:</b><br>{tl(d['desc'])}</p>
+                            </div>
+
+                            <div style='flex:1;min-width:200px;'>
+                                <p><b>⚠️ {t("risk")}:</b> <span style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-weight:700;'>
+                                    {tl(d['risk_d'])}
+                                </span></p>
+
+                                <div style='background:rgba(0,255,136,.06);padding:12px;border-radius:10px;margin:8px 0;'>
+                                    <b>💡:</b> {tl(d['advice'])}
+                                </div>
+
+                                <div style='background:rgba(0,100,255,.06);padding:12px;border-radius:10px;font-style:italic;'>
+                                    🤖 {tl(d['funny'])}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style='background:rgba(255,149,0,.06);padding:12px;border-radius:10px;margin:8px 0;'>
+                            <b>🌍 Géographie:</b> {d.get('geography', 'N/A')}<br>
+                            <b>🕒 Incubation:</b> {d.get('incubation', 'N/A')}<br>
+                            <b>🦟 Transmission:</b> {d.get('transmission', 'N/A')}
+                        </div>
+                        </div>""", unsafe_allow_html=True)
+
+                        # ✅ NEW: Interactive lifecycle
+                        cy = tl(d.get("cycle", {}))
+                        if cy and cy not in ["N/A", "غير متوفر"]:
+                            with st.expander(f"🔄 {t('lifecycle')}"):
+                                st.markdown(f"**{cy}**")
+
+                                # ✅ NEW: Visual lifecycle diagram
+                                if HAS_PLOTLY:
+                                    steps = cy.split("←") if "←" in cy else cy.split("→")
+                                    steps = [s.strip() for s in steps]
+
+                                    fig = go.Figure(go.Sankey(
+                                        node=dict(
+                                            pad=15,
+                                            thickness=20,
+                                            line=dict(color="black", width=0.5),
+                                            label=steps,
+                                            color=[NEON["cyan"], NEON["magenta"], NEON["green"],
+                                                  NEON["orange"], NEON["red"], NEON["blue"]]
+                                        ),
+                                        link=dict(
+                                            source=[i for i in range(len(steps)-1)],
+                                            target=[i+1 for i in range(len(steps)-1)],
+                                            value=[1 for _ in range(len(steps)-1)]
+                                        )
+                                    ))
+
+                                    fig.update_layout(
+                                        height=300,
+                                        template=plot_template,
+                                        margin=dict(l=20, r=20, t=20, b=20),
+                                        title="Cycle de vie du parasite"
+                                    )
+                                    st.plotly_chart(fig, use_container_width=True)
+
+                        # Diagnostic keys
+                        dk = tl(d.get("keys", {}))
+                        if dk and dk not in ["N/A", "غير متوفر"]:
+                            with st.expander(f"🔑 {t('diagnostic_keys')}"):
+                                st.markdown(dk)
+
+                        # Tests
+                        if d.get("tests"):
+                            with st.expander(f"🩺 {t('extra_tests')}"):
+                                for x in d["tests"]:
+                                    st.markdown(f"- {x}")
+
+                    with cv:
+                        rp = risk_pct(d["risk"])
+                        if rp > 0:
+                            st.progress(rp / 100, text=f"{rp}%")
+
+                        st.markdown(f'<div style="text-align:center;font-size:4rem;">{d["icon"]}</div>', unsafe_allow_html=True)
+
+                        if st.button(f"🔊 {t('listen')}", key=f"ev_{nm}"):
+                            speak(f"{nm}. {tl(d['desc'])}")
+                            st.rerun()
+
+                        # ✅ NEW: Quick reference card
+                        st.markdown(f"""
+                        <div class='dm-card' style='background:rgba(0,102,255,.1);margin-top:12px;'>
+                            <p style='margin:0;opacity:.8;font-size:.8rem;'>
+                                <b>📌 Référence rapide:</b><br>
+                                • <b>Taille:</b> {d['morph'].get(st.session_state.lang, '').split('(')[1].split(')')[0] if '(' in d['morph'].get(st.session_state.lang, '') else 'N/A'}<br>
+                                • <b>Coloration:</b> {d.get('coloration', 'MGG/Lugol')}<br>
+                                • <b>Localisation:</b> {d.get('location', 'Intestinal/Sang')}<br>
+                                • <b>Transmission:</b> {d.get('transmission', 'N/A')}
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+        if sr.strip() and not found:
+            st.warning(t("no_results"))
+
+            # ✅ NEW: Suggest similar parasites
+            suggestions = []
+            for nm in PARASITE_DB:
+                if nm != "Negative" and sr.lower() in nm.lower():
+                    suggestions.append(nm)
+
+            if suggestions:
+                st.markdown(f"**💡 Suggestions proches:** {', '.join(suggestions)}")
+
+    # ============================================
+    #  PAGE: DASHBOARD - ENHANCED
+    # ============================================
+    elif pg == "dash":
+        st.title(f"📊 {t('dashboard')}")
+
+        # Get data
+        s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
+        an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
+
+        # ✅ NEW: Enhanced metrics with icons
+        metrics = [
+            ("🔬", s["total"], t("total_analyses")),
+            ("✅", s["reliable"], t("reliable")),
+            ("⚠️", s["verify"], t("to_verify")),
+            ("🦠", s["top"], t("most_frequent")),
+            ("📈", f"{s['avg']}%", t("avg_confidence")),
+            ("⏱️", f"{s['avg_time_ms']}ms", "Temps moyen"),
+        ]
+
+        cols = st.columns(6)
+        for col, (ic, v, lb) in zip(cols, metrics):
+            with col:
+                st.markdown(f"""<div class='dm-m'>
+                <span class='dm-m-i'>{ic}</span>
+                <div class='dm-m-v'>{v}</div>
+                <div class='dm-m-l'>{lb}</div>
+                </div>""", unsafe_allow_html=True)
+
+        if s["total"] > 0 and an:
+            df = pd.DataFrame(an)
+
+            # ✅ NEW: Enhanced charts with tabs
+            st.markdown("---")
+            tab1, tab2, tab3 = st.tabs([
+                f"📊 {t('parasite_distribution')}",
+                f"📈 {t('trends')}",
+                f"🔍 Analyse avancée"
+            ])
+
+            with tab1:
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.markdown(f"#### {t('parasite_distribution')}")
+                    if HAS_PLOTLY and "parasite_detected" in df.columns:
+                        pc = df["parasite_detected"].value_counts()
+                        fig = px.pie(
+                            values=pc.values,
+                            names=pc.index,
+                            hole=.4,
+                            color_discrete_sequence=px.colors.sequential.Plasma
+                        )
+                        fig.update_layout(
+                            height=350,
+                            template=plot_template,
+                            margin=dict(l=20, r=20, t=20, b=20),
+                            title="Distribution des parasites détectés"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+                with c2:
+                    st.markdown(f"#### {t('confidence_levels')}")
+                    if HAS_PLOTLY and "confidence" in df.columns:
+                        fig = px.histogram(
+                            df,
+                            x="confidence",
+                            nbins=20,
+                            color_discrete_sequence=["#00f5ff"]
+                        )
+                        fig.update_layout(
+                            height=350,
+                            template=plot_template,
+                            margin=dict(l=20, r=20, t=20, b=20),
+                            title="Niveaux de confiance des analyses"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
+
+            with tab2:
+                tr = db_trends(30)
+                if tr and HAS_PLOTLY:
+                    # ✅ NEW: Enhanced trend analysis
+                    trend_df = pd.DataFrame(tr)
+
+                    # Group by day
+                    daily_trends = trend_df.groupby('day').agg({
+                        'count': 'sum',
+                        'avg_conf': 'mean'
+                    }).reset_index()
+
+                    # Plot trends
+                    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=daily_trends['day'],
+                            y=daily_trends['count'],
+                            name="Nombre d'analyses",
+                            line=dict(color='#00f5ff', width=2),
+                            marker=dict(size=8)
+                        ),
+                        secondary_y=False
+                    )
+
+                    fig.add_trace(
+                        go.Scatter(
+                            x=daily_trends['day'],
+                            y=daily_trends['avg_conf'],
+                            name="Confiance moyenne (%)",
+                            line=dict(color='#ff9500', width=2, dash='dot'),
+                            marker=dict(size=8)
+                        ),
+                        secondary_y=True
+                    )
+
+                    fig.update_layout(
+                        height=400,
+                        template=plot_template,
+                        margin=dict(l=20, r=20, t=40, b=20),
+                        title="Tendances des 30 derniers jours",
+                        hovermode="x unified"
+                    )
+
+                    fig.update_yaxes(title_text="Nombre", secondary_y=False)
+                    fig.update_yaxes(title_text="Confiance (%)", secondary_y=True)
+
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # Parasite-specific trends
+                    st.markdown("---")
+                    st.markdown("#### Tendances par parasite")
+
+                    for parasite in trend_df['parasite_detected'].unique():
+                        parasite_data = trend_df[trend_df['parasite_detected'] == parasite]
+                        if len(parasite_data) > 0:
+                            fig = px.line(
+                                parasite_data,
+                                x="day",
+                                y="count",
+                                title=f"Tendance: {parasite}",
+                                markers=True
+                            )
+                            fig.update_layout(
+                                height=250,
+                                template=plot_template,
+                                margin=dict(l=20, r=20, t=40, b=20)
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+
+            with tab3:
+                # ✅ NEW: Advanced analytics
+                st.markdown("#### Analyse par technicien")
+                if "technician1" in df.columns:
+                    tech_stats = df["technician1"].value_counts().head(10)
+                    fig = px.bar(
+                        tech_stats,
+                        orientation='h',
+                        title="Top 10 techniciens par nombre d'analyses",
+                        color=tech_stats.values,
+                        color_continuous_scale='Viridis'
+                    )
+                    fig.update_layout(
+                        height=350,
+                        template=plot_template,
+                        margin=dict(l=20, r=20, t=40, b=20)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+                st.markdown("---")
+                st.markdown("#### Analyse par type d'échantillon")
+                if "sample_type" in df.columns:
+                    sample_stats = df["sample_type"].value_counts()
+                    fig = px.pie(
+                        sample_stats,
+                        values=sample_stats.values,
+                        names=sample_stats.index,
+                        title="Répartition par type d'échantillon"
+                    )
+                    fig.update_layout(
+                        height=350,
+                        template=plot_template,
+                        margin=dict(l=20, r=20, t=40, b=20)
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+
+            # ✅ NEW: Enhanced data table
+            st.markdown("---")
+            st.markdown(f"### 📋 {t('history')}")
+
+            if has_role(3):
+                display_cols = [
+                    "id", "analysis_date", "patient_name", "parasite_detected",
+                    "confidence", "risk_level", "analyst", "validated"
+                ]
+            else:
+                display_cols = [
+                    "id", "analysis_date", "patient_name", "parasite_detected",
+                    "confidence", "risk_level", "validated"
+                ]
+
+            display_cols = [c for c in display_cols if c in df.columns]
+
+            # ✅ NEW: Data table with filtering
+            if display_cols:
+                st.dataframe(
+                    df[display_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "analysis_date": st.column_config.DatetimeColumn(
+                            "Date",
+                            format="DD/MM/YYYY HH:mm"
+                        ),
+                        "confidence": st.column_config.ProgressColumn(
+                            "Confiance",
+                            format="%d%%",
+                            min_value=0,
+                            max_value=100
+                        ),
+                        "risk_level": st.column_config.TextColumn(
+                            "Risque",
+                            help="Niveau de risque du parasite détecté"
+                        )
+                    }
+                )
+
+                # ✅ NEW: Export options
+                e1, e2, e3 = st.columns(3)
+                with e1:
+                    st.download_button(
+                        f"⬇️ {t('export_csv')}",
+                        df.to_csv(index=False).encode('utf-8-sig'),
+                        "analyses.csv",
+                        "text/csv",
+                        use_container_width=True
+                    )
+                with e2:
+                    st.download_button(
+                        f"⬇️ {t('export_json')}",
+                        df.to_json(orient='records', force_ascii=False).encode(),
+                        "analyses.json",
+                        "application/json",
+                        use_container_width=True
+                    )
+                with e3:
+                    if has_role(2):
+                        st.download_button(
+                            "⬇️ Exporter Excel",
+                            io.BytesIO(df.to_excel("analyses.xlsx", index=False)),
+                            "analyses.xlsx",
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+
+            # Validation section
+            if has_role(2) and "validated" in df.columns:
+                uv = df[df["validated"] == 0]
+                if not uv.empty:
+                    st.markdown("---")
+                    st.markdown("#### Validation des résultats")
+
+                    vi = st.selectbox("Sélectionner ID à valider:", uv["id"].tolist())
+                    if st.button(f"✅ {t('validate')} #{vi}", key=f"validate_{vi}"):
+                        db_validate(vi, st.session_state.user_full_name)
+                        st.success(f"Validé #{vi}")
+                        st.rerun()
+        else:
+            st.info(t("no_data"))
+
+    # ============================================
+    #  PAGE: QUIZ - ENHANCED
+    # ============================================
+    elif pg == "quiz":
+        st.title(f"🧠 {t('quiz')}")
+
+        # Initialize quiz state
+        if "quiz_state" not in st.session_state:
+            st.session_state.quiz_state = {
+                "current": 0, "score": 0, "answered": [],
+                "active": False, "order": [], "wrong": [],
+                "total_q": 0, "finished": False,
+                "selected_answer": None, "show_result": False,
+                "start_time": None, "time_taken": 0
+            }
+
+        qs = st.session_state.quiz_state
+
+        # ✅ NEW: Enhanced leaderboard with filters
+        with st.expander(f"🏆 {t('leaderboard')}"):
+            lb_col1, lb_col2 = st.columns(2)
+            with lb_col1:
+                lb_limit = st.selectbox("Nombre d'entrées", [5, 10, 20, 50], index=1)
+            with lb_col2:
+                lb_cat = st.selectbox("Catégorie", ["Toutes"] + list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS)))
+
+            lb_data = db_leaderboard(lb_limit * 2)  # Get more to filter
+
+            if lb_data:
+                # Filter by category if needed
+                if lb_cat != "Toutes":
+                    lb_data = [e for e in lb_data if e.get('category', 'general') == lb_cat]
+
+                # Display limited results
+                for i, e in enumerate(lb_data[:lb_limit]):
+                    medal = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"**#{i + 1}**"
+                    time_str = f" en {e.get('time_seconds', 0)}s" if e.get('time_seconds') else ""
+                    st.markdown(f"""
+                    <div class='dm-card' style='margin:4px 0;padding:8px;'>
+                        {medal} **{e['username']}** — {e['score']}/{e['total_questions']}
+                        ({e['percentage']:.0f}%){time_str}
+                        <div style='opacity:.6;font-size:.8rem;'>{e.get('category', 'Général')}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info(t("no_data"))
+
+        # Quiz not started
+        if not qs.get("active", False) and not qs.get("finished", False):
+            st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
+            <div style='font-size:4rem;margin-bottom:10px;'>🧠</div>
+            <h3 class='dm-nt'>{
+                {
+                    "fr": "Testez vos connaissances en parasitologie !",
+                    "ar": "اختبر معارفك في علم الطفيليات!",
+                    "en": "Test your parasitology knowledge!"
+                }.get(st.session_state.lang, "")
+            }</h3>
+            <p style='opacity:.5;'>{{
+                "fr": f"{len(QUIZ_QUESTIONS)} questions disponibles",
+                "ar": f"{len(QUIZ_QUESTIONS)} سؤال متاح",
+                "en": f"{len(QUIZ_QUESTIONS)} questions available"
+            }.get(st.session_state.lang, "")}</p>
+            </div>""", unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # ✅ NEW: Enhanced quiz configuration
+            qc1, qc2, qc3 = st.columns(3)
+            with qc1:
+                n_questions = st.slider(
+                    {
+                        "fr": "Nombre de questions:",
+                        "ar": "عدد الأسئلة:",
+                        "en": "Number of questions:"
+                    }.get(st.session_state.lang, "Questions:"),
+                    5, min(50, len(QUIZ_QUESTIONS)), 10
+                )
+            with qc2:
+                cats = list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS))
+                all_cat_label = {
+                    "fr": "Toutes les catégories",
+                    "ar": "جميع الفئات",
+                    "en": "All categories"
+                }.get(st.session_state.lang, "All")
+                cats.insert(0, all_cat_label)
+                chosen_cat = st.selectbox(
+                    {
+                        "fr": "Catégorie:",
+                        "ar": "الفئة:",
+                        "en": "Category:"
+                    }.get(st.session_state.lang, "Category:"),
+                    cats
+                )
+            with qc3:
+                time_limit = st.selectbox(
+                    {
+                        "fr": "Limite de temps:",
+                        "ar": "حد الوقت:",
+                        "en": "Time limit:"
+                    }.get(st.session_state.lang, "Time limit:"),
+                    ["Aucune", "30s", "1min", "2min"],
+                    index=0
+                )
+
+            if st.button(f"🎮 {t('start_quiz')}", use_container_width=True, type="primary"):
+                # Create question pool
+                if chosen_cat == all_cat_label:
+                    pool = list(range(len(QUIZ_QUESTIONS)))
+                else:
+                    pool = [i for i, q in enumerate(QUIZ_QUESTIONS) if q.get("cat") == chosen_cat]
+
+                if len(pool) == 0:
+                    pool = list(range(len(QUIZ_QUESTIONS)))
+
+                random.shuffle(pool)
+                final_order = pool[:min(n_questions, len(pool))]
+
+                # Start quiz
+                st.session_state.quiz_state = {
+                    "current": 0,
+                    "score": 0,
+                    "answered": [],
+                    "active": True,
+                    "order": final_order,
+                    "wrong": [],
+                    "total_q": len(final_order),
+                    "finished": False,
+                    "selected_answer": None,
+                    "show_result": False,
+                    "start_time": time.time(),
+                    "time_limit": {
+                        "Aucune": 0, "30s": 30, "1min": 60, "2min": 120
+                    }.get(time_limit, 0),
+                    "category": chosen_cat if chosen_cat != all_cat_label else "general"
+                }
+
+                db_log(st.session_state.user_id, st.session_state.user_name,
+                      "Quiz started", f"n={len(final_order)} cat={chosen_cat}")
+                st.rerun()
+
+        # Quiz active - answering questions
+        elif qs.get("active", False) and not qs.get("finished", False):
+            idx = qs["current"]
+            order = qs.get("order", [])
+            total_q = qs.get("total_q", len(order))
+
+            if idx < len(order):
+                qi = order[idx]
+                q = QUIZ_QUESTIONS[qi]
+
+                # ✅ NEW: Time tracking
+                time_elapsed = int(time.time() - qs["start_time"])
+                time_left = qs["time_limit"] - time_elapsed if qs["time_limit"] > 0 else 0
+
+                if qs["time_limit"] > 0 and time_left <= 0:
+                    st.session_state.quiz_state["finished"] = True
+                    st.session_state.quiz_state["active"] = False
+                    st.rerun()
+
+                # Progress with time
+                progress_val = idx / total_q if total_q > 0 else 0
+                st.progress(progress_val)
+
+                # Time display
+                if qs["time_limit"] > 0:
+                    mins, secs = divmod(time_left, 60)
+                    time_display = f"⏱️ {mins:02d}:{secs:02d}"
+                    st.markdown(f"""
+                    <div style='display:flex;justify-content:space-between;align-items:center;'>
+                        <h3>{{
+                            "fr": "Question",
+                            "ar": "سؤال",
+                            "en": "Question"
+                        }} {idx + 1}/{total_q}</h3>
+                        <div style='background:rgba(255,0,64,0.1);padding:4px 8px;border-radius:6px;'>
+                            {time_display}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"### {{
+                        "fr": "Question",
+                        "ar": "سؤال",
+                        "en": "Question"
+                    }} {idx + 1}/{total_q}")
+
+                # Category display
+                cat = q.get("cat", "")
+                if cat:
+                    st.caption(f"📂 {cat}")
+
+                # Question text
+                q_text = tl(q["q"])
+                st.markdown(f"""<div class='dm-card dm-card-purple'>
+                <h4 style='margin:0;line-height:1.6;'>{q_text}</h4>
+                </div>""", unsafe_allow_html=True)
+
+                # Check if already answered this question
+                if not qs.get("show_result", False):
+                    st.markdown("---")
+                    option_cols = st.columns(2)
+
+                    # ✅ NEW: Enhanced option buttons with letters and colors
+                    for i, opt in enumerate(q["opts"]):
+                        with option_cols[i % 2]:
+                            letter = ['A', 'B', 'C', 'D'][i]
+                            btn_key = f"quiz_opt_{idx}_{i}"
+
+                            # Color options based on selection
+                            if qs.get("selected_answer") == i:
+                                btn_style = "background:linear-gradient(135deg,#00f5ff,#0066ff);color:white;"
+                            else:
+                                btn_style = ""
+
+                            if st.button(
+                                f"<span style='{btn_style}'>"
+                                f"<span style='background:rgba(0,245,255,0.2);padding:2px 6px;border-radius:4px;margin-right:8px;'>{letter}</span>"
+                                f"{opt}</span>",
+                                key=btn_key,
+                                use_container_width=True,
+                                help=f"Option {letter}"
+                            ):
+                                correct = (i == q["ans"])
+                                st.session_state.quiz_state["selected_answer"] = i
+                                st.session_state.quiz_state["show_result"] = True
+
+                                if correct:
+                                    st.session_state.quiz_state["score"] += 1
+                                else:
+                                    st.session_state.quiz_state["wrong"].append({
+                                        "q": q_text,
+                                        "your": opt,
+                                        "correct": q["opts"][q["ans"]],
+                                        "cat": q.get("cat", "general")
+                                    })
+
+                                st.session_state.quiz_state["answered"].append(correct)
+                                st.rerun()
+
+                else:
+                    # Show result of answer
+                    selected = qs.get("selected_answer", -1)
+                    correct_idx = q["ans"]
+                    is_correct = selected == correct_idx
+
+                    # ✅ NEW: Enhanced result display
+                    if is_correct:
+                        st.success(f"✅ {{
+                            'fr': 'Bonne réponse !',
+                            'ar': 'إجابة صحيحة!',
+                            'en': 'Correct!'
+                        }}")
+                    else:
+                        correct_ans = q["opts"][correct_idx]
+                        st.error(f"❌ {{
+                            'fr': 'Réponse correcte',
+                            'ar': 'الإجابة الصحيحة',
+                            'en': 'Correct answer'
+                        }}: **{correct_ans}**")
+
+                    # Show explanation
+                    expl = tl(q.get("expl", {}))
+                    if expl:
+                        st.info(f"📖 {expl}")
+
+                    # Show all options with markers
+                    for i, opt in enumerate(q["opts"]):
+                        if i == correct_idx:
+                            st.markdown(f"✅ **{['A','B','C','D'][i]}. {opt}**")
+                        elif i == selected and not is_correct:
+                            st.markdown(f"❌ ~~{['A','B','C','D'][i]}. {opt}~~")
+                        else:
+                            st.markdown(f"{'  '}{['A','B','C','D'][i]}. {opt}")
+
+                    st.markdown("---")
+
+                    # Next question button
+                    if idx + 1 < len(order):
+                        if st.button(f"➡️ {t('next_question')}", use_container_width=True, type="primary"):
+                            st.session_state.quiz_state["current"] += 1
+                            st.session_state.quiz_state["show_result"] = False
+                            st.session_state.quiz_state["selected_answer"] = None
+                            st.rerun()
+                    else:
+                        finish_label = {
+                            "fr": "🏁 Voir les résultats",
+                            "ar": "🏁 عرض النتائج",
+                            "en": "🏁 See Results"
+                        }.get(st.session_state.lang, "🏁 Results")
+
+                        if st.button(finish_label, use_container_width=True, type="primary"):
+                            st.session_state.quiz_state["finished"] = True
+                            st.session_state.quiz_state["active"] = False
+                            st.session_state.quiz_state["time_taken"] = int(time.time() - qs["start_time"])
+                            st.rerun()
+
+            else:
+                # Fallback: mark as finished
+                st.session_state.quiz_state["finished"] = True
+                st.session_state.quiz_state["active"] = False
+                st.session_state.quiz_state["time_taken"] = int(time.time() - qs["start_time"])
+                st.rerun()
+
+        # Quiz finished - show results
+        elif qs.get("finished", False):
+            score = qs.get("score", 0)
+            total_q = qs.get("total_q", 1)
+            pct = int(score / total_q * 100) if total_q > 0 else 0
+            time_taken = qs.get("time_taken", 0)
+
+            # ✅ NEW: Enhanced result display with animations
+            if pct >= 80:
+                emoji, msg, color = "🏆", t("score_excellent"), "#00ff88"
+            elif pct >= 60:
+                emoji, msg, color = "👍", t("score_good"), "#00f5ff"
+            elif pct >= 40:
+                emoji, msg, color = "📚", t("score_average"), "#ff9500"
+            else:
+                emoji, msg, color = "💪", t("score_low"), "#ff0040"
+
+            st.markdown(f"""
+            <div class='dm-card dm-card-green' style='text-align:center;'>
+            <div style='font-size:5rem;'>{emoji}</div>
+            <h2 class='dm-nt'>{t('result')}</h2>
+
+            <div style='font-size:4rem;font-weight:900;font-family:JetBrains Mono,monospace;
+                background:linear-gradient(135deg,{color},#ff00ff,#00ff88);
+                -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>
+                {score}/{total_q}
+            </div>
+
+            <p style='font-size:1.5rem;opacity:.8;'>{pct}%</p>
+
+            <div style='background:rgba(0,255,136,.1);padding:12px;border-radius:12px;margin:12px auto;max-width:80%;'>
+                {msg}
+            </div>
+
+            <p style='opacity:.6;font-size:.9rem;'>
+                Temps: {time_taken} secondes • Catégorie: {qs.get('category', 'Général')}
+            </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Save score to DB
+            try:
+                db_quiz_save(
+                    st.session_state.user_id,
+                    st.session_state.user_name,
+                    score, total_q, pct,
+                    qs.get('category', 'general'),
+                    time_taken
+                )
+                db_log(st.session_state.user_id, st.session_state.user_name,
+                      "Quiz done", f"{score}/{total_q}={pct}% time={time_taken}s")
+            except Exception as e:
+                st.error(f"Error saving score: {e}")
+
+            # ✅ NEW: Performance chart with time
+            if HAS_PLOTLY and total_q > 0:
+                st.markdown("---")
+                analysis_label = {
+                    "fr": "Analyse des résultats",
+                    "ar": "تحليل النتائج",
+                    "en": "Results Analysis"
+                }.get(st.session_state.lang, "Analysis")
+
+                st.markdown(f"### 📊 {analysis_label}")
+
+                correct_label = {
+                    "fr": "Correctes",
+                    "ar": "صحيحة",
+                    "en": "Correct"
+                }.get(st.session_state.lang, "Correct")
+
+                incorrect_label = {
+                    "fr": "Incorrectes",
+                    "ar": "خاطئة",
+                    "en": "Incorrect"
+                }.get(st.session_state.lang, "Incorrect")
+
+                fig = make_subplots(rows=1, cols=2, specs=[[{"type": "domain"}, {"type": "domain"}]])
+
+                # Pie chart
+                fig.add_trace(
+                    go.Pie(
+                        labels=[correct_label, incorrect_label],
+                        values=[score, total_q - score],
+                        marker_colors=["#00ff88", "#ff0040"],
+                        hole=0.5,
+                        textinfo='label+percent',
+                        textfont_size=14
+                    ),
+                    1, 1
+                )
+
+                # Gauge for percentage
+                fig.add_trace(
+                    go.Indicator(
+                        mode="gauge+number",
+                        value=pct,
+                        title={'text': "Score"},
+                        number={'font': {'color': color}},
+                        gauge={
+                            'axis': {'range': [0, 100]},
+                            'bar': {'color': color},
+                            'steps': [
+                                {'range': [0, 40], 'color': "#ff0040"},
+                                {'range': [40, 60], 'color': "#ff9500"},
+                                {'range': [60, 80], 'color': "#00f5ff"},
+                                {'range': [80, 100], 'color': "#00ff88"}
+                            ]
+                        }
+                    ),
+                    1, 2
+                )
+
+                fig.update_layout(
+                    height=300,
+                    template=plot_template,
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    title="Performance du quiz"
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            # Wrong answers review
+            wrong = qs.get("wrong", [])
+            if wrong:
+                review_label = {
+                    "fr": f"Erreurs à revoir ({len(wrong)})",
+                    "ar": f"الأخطاء ({len(wrong)})",
+                    "en": f"Mistakes to review ({len(wrong)})"
+                }.get(st.session_state.lang, f"Mistakes ({len(wrong)})")
+
+                with st.expander(f"❌ {review_label}"):
+                    for i, w in enumerate(wrong):
+                        your_label = {
+                            "fr": "Votre réponse",
+                            "ar": "إجابتك",
+                            "en": "Your answer"
+                        }.get(st.session_state.lang, "Your answer")
+
+                        correct_label2 = {
+                            "fr": "Correcte",
+                            "ar": "الصحيحة",
+                            "en": "Correct"
+                        }.get(st.session_state.lang, "Correct")
+
+                        st.markdown(f"""
+                        <div class='dm-card' style='margin:8px 0;padding:12px;'>
+                        **{i + 1}. {w['q']}**
+                        <div style='display:flex;justify-content:space-between;margin:8px 0;'>
+                            <div>❌ {your_label}: ~~{w['your']}~~</div>
+                            <div>✅ {correct_label2}: **{w['correct']}**</div>
+                        </div>
+                        <div style='opacity:.6;font-size:.8rem;'>Catégorie: {w.get('cat', 'Général')}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # ✅ NEW: Category performance breakdown
+            if wrong:
+                st.markdown("#### Performance par catégorie")
+
+                # Count wrong answers by category
+                wrong_by_cat = {}
+                for w in wrong:
+                    cat = w.get('cat', 'general')
+                    wrong_by_cat[cat] = wrong_by_cat.get(cat, 0) + 1
+
+                # Count total questions by category
+                total_by_cat = {}
+                for qi in qs.get('order', []):
+                    cat = QUIZ_QUESTIONS[qi].get('cat', 'general')
+                    total_by_cat[cat] = total_by_cat.get(cat, 0) + 1
+
+                # Calculate percentages
+                cat_data = []
+                for cat in set(wrong_by_cat.keys()).union(set(total_by_cat.keys())):
+                    wrong = wrong_by_cat.get(cat, 0)
+                    total = total_by_cat.get(cat, 0)
+                    pct = (1 - (wrong / total)) * 100 if total > 0 else 100
+                    cat_data.append({
+                        'category': cat,
+                        'correct': total - wrong,
+                        'wrong': wrong,
+                        'total': total,
+                        'percentage': pct
+                    })
+
+                # Sort by percentage
+                cat_data.sort(key=lambda x: x['percentage'], reverse=True)
+
+                # Display as cards
+                for item in cat_data:
+                    color = "#00ff88" if item['percentage'] >= 80 else "#00f5ff" if item['percentage'] >= 50 else "#ff9500"
+                    st.markdown(f"""
+                    <div class='dm-card' style='border-left:4px solid {color};margin:8px 0;'>
+                        <div style='display:flex;justify-content:space-between;'>
+                            <div>
+                                <b>{item['category']}</b><br>
+                                <span style='opacity:.6;'>{item['correct']}/{item['total']} correctes</span>
+                            </div>
+                            <div style='font-weight:bold;color:{color};'>
+                                {item['percentage']:.0f}%
+                            </div>
+                        </div>
+                        <div style='margin-top:8px;'>
+                            <div style='background:{color};height:4px;border-radius:2px;width:{item['percentage']}%;'></div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            # Restart button
+            if st.button(f"🔄 {t('restart')}", use_container_width=True, type="primary"):
+                st.session_state.quiz_state = {
+                    "current": 0, "score": 0, "answered": [],
+                    "active": False, "order": [], "wrong": [],
+                    "total_q": 0, "finished": False,
+                    "selected_answer": None, "show_result": False,
+                    "start_time": None, "time_taken": 0
+                }
+                st.rerun()
 # ============================================
 #  PAGE: CHATBOT - FULLY ENHANCED
 # ============================================
