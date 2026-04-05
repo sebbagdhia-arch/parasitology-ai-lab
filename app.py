@@ -3912,12 +3912,9 @@ def main():
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    st.markdown(f"### {{
-                        "fr": "Question",
-                        "ar": "سؤال",
-                        "en": "Question"
-                    }} {idx + 1}/{total_q}")
-
+                    sst.markdown(
+    f"### { {'fr': 'Question', 'ar': 'سؤال', 'en': 'Question'}[lang] }"
+)
                 # Category display
                 cat = q.get("cat", "")
                 if cat:
