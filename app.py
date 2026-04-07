@@ -5080,7 +5080,7 @@ elif selected_page == "admin":
                     st.plotly_chart(fig, use_container_width=True)
 
 # ════════════════════════════════════════════
-#  PAGE: ABOUT - ENHANCED
+#  PAGE: ABOUT - مع معلوماتك الكاملة
 # ════════════════════════════════════════════
 
 elif selected_page == "about":
@@ -5106,8 +5106,11 @@ elif selected_page == "about":
     # Project title
     st.markdown(f"""
     <div class="glass-card" style="padding: 2rem;">
-        <h3 style="color: #00f5ff; margin-top: 0;">📖 {tl(PROJECT_TITLE)}</h3>
+        <h3 style="color: #00f5ff; margin-top: 0;">📖 Titre du Projet</h3>
         <p style="line-height: 1.8; opacity: 0.9; margin-top: 1rem;">
+            <b>{tl(PROJECT_TITLE)}</b>
+        </p>
+        <p style="line-height: 1.8; opacity: 0.8; margin-top: 1rem;">
             Ce projet innovant combine les technologies de <b>Deep Learning</b>, 
             <b>Vision par Ordinateur</b> et <b>Intelligence Artificielle</b> pour 
             révolutionner le diagnostic parasitologique en laboratoire médical.
@@ -5126,15 +5129,15 @@ elif selected_page == "about":
             <h3 style="color: #00ff88; margin-top: 0;">👨‍💻 {t('dev_team')}</h3>
             
             <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(0,245,255,0.05); border-radius: 12px; border-left: 3px solid #00f5ff;">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{AUTHORS['dev1']['avatar']}</div>
-                <h4 style="margin: 0.5rem 0; color: #00f5ff;">{AUTHORS['dev1']['name']}</h4>
-                <p style="opacity: 0.7; margin: 0;">{tl(AUTHORS['dev1']['role'])}</p>
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🧑‍💻</div>
+                <h4 style="margin: 0.5rem 0; color: #00f5ff;">Sebbag Mohamed Dhia Eddine</h4>
+                <p style="opacity: 0.7; margin: 0;">Expert IA & Conception</p>
             </div>
             
             <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(255,0,255,0.05); border-radius: 12px; border-left: 3px solid #ff00ff;">
-                <div style="font-size: 2rem; margin-bottom: 0.5rem;">{AUTHORS['dev2']['avatar']}</div>
-                <h4 style="margin: 0.5rem 0; color: #ff00ff;">{AUTHORS['dev2']['name']}</h4>
-                <p style="opacity: 0.7; margin: 0;">{tl(AUTHORS['dev2']['role'])}</p>
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔬</div>
+                <h4 style="margin: 0.5rem 0; color: #ff00ff;">Ben Sghir Mohamed</h4>
+                <p style="opacity: 0.7; margin: 0;">Expert Laboratoire & Données</p>
             </div>
             
             <p style="margin-top: 1.5rem; opacity: 0.6; font-size: 0.9rem;">
@@ -5147,28 +5150,30 @@ elif selected_page == "about":
     with inst_col:
         st.markdown(f"""
         <div class="glass-card" style="padding: 2rem;">
-            <h3 style="color: #ff9500; margin-top: 0;">{INSTITUTION['logo']} {t('institution')}</h3>
+            <h3 style="color: #ff9500; margin-top: 0;">🏛️ {t('institution')}</h3>
             
             <div style="margin: 1.5rem 0;">
-                <h4 style="color: #00f5ff;">{tl(INSTITUTION['name'])}</h4>
+                <h4 style="color: #00f5ff;">Institut National de Formation Supérieure Paramédicale</h4>
+                <h4 style="color: #00ff88; margin-top: 0.5rem;">المعهد الوطني للتكوين العالي شبه الطبي</h4>
                 <p style="opacity: 0.8; margin: 0.5rem 0;">
-                    <b>{INSTITUTION['short']}</b>
+                    <b>INFSPM</b>
                 </p>
                 <p style="opacity: 0.7;">
-                    📍 {INSTITUTION['city']}, {tl(INSTITUTION['country'])} 🇩🇿
+                    📍 Ouargla, Algérie 🇩🇿
                 </p>
                 <p style="opacity: 0.6;">
-                    📅 {INSTITUTION['year']}
+                    📅 2026
                 </p>
             </div>
             
             <h4 style="color: #00ff88; margin-top: 2rem;">🎯 Objectifs du projet</h4>
             <ul style="line-height: 1.8; opacity: 0.8;">
-                <li>Automatiser la lecture microscopique</li>
-                <li>Réduire les erreurs diagnostiques</li>
-                <li>Accélérer le processus d'analyse</li>
-                <li>Assister les professionnels de santé</li>
-                <li>Former les futurs techniciens</li>
+                <li>Automatiser la lecture microscopique des examens parasitologiques</li>
+                <li>Réduire les erreurs diagnostiques humaines</li>
+                <li>Accélérer le processus d'analyse au laboratoire</li>
+                <li>Assister les professionnels de santé dans leurs décisions</li>
+                <li>Former les futurs techniciens de laboratoire</li>
+                <li>Améliorer la qualité des diagnostics en parasitologie</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -5176,27 +5181,53 @@ elif selected_page == "about":
     st.markdown("---")
     
     # Technologies
-    st.markdown("### 🛠️ Technologies utilisées")
+    st.markdown("### 🛠️ Technologies & Outils utilisés")
     
     tech_cols = st.columns(8)
     technologies = [
-        ("🐍", "Python", "Core"),
-        ("🧠", "TensorFlow", "AI"),
-        ("🎨", "Streamlit", "UI"),
-        ("📊", "Plotly", "Charts"),
-        ("🗄️", "SQLite", "Database"),
-        ("🔒", "Bcrypt", "Security"),
+        ("🐍", "Python", "3.10+"),
+        ("🧠", "TensorFlow", "2.x"),
+        ("🎨", "Streamlit", "1.28+"),
+        ("📊", "Plotly", "5.x"),
+        ("🗄️", "SQLite", "DB"),
+        ("🔒", "Bcrypt", "Hash"),
         ("📄", "FPDF", "Reports"),
-        ("📱", "QR", "Codes")
+        ("📱", "QRCode", "Verify")
     ]
     
-    for col, (icon, name, desc) in zip(tech_cols, technologies):
+    for col, (icon, name, version) in zip(tech_cols, technologies):
         with col:
             st.markdown(f"""
             <div class="metric-card" style="padding: 1rem;">
                 <div class="metric-icon" style="font-size: 2rem;">{icon}</div>
-                <div class="metric-value" style="font-size: 0.9rem;">{name}</div>
-                <div class="metric-label" style="font-size: 0.7rem;">{desc}</div>
+                <div class="metric-value" style="font-size: 0.85rem;">{name}</div>
+                <div class="metric-label" style="font-size: 0.65rem;">{version}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Parasites étudiés
+    st.markdown("### 🦠 Parasites détectés par le système")
+    
+    parasites_info = [
+        ("🔴", "Amoeba (E. histolytica)", "Protozoaire intestinal pathogène"),
+        ("🟠", "Giardia lamblia", "Flagellé causant la giardiose"),
+        ("🔴", "Leishmania", "Transmise par phlébotome"),
+        ("🚨", "Plasmodium", "Agent du paludisme (URGENCE)"),
+        ("🔴", "Trypanosoma", "Maladie du sommeil / Chagas"),
+        ("🟠", "Schistosoma", "Bilharziose uro-génitale/intestinale"),
+    ]
+    
+    para_cols = st.columns(3)
+    
+    for i, (icon, name, desc) in enumerate(parasites_info):
+        with para_cols[i % 3]:
+            st.markdown(f"""
+            <div class="glass-card" style="padding: 1rem; margin: 0.5rem 0;">
+                <div style="font-size: 2rem; text-align: center; margin-bottom: 0.5rem;">{icon}</div>
+                <h4 style="margin: 0.5rem 0; font-size: 0.95rem; text-align: center;">{name}</h4>
+                <p style="font-size: 0.75rem; opacity: 0.6; margin: 0; text-align: center;">{desc}</p>
             </div>
             """, unsafe_allow_html=True)
     
@@ -5208,22 +5239,22 @@ elif selected_page == "about":
     feature_cols = st.columns(4)
     
     features = [
-        ("📸", "Capture en direct", "Caméra + Upload"),
+        ("📸", "Capture directe", "Caméra + Upload"),
         ("🌍", "Multilingue", "FR / AR / EN"),
-        ("🤖", "IA Avancée", "6 Parasites"),
+        ("🤖", "IA Avancée", "6 Parasites + Négatif"),
         ("🧠", "Quiz Interactif", "60+ Questions"),
-        ("💬", "Chatbot", "Assistant intelligent"),
-        ("🎯", "Heatmap IA", "Visualisation"),
-        ("📄", "PDF Pro", "5 Templates"),
+        ("💬", "Chatbot Intelligent", "Assistant parasitologie"),
+        ("🎯", "Heatmap IA", "Visualisation zones"),
+        ("📄", "PDF Professionnel", "5 Templates"),
         ("🔄", "Comparaison", "Analyse différentielle"),
-        ("🔊", "Synthèse vocale", "TTS multilingue"),
+        ("🔊", "Synthèse vocale", "TTS 3 langues"),
         ("📊", "Analytics", "Tableaux de bord"),
-        ("🔐", "Sécurité", "Authentification forte"),
-        ("🌌", "UI Moderne", "Dark mode spatial"),
+        ("🔐", "Sécurité", "Auth + Bcrypt"),
+        ("🌌", "UI Moderne", "Dark spatial"),
         ("🏆", "Gamification", "Achievements"),
         ("📱", "Responsive", "Mobile-friendly"),
         ("💾", "Export", "CSV/Excel/JSON"),
-        ("🔬", "7 Filtres", "Traitement d'image")
+        ("🔬", "7 Filtres", "Image processing")
     ]
     
     for i, (icon, title, desc) in enumerate(features):
@@ -5239,18 +5270,18 @@ elif selected_page == "about":
     st.markdown("---")
     
     # Statistics
-    st.markdown("### 📈 En chiffres")
-    
-    stats_cols = st.columns(5)
+    st.markdown("### 📈 Statistiques du système")
     
     stats = db_stats()
     
+    stats_cols = st.columns(5)
+    
     stats_data = [
-        ("🔬", stats["total"], "Analyses"),
+        ("🔬", stats["total"], "Analyses totales"),
         ("👥", len(db_users()), "Utilisateurs"),
-        ("📝", len(QUIZ_QUESTIONS), "Questions"),
-        ("🦠", len(CLASS_NAMES), "Parasites"),
-        ("⭐", f"{stats['avg_confidence']:.0f}%", "Confiance moy.")
+        ("📝", len(QUIZ_QUESTIONS), "Questions quiz"),
+        ("🦠", len(CLASS_NAMES)-1, "Parasites détectés"),
+        ("⭐", f"{stats['avg_confidence']:.0f}%", "Confiance moyenne")
     ]
     
     for col, (icon, value, label) in zip(stats_cols, stats_data):
@@ -5261,21 +5292,34 @@ elif selected_page == "about":
     
     # Credits footer
     st.markdown(f"""
-    <div class="glass-card" style="text-align: center; padding: 2rem; opacity: 0.8;">
-        <p style="font-size: 1rem; margin-bottom: 1rem;">
-            Fait avec ❤️ à {INSTITUTION['city']}, {tl(INSTITUTION['country'])} 🇩🇿
+    <div class="glass-card" style="text-align: center; padding: 2rem; opacity: 0.9;">
+        <h3 style="color: #00f5ff; margin-bottom: 1rem;">Développé avec passion ❤️</h3>
+        
+        <p style="font-size: 1.1rem; margin-bottom: 1rem;">
+            <b>Sebbag Mohamed Dhia Eddine</b> & <b>Ben Sghir Mohamed</b>
         </p>
-        <p style="font-size: 0.85rem; opacity: 0.7;">
-            © {INSTITUTION['year']} {INSTITUTION['short']} | 
-            {AUTHORS['dev1']['name']} & {AUTHORS['dev2']['name']}
+        
+        <p style="font-size: 0.95rem; opacity: 0.8;">
+            Institut National de Formation Supérieure Paramédicale<br>
+            المعهد الوطني للتكوين العالي شبه الطبي<br>
+            <b>INFSPM Ouargla</b> 🇩🇿
         </p>
+        
+        <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 1rem;">
+            3ème Année Technicien Supérieur<br>
+            Spécialité: Laboratoire de Santé Publique
+        </p>
+        
+        <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 1.5rem;">
+            © 2026 INFSPM Ouargla, Algérie
+        </p>
+        
         <p style="font-size: 0.75rem; opacity: 0.5; margin-top: 1rem;">
             DM Smart Lab AI v{APP_VERSION} Professional Edition<br>
             Intelligence Artificielle au service de la Parasitologie
         </p>
     </div>
     """, unsafe_allow_html=True)
-
 # ════════════════════════════════════════════
 #  FOOTER - GLOBAL
 # ════════════════════════════════════════════
