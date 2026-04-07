@@ -2767,11 +2767,11 @@ def add_achievement(achievement_id):
             )
 
 # ============================================
-#  ENHANCED LOGO & UI COMPONENTS
+#  LOGO FUNCTION - COMPLETE & TESTED
 # ============================================
 
 def render_animated_logo():
-    """Render advanced animated DNA logo"""
+    """Render animated logo with DNA helix"""
     st.markdown("""
     <div class="glass-card" style="text-align: center; padding: 2rem 1rem;">
         <svg width="90" height="90" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
@@ -2795,21 +2795,13 @@ def render_animated_logo():
                     </feMerge>
                 </filter>
             </defs>
-            
-            <!-- Outer rotating circle -->
             <circle cx="60" cy="60" r="50" fill="none" stroke="url(#grad1)" stroke-width="3" filter="url(#glow)" opacity="0.8">
                 <animateTransform attributeName="transform" type="rotate" values="0 60 60;360 60 60" dur="20s" repeatCount="indefinite"/>
             </circle>
-            
-            <!-- Middle circle -->
             <circle cx="60" cy="60" r="42" fill="none" stroke="url(#grad1)" stroke-width="1.5" opacity="0.4">
                 <animateTransform attributeName="transform" type="rotate" values="360 60 60;0 60 60" dur="15s" repeatCount="indefinite"/>
             </circle>
-            
-            <!-- Inner circle -->
             <circle cx="60" cy="60" r="34" fill="none" stroke="url(#grad1)" stroke-width="1" opacity="0.2"/>
-            
-            <!-- DNA Helix -->
             <path d="M 30,40 Q 45,30 60,40 T 90,40" fill="none" stroke="#00f5ff" stroke-width="2" opacity="0.6">
                 <animate attributeName="d" values="M 30,40 Q 45,30 60,40 T 90,40;M 30,40 Q 45,50 60,40 T 90,40;M 30,40 Q 45,30 60,40 T 90,40" dur="3s" repeatCount="indefinite"/>
             </path>
@@ -2819,13 +2811,9 @@ def render_animated_logo():
             <path d="M 30,80 Q 45,90 60,80 T 90,80" fill="none" stroke="#00ff88" stroke-width="2" opacity="0.6">
                 <animate attributeName="d" values="M 30,80 Q 45,90 60,80 T 90,80;M 30,80 Q 45,70 60,80 T 90,80;M 30,80 Q 45,90 60,80 T 90,80" dur="3s" repeatCount="indefinite"/>
             </path>
-            
-            <!-- Center Text -->
             <text x="60" y="50" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="16" font-weight="900" fill="url(#grad1)" filter="url(#glow)">DM</text>
             <text x="60" y="68" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="9" font-weight="600" fill="url(#grad1)">SMART LAB</text>
             <text x="60" y="80" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="7" font-weight="400" fill="#00f5ff" opacity="0.7">AI v8.0</text>
-            
-            <!-- Orbiting particles -->
             <circle cx="30" cy="40" r="2.5" fill="#00f5ff" opacity="0.6">
                 <animateMotion path="M 0,0 m -50,0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0" dur="8s" repeatCount="indefinite"/>
             </circle>
@@ -2836,38 +2824,14 @@ def render_animated_logo():
                 <animateMotion path="M 0,0 m -42,0 a 42,42 0 1,1 84,0 a 42,42 0 1,1 -84,0" dur="10s" repeatCount="indefinite"/>
             </circle>
         </svg>
-        
         <h2 class="neon-text" style="margin: 1rem 0 0.5rem; font-size: 1.8rem;">DM SMART LAB AI</h2>
         <p style="color: var(--text-secondary); font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; opacity: 0.6;">Version 8.0 Professional</p>
     </div>
     """, unsafe_allow_html=True)
 
-def create_metric_card(icon, value, label, delta=None, color="cyan"):
-    """Create professional metric card"""
-    delta_html = ""
-    if delta is not None:
-        delta_color = "#00ff88" if delta >= 0 else "#ff0040"
-        delta_icon = "↑" if delta >= 0 else "↓"
-        delta_html = f'<div style="color: {delta_color}; font-size: 0.85rem; margin-top: 0.5rem; font-weight: 600;">{delta_icon} {abs(delta)}%</div>'
-    
-    st.markdown(f"""
-    <div class="metric-card">
-        <div class="metric-icon">{icon}</div>
-        <div class="metric-value">{value}</div>
-        <div class="metric-label">{label}</div>
-        {delta_html}
-    </div>
-    """, unsafe_allow_html=True)
-
-def show_loading_skeleton():
-    """Show loading skeleton animation"""
-    st.markdown("""
-    <div class="glass-card">
-        <div class="skeleton" style="height: 20px; width: 60%; margin-bottom: 10px;"></div>
-        <div class="skeleton" style="height: 15px; width: 80%; margin-bottom: 10px;"></div>
-        <div class="skeleton" style="height: 15px; width: 70%;"></div>
-    </div>
-    """, unsafe_allow_html=True)
+# استخدام في SIDEBAR
+with st.sidebar:
+    render_animated_logo()
 
 # ============================================
 #  SIDEBAR WITH LOGO
