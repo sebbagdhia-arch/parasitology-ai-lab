@@ -1,14 +1,20 @@
-# ╔══════════════════════════════════════════════════════════════════════════════════╗
-# ║                  DM SMART LAB AI v7.5 - ULTIMATE SPACE EDITION                 ║
-# ║            Diagnostic Parasitologique par Intelligence Artificielle              ║
-# ║                                                                                ║
-# ║  Développé par:                                                                ║
-# ║    • Sebbag Mohamed Dhia Eddine (Expert IA & Conception)                       ║
-# ║    • Ben Sghir Mohamed (Expert Laboratoire & Données)                          ║
-# ║                                                                                ║
-# ║  INFSPM - Ouargla, Algérie 🇩🇿                                                ║
-# ╚══════════════════════════════════════════════════════════════════════════════════╝
+"""
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║                  DM SMART LAB AI v8.0 - ULTIMATE EDITION                        ║
+║            Advanced Parasitological Diagnosis System with AI                      ║
+║                                                                                    ║
+║  Developers:                                                                       ║
+║    • Sebbag Mohamed Dhia Eddine (AI & System Architecture)                       ║
+║    • Ben Sghir Mohamed (Laboratory & Data Science)                               ║
+║                                                                                    ║
+║  INFSPM - Ouargla, Algeria 🇩🇿                                                   ║
+║  Copyright © 2026 - All Rights Reserved                                          ║
+╚══════════════════════════════════════════════════════════════════════════════════╝
+"""
 
+# ============================================
+#  IMPORTS
+# ============================================
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -21,23 +27,29 @@ import json
 import io
 import sqlite3
 import math
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageDraw
+import secrets
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageDraw, ImageFont
 from datetime import datetime, timedelta
-from fpdf import FPDF
 from contextlib import contextmanager
+from typing import Optional, List, Dict, Any
+import re
 
+# Optional imports with fallbacks
 try:
     import bcrypt
     HAS_BCRYPT = True
 except ImportError:
     HAS_BCRYPT = False
+    st.warning("⚠️ bcrypt not installed. Using SHA256 fallback.")
 
 try:
     import plotly.express as px
     import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
     HAS_PLOTLY = True
 except ImportError:
     HAS_PLOTLY = False
+    st.warning("⚠️ Plotly not installed. Charts disabled.")
 
 try:
     import qrcode
@@ -45,1136 +57,1761 @@ try:
 except ImportError:
     HAS_QRCODE = False
 
+try:
+    from fpdf import FPDF
+    HAS_FPDF = True
+except ImportError:
+    HAS_FPDF = False
+    st.warning("⚠️ FPDF not installed. PDF export disabled.")
+
+try:
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.chart import BarChart, PieChart, Reference
+    HAS_EXCEL = True
+except ImportError:
+    HAS_EXCEL = False
+
+try:
+    from docx import Document
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    HAS_DOCX = True
+except ImportError:
+    HAS_DOCX = False
+
 # ============================================
 #  PAGE CONFIG
 # ============================================
 st.set_page_config(
-    page_title="DM Smart Lab AI v7.5",
+    page_title="DM Smart Lab AI v8.0 Ultimate",
     page_icon="🧬",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://github.com/dmsmartlab',
+        'Report a bug': 'https://github.com/dmsmartlab/issues',
+        'About': "DM Smart Lab AI v8.0 - Ultimate Edition"
+    }
 )
 
 # ============================================
 #  CONSTANTS
 # ============================================
-APP_VERSION = "7.5.0"
-SECRET_KEY = "dm_smart_lab_2026_ultra_secret"
+APP_VERSION = "8.0.0"
+APP_NAME = "DM Smart Lab AI"
+BUILD_DATE = "2026-01-15"
+SECRET_KEY = "dm_smart_lab_2026_ultra_secret_key_v8"
+
+# Security
 MAX_LOGIN_ATTEMPTS = 5
-LOCKOUT_MINUTES = 10
-CONFIDENCE_THRESHOLD = 60
+LOCKOUT_MINUTES = 15
+SESSION_TIMEOUT = 120
+
+# AI Model
 MODEL_INPUT_SIZE = (224, 224)
+CONFIDENCE_THRESHOLD = 60
+HIGH_CONFIDENCE = 80
+LOW_CONFIDENCE = 40
 
+# Files
+MAX_FILE_SIZE_MB = 10
+MAX_BATCH_UPLOAD = 50
+ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "bmp", "tiff"]
+
+# Database
+DB_PATH = "dm_smartlab_v8.db"
+
+# Roles
 ROLES = {
-    "admin": {"level": 3, "icon": "👑",
-              "label": {"fr": "Administrateur", "ar": "مدير النظام", "en": "Administrator"}},
-    "technician": {"level": 2, "icon": "🔬",
-                   "label": {"fr": "Technicien", "ar": "تقني مخبر", "en": "Technician"}},
-    "viewer": {"level": 1, "icon": "👁️",
-               "label": {"fr": "Observateur", "ar": "مراقب", "en": "Viewer"}}
-}
-
-AUTHORS = {
-    "dev1": {
-        "name": "Sebbag Mohamed Dhia Eddine",
-        "role": {"fr": "Expert IA & Conception", "ar": "خبير ذكاء اصطناعي و تصميم", "en": "AI & Design Expert"}
+    "admin": {
+        "level": 5, "icon": "👑",
+        "label": {"fr": "Administrateur", "ar": "مدير", "en": "Administrator"},
+        "permissions": ["all"]
     },
-    "dev2": {
-        "name": "Ben Sghir Mohamed",
-        "role": {"fr": "Expert Laboratoire & Données", "ar": "خبير مخبر و بيانات", "en": "Laboratory & Data Expert"}
+    "supervisor": {
+        "level": 4, "icon": "👨‍⚕️",
+        "label": {"fr": "Superviseur", "ar": "مشرف", "en": "Supervisor"},
+        "permissions": ["view_all", "validate", "export", "reports"]
+    },
+    "technician": {
+        "level": 3, "icon": "🔬",
+        "label": {"fr": "Technicien", "ar": "تقني", "en": "Technician"},
+        "permissions": ["scan", "view_own", "save", "export_own"]
+    },
+    "trainee": {
+        "level": 2, "icon": "🎓",
+        "label": {"fr": "Stagiaire", "ar": "متدرب", "en": "Trainee"},
+        "permissions": ["scan", "view_own", "training"]
+    },
+    "viewer": {
+        "level": 1, "icon": "👁️",
+        "label": {"fr": "Observateur", "ar": "مراقب", "en": "Viewer"},
+        "permissions": ["view_own"]
     }
 }
 
-INSTITUTION = {
-    "name": {
-        "fr": "Institut National de Formation Supérieure Paramédicale",
-        "ar": "المعهد الوطني للتكوين العالي شبه الطبي",
-        "en": "National Institute of Higher Paramedical Training"
-    },
-    "short": "INFSPM",
-    "city": "Ouargla",
-    "country": {"fr": "Algérie", "ar": "الجزائر", "en": "Algeria"},
-    "year": 2026
-}
-
-PROJECT_TITLE = {
-    "fr": "Exploration du potentiel de l'intelligence artificielle pour la lecture automatique de l'examen parasitologique à l'état frais",
-    "ar": "استكشاف إمكانيات الذكاء الاصطناعي للقراءة الآلية للفحص الطفيلي المباشر",
-    "en": "Exploring AI potential for automatic reading of fresh parasitological examination"
-}
-
+# Colors
 NEON = {
     "cyan": "#00f5ff", "magenta": "#ff00ff", "green": "#00ff88",
     "orange": "#ff6600", "red": "#ff0040", "blue": "#0066ff",
     "purple": "#9933ff", "yellow": "#ffff00", "pink": "#ff69b4"
 }
 
+RISK_COLORS = {
+    "critical": "#ff0040", "high": "#ff3366", "medium": "#ff9500",
+    "low": "#00e676", "none": "#00ff88"
+}
+
+# Laboratory
 MICROSCOPE_TYPES = [
-    "Microscope Optique", "Microscope Binoculaire", "Microscope Inversé",
-    "Microscope à Fluorescence", "Microscope Contraste de Phase",
+    "Microscope Optique Standard", "Microscope Binoculaire", "Microscope Trinoculaire",
+    "Microscope Inversé", "Microscope à Fluorescence", "Microscope Contraste de Phase",
     "Microscope Fond Noir", "Microscope Numérique", "Microscope Confocal"
 ]
 
 MAGNIFICATIONS = ["x4", "x10", "x20", "x40", "x60", "x100 (Immersion)"]
 
 PREPARATION_TYPES = [
-    "État Frais (Direct)", "Coloration au Lugol", "MIF", "Concentration Ritchie",
-    "Kato-Katz", "Coloration MGG", "Coloration Giemsa", "Ziehl-Neelsen Modifié",
-    "Coloration Trichrome", "Goutte Épaisse", "Frottis Mince", "Scotch-Test (Graham)",
-    "Technique Baermann", "Flottation Willis", "Technique Knott"
+    "État Frais (Direct)", "État Frais + Lugol", "Concentration Ritchie (Formol-Éther)",
+    "Concentration MIF", "Concentration Willis (Flottation)", "Kato-Katz",
+    "Coloration MGG", "Coloration Giemsa", "Ziehl-Neelsen Modifié",
+    "Coloration Trichrome", "Goutte Épaisse + Frottis", "Scotch-Test (Graham)",
+    "Technique Baermann", "Culture NNN", "PCR Parasitaire"
 ]
 
-SAMPLES = {
+SAMPLE_TYPES = {
     "fr": ["Selles", "Sang (Frottis)", "Sang (Goutte épaisse)", "Urines", "LCR",
-           "Biopsie Cutanée", "Crachat", "Autre"],
+           "Biopsie Cutanée", "Suc Ganglionnaire", "Crachat", "Moelle Osseuse", "Autre"],
     "ar": ["براز", "دم (لطاخة)", "دم (قطرة سميكة)", "بول", "سائل دماغي شوكي",
-           "خزعة جلدية", "بلغم", "أخرى"],
+           "خزعة جلدية", "عصارة عقدية", "بلغم", "نقي عظم", "أخرى"],
     "en": ["Stool", "Blood (Smear)", "Blood (Thick drop)", "Urine", "CSF",
-           "Skin Biopsy", "Sputum", "Other"]
+           "Skin Biopsy", "Lymph Node", "Sputum", "Bone Marrow", "Other"]
 }
 
+# Parasite Database
+CLASS_NAMES = [
+    "Amoeba (E. histolytica)", "Giardia", "Plasmodium",
+    "Leishmania", "Trypanosoma", "Schistosoma", "Negative"
+]
 
-# ============================================
-#  COMPLETE TRANSLATION SYSTEM
-# ============================================
-TR = {
-    "fr": {
-        "app_title": "DM Smart Lab AI",
-        "login_title": "Connexion Sécurisée",
-        "login_subtitle": "Système d'Authentification Professionnel",
-        "username": "Identifiant",
-        "password": "Mot de Passe",
-        "connect": "SE CONNECTER",
-        "logout": "Déconnexion",
-        "home": "Accueil",
-        "scan": "Scan & Analyse",
-        "encyclopedia": "Encyclopédie",
-        "dashboard": "Tableau de Bord",
-        "quiz": "Quiz Médical",
-        "chatbot": "DM Bot",
-        "compare": "Comparaison",
-        "admin": "Administration",
-        "about": "À Propos",
-        "greeting_morning": "Bonjour",
-        "greeting_afternoon": "Bon après-midi",
-        "greeting_evening": "Bonsoir",
-        "welcome_btn": "Message de Bienvenue",
-        "intro_btn": "Présentation du Système",
-        "stop_voice": "Arrêter",
-        "patient_info": "Informations du Patient",
-        "patient_name": "Nom du Patient",
-        "patient_firstname": "Prénom",
-        "age": "Âge",
-        "sex": "Sexe",
-        "male": "Homme",
-        "female": "Femme",
-        "weight": "Poids (kg)",
-        "sample_type": "Type d'Échantillon",
-        "lab_info": "Informations du Laboratoire",
-        "microscope": "Microscope",
-        "magnification": "Grossissement",
-        "preparation": "Préparation",
-        "technician": "Technicien",
-        "notes": "Notes / Observations",
-        "image_capture": "Capture Microscopique",
-        "take_photo": "Prendre une Photo (Caméra)",
-        "upload_file": "Importer un fichier",
-        "camera_hint": "Placez l'oculaire du microscope devant la caméra",
-        "result": "Résultat",
-        "confidence": "Confiance",
-        "risk": "Risque",
-        "morphology": "Morphologie",
-        "description": "Description",
-        "advice": "Conseil Médical",
-        "extra_tests": "Examens complémentaires suggérés",
-        "diagnostic_keys": "Clés Diagnostiques",
-        "lifecycle": "Cycle de Vie",
-        "all_probabilities": "Toutes les probabilités",
-        "download_pdf": "Télécharger PDF",
-        "save_db": "Sauvegarder",
-        "new_analysis": "Nouvelle Analyse",
-        "listen": "Écouter",
-        "total_analyses": "Total Analyses",
-        "reliable": "Fiables",
-        "to_verify": "À Vérifier",
-        "most_frequent": "Plus Fréquent",
-        "avg_confidence": "Confiance Moy.",
-        "parasite_distribution": "Distribution des Parasites",
-        "confidence_levels": "Niveaux de Confiance",
-        "trends": "Tendances (30 jours)",
-        "history": "Historique Complet",
-        "validate": "Valider",
-        "export_csv": "CSV",
-        "export_json": "JSON",
-        "start_quiz": "Démarrer le Quiz",
-        "next_question": "Question Suivante",
-        "restart": "Recommencer",
-        "leaderboard": "Classement",
-        "score_excellent": "Excellent ! Vous maîtrisez la parasitologie !",
-        "score_good": "Bien joué ! Continuez à apprendre !",
-        "score_average": "Pas mal ! Révisez encore un peu !",
-        "score_low": "Courage ! La parasitologie s'apprend avec la pratique !",
-        "search": "Rechercher...",
-        "no_data": "Aucune donnée disponible",
-        "no_results": "Aucun résultat trouvé",
-        "language": "Langue",
-        "daily_tip": "Conseil du Jour",
-        "users_mgmt": "Gestion des Utilisateurs",
-        "activity_log": "Journal d'Activité",
-        "system_info": "Système",
-        "create_user": "Créer un Utilisateur",
-        "change_pwd": "Changer le Mot de Passe",
-        "image1": "Image 1 (Avant)",
-        "image2": "Image 2 (Après)",
-        "compare_btn": "Comparer les Images",
-        "similarity": "Similarité",
-        "filter_comparison": "Comparaison des Filtres",
-        "pixel_diff": "Différence Pixel à Pixel",
-        "name_required": "Le nom du patient est obligatoire !",
-        "saved_ok": "Résultat sauvegardé !",
-        "demo_mode": "Mode démonstration (aucun modèle IA chargé)",
-        "low_conf_warn": "Confiance faible. Vérification manuelle recommandée !",
-        "voice_welcome": "Bienvenue dans DM Smart Lab AI ! Nous sommes ravis de vous accueillir dans ce système d'intelligence artificielle dédié au diagnostic parasitologique. Ce système a été conçu pour assister les professionnels de santé dans l'identification rapide et précise des parasites.",
-        "voice_intro": "Je suis DM Smart Lab AI, version 7 point 5, système de diagnostic parasitologique par intelligence artificielle. J'ai été développé par deux techniciens supérieurs de l'Institut National de Formation Supérieure Paramédicale de Ouargla. Sebbag Mohamed Dhia Eddine, expert en intelligence artificielle et conception, et Ben Sghir Mohamed, expert en laboratoire et données. Ensemble, nous repoussons les limites de la parasitologie moderne !",
-        "quick_overview": "Aperçu Rapide",
-        "where_science": "Où la Science Rencontre l'Intelligence",
-        "system_desc": "Système de diagnostic parasitologique assisté par IA",
-        "dev_team": "Équipe de Développement",
-        "institution": "Établissement",
-        "technologies": "Technologies Utilisées",
-        "chat_welcome": "Bonjour ! Je suis **DM Bot**, votre assistant parasitologique intelligent.\n\nJe peux vous aider avec :\n- **Parasites** : Amoeba, Giardia, Plasmodium, Leishmania, Trypanosoma, Schistosoma, Ascaris, Taenia, Toxoplasma, Oxyure, Cryptosporidium...\n- **Techniques** : Microscopie, Colorations, Concentration, EPS...\n- **Traitements** : Protocoles thérapeutiques\n- **Cas cliniques** : Diagnostic différentiel\n\nTapez un mot-clé pour commencer !",
-        "chat_placeholder": "Posez votre question sur les parasites...",
-        "chat_not_found": "Je n'ai pas trouvé de réponse exacte. Essayez avec un mot-clé comme : **amoeba**, **giardia**, **plasmodium**, **microscope**, **coloration**, **traitement**, **concentration**, **toxoplasma**, **ascaris**, **taenia**, **oxyure** ou tapez **aide** pour voir tout ce que je connais !",
-        "clear_chat": "Effacer le chat",
-        "quick_questions": "Questions rapides :",
+PARASITE_DB = {
+    "Amoeba (E. histolytica)": {
+        "sci": "Entamoeba histolytica",
+        "morph": {
+            "fr": "Kyste sphérique 10-15μm à 4 noyaux, corps chromatoïdes en cigare. Trophozoïte 20-40μm avec pseudopodes et hématies phagocytées.",
+            "ar": "كيس كروي 10-15 ميكرومتر بـ 4 أنوية، جسم كروماتيني سيجاري. طور نشط 20-40 ميكرومتر مع أقدام كاذبة وكريات حمراء مبتلعة.",
+            "en": "Spherical cyst 10-15μm with 4 nuclei, cigar-shaped chromatoid bodies. Trophozoite 20-40μm with pseudopods and phagocytosed RBCs."
+        },
+        "desc": {
+            "fr": "Protozoaire responsable de l'amibiase intestinale et hépatique. Transmission féco-orale. Forme invasive = E. histolytica, forme commensale = E. dispar.",
+            "ar": "طفيلي أولي مسؤول عن الأميبيا المعوية والكبدية. الانتقال عبر الفم-البراز. الشكل الغازي = E. histolytica.",
+            "en": "Protozoan causing intestinal and hepatic amebiasis. Fecal-oral transmission. Invasive form = E. histolytica."
+        },
+        "funny": {
+            "fr": "Le ninja des intestins ! Adore grignoter les globules rouges au petit-déjeuner ! 🥷🔴",
+            "ar": "نينجا الأمعاء! يحب قضم كريات الدم الحمراء في الفطور! 🥷🔴",
+            "en": "The intestinal ninja! Loves munching red blood cells for breakfast! 🥷🔴"
+        },
+        "risk": "high",
+        "risk_d": {"fr": "Élevé", "ar": "مرتفع", "en": "High"},
+        "advice": {
+            "fr": "Métronidazole 500mg x3/j (7-10j) + Tiliquinol (Intetrix) 2cp x3/j. Contrôle EPS J15/J30. Éviter aliments crus.",
+            "ar": "ميترونيدازول 500 ملغ 3 مرات يومياً (7-10 أيام) + Tiliquinol. مراقبة بعد 15 و 30 يوم. تجنب الطعام النيء.",
+            "en": "Metronidazole 500mg x3/d (7-10d) + Tiliquinol (Intetrix). Follow-up D15/D30. Avoid raw food."
+        },
+        "tests": ["Sérologie amibienne (Elisa)", "Échographie hépatique", "NFS + CRP", "Coproculture", "PCR E. histolytica"],
+        "color": "#ff0040", "icon": "🔴",
+        "cycle": {
+            "fr": "Kyste ingéré → Excystation intestin grêle → Trophozoïte → Colonisation côlon → Invasion (parfois) → Enkystement → Émission selles",
+            "ar": "كيس مبتلع ← انفكاس أمعاء دقيقة ← طور نشط ← استعمار القولون ← غزو (أحياناً) ← تكيس ← إفراز في البراز",
+            "en": "Ingested cyst → Excystation small intestine → Trophozoite → Colon colonization → Invasion (sometimes) → Encystation → Stool emission"
+        },
+        "keys": {
+            "fr": "• E. histolytica vs E. dispar: seule histolytica phagocyte hématies\n• Kyste 4 noyaux (vs E. coli 8 noyaux)\n• Corps chromatoïdes en cigare (vs baguette)\n• Mobilité directionnelle active",
+            "ar": "• E. histolytica مقابل E. dispar: فقط histolytica تبتلع الكريات\n• كيس 4 أنوية (مقابل 8 لـ E. coli)\n• أجسام كروماتينية سيجارية\n• حركة اتجاهية نشطة",
+            "en": "• E. histolytica vs E. dispar: only histolytica phagocytoses RBCs\n• 4-nuclei cyst (vs E. coli 8)\n• Cigar-shaped chromatoid bodies\n• Active directional motility"
+        }
     },
-    "ar": {
-        "app_title": "مختبر DM الذكي",
-        "login_title": "تسجيل الدخول الآمن",
-        "login_subtitle": "نظام المصادقة المهني",
-        "username": "اسم المستخدم",
-        "password": "كلمة المرور",
-        "connect": "تسجيل الدخول",
-        "logout": "تسجيل الخروج",
-        "home": "الرئيسية",
-        "scan": "مسح و تحليل",
-        "encyclopedia": "الموسوعة",
-        "dashboard": "لوحة التحكم",
-        "quiz": "اختبار طبي",
-        "chatbot": "DM بوت",
-        "compare": "المقارنة",
-        "admin": "الإدارة",
-        "about": "حول المشروع",
-        "greeting_morning": "صباح الخير",
-        "greeting_afternoon": "مساء الخير",
-        "greeting_evening": "مساء الخير",
-        "welcome_btn": "رسالة ترحيبية",
-        "intro_btn": "تقديم النظام",
-        "stop_voice": "إيقاف",
-        "patient_info": "معلومات المريض",
-        "patient_name": "اسم المريض",
-        "patient_firstname": "الاسم الأول",
-        "age": "العمر",
-        "sex": "الجنس",
-        "male": "ذكر",
-        "female": "أنثى",
-        "weight": "الوزن (كغ)",
-        "sample_type": "نوع العينة",
-        "lab_info": "معلومات المخبر",
-        "microscope": "المجهر",
-        "magnification": "التكبير",
-        "preparation": "نوع التحضير",
-        "technician": "التقني",
-        "notes": "ملاحظات",
-        "image_capture": "التقاط مجهري",
-        "take_photo": "التقاط صورة (الكاميرا)",
-        "upload_file": "استيراد ملف",
-        "camera_hint": "ضع عدسة المجهر أمام الكاميرا",
-        "result": "النتيجة",
-        "confidence": "نسبة الثقة",
-        "risk": "مستوى الخطر",
-        "morphology": "المورفولوجيا",
-        "description": "الوصف",
-        "advice": "النصيحة الطبية",
-        "extra_tests": "فحوصات إضافية مقترحة",
-        "diagnostic_keys": "مفاتيح التشخيص",
-        "lifecycle": "دورة الحياة",
-        "all_probabilities": "جميع الاحتمالات",
-        "download_pdf": "تحميل PDF",
-        "save_db": "حفظ",
-        "new_analysis": "تحليل جديد",
-        "listen": "استماع",
-        "total_analyses": "مجموع التحاليل",
-        "reliable": "موثوقة",
-        "to_verify": "للتحقق",
-        "most_frequent": "الأكثر شيوعاً",
-        "avg_confidence": "متوسط الثقة",
-        "parasite_distribution": "توزيع الطفيليات",
-        "confidence_levels": "مستويات الثقة",
-        "trends": "الاتجاهات (30 يوم)",
-        "history": "السجل الكامل",
-        "validate": "مصادقة",
-        "export_csv": "CSV",
-        "export_json": "JSON",
-        "start_quiz": "بدء الاختبار",
-        "next_question": "السؤال التالي",
-        "restart": "إعادة",
-        "leaderboard": "الترتيب",
-        "score_excellent": "ممتاز ! أنت خبير في علم الطفيليات !",
-        "score_good": "أحسنت ! واصل التعلم !",
-        "score_average": "لا بأس ! راجع قليلاً !",
-        "score_low": "شجاعة ! علم الطفيليات يُتعلم بالممارسة !",
-        "search": "بحث...",
-        "no_data": "لا توجد بيانات",
-        "no_results": "لا توجد نتائج",
-        "language": "اللغة",
-        "daily_tip": "نصيحة اليوم",
-        "users_mgmt": "إدارة المستخدمين",
-        "activity_log": "سجل النشاط",
-        "system_info": "النظام",
-        "create_user": "إنشاء مستخدم",
-        "change_pwd": "تغيير كلمة المرور",
-        "image1": "الصورة 1 (قبل)",
-        "image2": "الصورة 2 (بعد)",
-        "compare_btn": "مقارنة الصور",
-        "similarity": "التشابه",
-        "filter_comparison": "مقارنة الفلاتر",
-        "pixel_diff": "الفرق بكسل ببكسل",
-        "name_required": "اسم المريض مطلوب !",
-        "saved_ok": "تم الحفظ بنجاح !",
-        "demo_mode": "وضع تجريبي (لا يوجد نموذج ذكاء اصطناعي)",
-        "low_conf_warn": "ثقة منخفضة. يُنصح بالتحقق اليدوي !",
-        "voice_welcome": "مرحباً بكم في مختبر DM الذكي. نحن سعداء باستقبالكم في هذا النظام المخصص للتشخيص الطفيلي بالذكاء الاصطناعي.",
-        "voice_intro": "أنا مختبر DM الذكي، النسخة 7.5، نظام تشخيص طفيلي بالذكاء الاصطناعي. تم تطويري من طرف تقنيين ساميين من المعهد الوطني للتكوين العالي شبه الطبي بورقلة.",
-        "quick_overview": "نظرة سريعة",
-        "where_science": "حيث يلتقي العلم بالذكاء",
-        "system_desc": "نظام تشخيص طفيلي بالذكاء الاصطناعي",
-        "dev_team": "فريق التطوير",
-        "institution": "المؤسسة",
-        "technologies": "التقنيات المستخدمة",
-        "chat_welcome": "مرحباً! أنا **DM Bot**، مساعدك الذكي في علم الطفيليات.\n\nأستطيع مساعدتك في:\n- **الطفيليات**: الأميبا، الجيارديا، البلازموديوم، الليشمانيا...\n- **التقنيات**: المجهر، التلوينات، التركيز...\n- **العلاجات**: البروتوكولات العلاجية\n\naكتب كلمة مفتاحية للبدء!",
-        "chat_placeholder": "اطرح سؤالك عن الطفيليات...",
-        "chat_not_found": "لم أجد إجابة دقيقة. جرب كلمة مفتاحية مثل: **amoeba**، **giardia**، **plasmodium**، أو اكتب **aide** لرؤية كل ما أعرفه!",
-        "clear_chat": "مسح المحادثة",
-        "quick_questions": "أسئلة سريعة:",
+    "Giardia": {
+        "sci": "Giardia lamblia (intestinalis)",
+        "morph": {
+            "fr": "Trophozoïte piriforme 12-15μm en cerf-volant, 2 noyaux (face de hibou), disque ventral adhésif, 4 paires de flagelles. Kyste ovoïde 8-12μm à 4 noyaux.",
+            "ar": "طور نشط كمثري 12-15 ميكرومتر شكل طائرة ورقية، نواتان (وجه البومة)، قرص بطني لاصق، 4 أزواج أسواط. كيس بيضاوي 8-12 ميكرومتر بـ 4 أنوية.",
+            "en": "Pear-shaped trophozoite 12-15μm kite-like, 2 nuclei (owl face), ventral adhesive disk, 4 flagella pairs. Ovoid cyst 8-12μm with 4 nuclei."
+        },
+        "desc": {
+            "fr": "Flagellé du duodénum. Diarrhée graisseuse chronique, malabsorption, ballonnements. Transmission hydrique (eau contaminée). Très fréquent chez enfants.",
+            "ar": "سوطي الاثني عشر. إسهال دهني مزمن، سوء امتصاص، انتفاخ. انتقال عبر الماء الملوث. شائع جداً عند الأطفال.",
+            "en": "Duodenal flagellate. Chronic greasy diarrhea, malabsorption, bloating. Waterborne transmission. Very common in children."
+        },
+        "funny": {
+            "fr": "Il te fixe avec ses lunettes de soleil (2 noyaux) ! Un touriste collant qui refuse de partir ! 🕶️😄",
+            "ar": "ينظر إليك بنظارته الشمسية (نواتان)! سائح لزج يرفض المغادرة! 🕶️😄",
+            "en": "Stares at you with sunglasses (2 nuclei)! A clingy tourist who refuses to leave! 🕶️😄"
+        },
+        "risk": "medium",
+        "risk_d": {"fr": "Moyen", "ar": "متوسط", "en": "Medium"},
+        "advice": {
+            "fr": "Métronidazole 250mg x3/j (5-7j) OU Tinidazole 2g dose unique. Traiter toute la famille. Désinfecter eau (ébullition 10 min).",
+            "ar": "ميترونيدازول 250 ملغ 3 مرات يومياً (5-7 أيام) أو تينيدازول 2 غرام جرعة واحدة. علاج كل العائلة. تعقيم الماء (غلي 10 دقائق).",
+            "en": "Metronidazole 250mg x3/d (5-7d) OR Tinidazole 2g single dose. Treat whole family. Disinfect water (boil 10 min)."
+        },
+        "tests": ["Antigène Giardia (ELISA selles)", "Test malabsorption (D-xylose)", "EPS x3 jours consécutifs", "PCR Giardia"],
+        "color": "#ff9500", "icon": "🟠",
+        "cycle": {
+            "fr": "Kyste ingéré → Excystation duodénale → Trophozoïte binucléé → Adhésion villosités → Multiplication asexuée → Enkystement iléon → Émission",
+            "ar": "كيس مبتلع ← انفكاس في الاثني عشر ← طور نشط ثنائي النواة ← التصاق بالزغابات ← تكاثر لاجنسي ← تكيس في اللفائفي ← إفراز",
+            "en": "Ingested cyst → Duodenal excystation → Binucleate trophozoite → Villi adhesion → Asexual multiplication → Ileum encystation → Emission"
+        },
+        "keys": {
+            "fr": "• Forme cerf-volant = PATHOGNOMONIQUE\n• 2 noyaux symétriques = face de hibou\n• Disque ventral visible au Lugol\n• Mobilité feuille morte (oscillante)\n• État frais < 30 min crucial",
+            "ar": "• شكل طائرة ورقية = مميز جداً\n• نواتان متماثلتان = وجه البومة\n• القرص البطني مرئي باللوغول\n• حركة ورقة ميتة (متذبذبة)\n• الفحص المباشر < 30 دقيقة حاسم",
+            "en": "• Kite shape = PATHOGNOMONIC\n• 2 symmetrical nuclei = owl face\n• Ventral disk visible with Lugol\n• Falling leaf motility\n• Fresh exam < 30 min crucial"
+        }
     },
-    "en": {
-        "app_title": "DM Smart Lab AI",
-        "login_title": "Secure Login",
-        "login_subtitle": "Professional Authentication System",
-        "username": "Username",
-        "password": "Password",
-        "connect": "LOG IN",
-        "logout": "Logout",
-        "home": "Home",
-        "scan": "Scan & Analysis",
-        "encyclopedia": "Encyclopedia",
-        "dashboard": "Dashboard",
-        "quiz": "Medical Quiz",
-        "chatbot": "DM Bot",
-        "compare": "Comparison",
-        "admin": "Administration",
-        "about": "About",
-        "greeting_morning": "Good morning",
-        "greeting_afternoon": "Good afternoon",
-        "greeting_evening": "Good evening",
-        "welcome_btn": "Welcome Message",
-        "intro_btn": "System Introduction",
-        "stop_voice": "Stop",
-        "patient_info": "Patient Information",
-        "patient_name": "Patient Name",
-        "patient_firstname": "First Name",
-        "age": "Age",
-        "sex": "Sex",
-        "male": "Male",
-        "female": "Female",
-        "weight": "Weight (kg)",
-        "sample_type": "Sample Type",
-        "lab_info": "Laboratory Information",
-        "microscope": "Microscope",
-        "magnification": "Magnification",
-        "preparation": "Preparation",
-        "technician": "Technician",
-        "notes": "Notes / Observations",
-        "image_capture": "Microscopic Capture",
-        "take_photo": "Take a Photo (Camera)",
-        "upload_file": "Upload a file",
-        "camera_hint": "Place the microscope eyepiece in front of the camera",
-        "result": "Result",
-        "confidence": "Confidence",
-        "risk": "Risk Level",
-        "morphology": "Morphology",
-        "description": "Description",
-        "advice": "Medical Advice",
-        "extra_tests": "Suggested Additional Tests",
-        "diagnostic_keys": "Diagnostic Keys",
-        "lifecycle": "Life Cycle",
-        "all_probabilities": "All Probabilities",
-        "download_pdf": "Download PDF",
-        "save_db": "Save",
-        "new_analysis": "New Analysis",
-        "listen": "Listen",
-        "total_analyses": "Total Analyses",
-        "reliable": "Reliable",
-        "to_verify": "To Verify",
-        "most_frequent": "Most Frequent",
-        "avg_confidence": "Avg. Confidence",
-        "parasite_distribution": "Parasite Distribution",
-        "confidence_levels": "Confidence Levels",
-        "trends": "Trends (30 days)",
-        "history": "Complete History",
-        "validate": "Validate",
-        "export_csv": "CSV",
-        "export_json": "JSON",
-        "start_quiz": "Start Quiz",
-        "next_question": "Next Question",
-        "restart": "Restart",
-        "leaderboard": "Leaderboard",
-        "score_excellent": "Excellent! You master parasitology!",
-        "score_good": "Well done! Keep learning!",
-        "score_average": "Not bad! Review a bit more!",
-        "score_low": "Courage! Parasitology is learned through practice!",
-        "search": "Search...",
-        "no_data": "No data available",
-        "no_results": "No results found",
-        "language": "Language",
-        "daily_tip": "Daily Tip",
-        "users_mgmt": "Users Management",
-        "activity_log": "Activity Log",
-        "system_info": "System",
-        "create_user": "Create User",
-        "change_pwd": "Change Password",
-        "image1": "Image 1 (Before)",
-        "image2": "Image 2 (After)",
-        "compare_btn": "Compare Images",
-        "similarity": "Similarity",
-        "filter_comparison": "Filter Comparison",
-        "pixel_diff": "Pixel-by-Pixel Difference",
-        "name_required": "Patient name is required!",
-        "saved_ok": "Result saved!",
-        "demo_mode": "Demo mode (no AI model loaded)",
-        "low_conf_warn": "Low confidence. Manual verification recommended!",
-        "voice_welcome": "Welcome to DM Smart Lab AI! We are delighted to have you in this artificial intelligence system dedicated to parasitological diagnosis.",
-        "voice_intro": "I am DM Smart Lab AI, version 7 point 5, a parasitological diagnosis system powered by artificial intelligence. Developed at INFSPM Ouargla, Algeria.",
-        "quick_overview": "Quick Overview",
-        "where_science": "Where Science Meets Intelligence",
-        "system_desc": "AI-powered parasitological diagnosis system",
-        "dev_team": "Development Team",
-        "institution": "Institution",
-        "technologies": "Technologies Used",
-        "chat_welcome": "Hello! I'm **DM Bot**, your intelligent parasitology assistant.\n\nI can help you with:\n- **Parasites**: Amoeba, Giardia, Plasmodium, Leishmania...\n- **Techniques**: Microscopy, Staining, Concentration...\n- **Treatments**: Therapeutic protocols\n\nType a keyword to start!",
-        "chat_placeholder": "Ask your question about parasites...",
-        "chat_not_found": "I couldn't find an exact answer. Try a keyword like: **amoeba**, **giardia**, **plasmodium**, **microscope**, or type **help** to see everything I know!",
-        "clear_chat": "Clear chat",
-        "quick_questions": "Quick questions:",
+    "Plasmodium": {
+        "sci": "Plasmodium falciparum / vivax / ovale / malariae",
+        "morph": {
+            "fr": "P. falciparum: anneau en bague à chaton, gamétocytes en banane. P. vivax: trophozoïte amœboïde, granulations de Schüffner, hématies augmentées de volume.",
+            "ar": "P. falciparum: حلقة خاتم، خلايا جنسية موزية. P. vivax: طور نشط أميبي، حبيبات شوفنر، كريات حمراء متضخمة.",
+            "en": "P. falciparum: signet ring, banana gametocytes. P. vivax: amoeboid trophozoite, Schüffner's dots, enlarged RBCs."
+        },
+        "desc": {
+            "fr": "⚠️ URGENCE MÉDICALE ! Paludisme = 1ère cause mortalité parasitaire mondiale. P. falciparum = le plus mortel (accès pernicieux). Anophèle femelle = vecteur.",
+            "ar": "⚠️ حالة طوارئ طبية! الملاريا = السبب الأول لوفيات الطفيليات عالمياً. P. falciparum = الأكثر فتكاً. أنثى الأنوفيل = الناقل.",
+            "en": "⚠️ MEDICAL EMERGENCY! Malaria = 1st cause parasitic mortality worldwide. P. falciparum = most lethal. Female Anopheles = vector."
+        },
+        "funny": {
+            "fr": "Le champion olympique du saut ! Saute du moustique à ton foie en 0.001 seconde ! 🏅🦟",
+            "ar": "بطل الأولمبياد في القفز! يقفز من البعوضة إلى كبدك في 0.001 ثانية! 🏅🦟",
+            "en": "Olympic jump champion! Jumps from mosquito to your liver in 0.001 second! 🏅🦟"
+        },
+        "risk": "critical",
+        "risk_d": {"fr": "CRITIQUE - URGENCE", "ar": "حرج - طوارئ", "en": "CRITICAL - EMERGENCY"},
+        "advice": {
+            "fr": "🚨 HOSPITALISATION IMMÉDIATE ! ACT (Artemether-Lumefantrine) 1ère ligne. Quinine IV si accès grave. Parasitémie /4-6h. Surveillance réanimation si >2%.",
+            "ar": "🚨 دخول المستشفى فوراً! ACT خط أول. كينين وريدي إذا خطير. فحص الطفيليات كل 4-6 ساعات. مراقبة مشددة إذا > 2%.",
+            "en": "🚨 IMMEDIATE HOSPITALIZATION! ACT 1st line. IV Quinine if severe. Parasitemia /4-6h. ICU monitoring if >2%."
+        },
+        "tests": ["TDR Paludisme (HRP2/pLDH) URGENCE", "Frottis + Goutte épaisse /4-6h", "Parasitémie quantitative", "NFS", "Bilan hépato-rénal", "Glycémie", "Lactates"],
+        "color": "#7f1d1d", "icon": "🚨",
+        "cycle": {
+            "fr": "Piqûre anophèle → Sporozoïtes (sang) → Hépatocytes (cycle exo-érythrocytaire) → Mérozoïtes → Hématies (cycle érythrocytaire) → Gamétocytes → Anophèle",
+            "ar": "لدغة الأنوفيل ← سبوروزويت (دم) ← خلايا كبدية (دورة خارج كريات) ← ميروزويت ← كريات حمراء (دورة داخل كريات) ← خلايا جنسية ← الأنوفيل",
+            "en": "Anopheles bite → Sporozoites (blood) → Hepatocytes (exo-erythrocytic cycle) → Merozoites → RBCs (erythrocytic cycle) → Gametocytes → Anopheles"
+        },
+        "keys": {
+            "fr": "• URGENCE < 2H diagnostic\n• Frottis mince = espèce / Goutte épaisse = sensibilité 10x\n• Parasitémie > 2% = ACCÈS GRAVE\n• Banane (gamétocyte) = P. falciparum\n• Schüffner + hématie ↑ = P. vivax\n• TDR positif ≠ paludisme actif (peut rester + 2 semaines)",
+            "ar": "• طوارئ < ساعتين للتشخيص\n• لطاخة = النوع / قطرة سميكة = حساسية × 10\n• طفيليات > 2% = حالة خطيرة\n• موز (خلية جنسية) = P. falciparum\n• شوفنر + كرية ↑ = P. vivax",
+            "en": "• URGENT < 2H diagnosis\n• Thin smear = species / Thick drop = 10x sensitivity\n• Parasitemia > 2% = SEVERE ACCESS\n• Banana = P. falciparum\n• Schüffner + RBC ↑ = P. vivax"
+        }
+    },
+    "Leishmania": {
+        "sci": "Leishmania infantum / major / tropica",
+        "morph": {
+            "fr": "Amastigotes ovoïdes intracellulaires 2-5μm dans macrophages. Noyau + kinétoplaste visible MGG/Giemsa. Promastigotes flagellés en culture NNN.",
+            "ar": "أماستيغوت بيضاوية داخل خلوية 2-5 ميكرومتر في البلاعم. نواة + كينيتوبلاست مرئي MGG/جيمزا. بروماستيغوت سوطية في زراعة NNN.",
+            "en": "Intracellular ovoid amastigotes 2-5μm in macrophages. Nucleus + kinetoplast visible MGG/Giemsa. Flagellated promastigotes in NNN culture."
+        },
+        "desc": {
+            "fr": "Transmis par phlébotome. Forme cutanée (bouton d'Orient) ou viscérale (Kala-azar). Algérie: L. infantum (nord), L. major (sud). MDO (Maladie à Déclaration Obligatoire).",
+            "ar": "ينتقل عبر ذبابة الرمل. شكل جلدي (حبة حلب) أو حشوي. الجزائر: L. infantum (شمال)، L. major (جنوب). مرض تبليغ إجباري.",
+            "en": "Sandfly-transmitted. Cutaneous (Oriental sore) or visceral (Kala-azar). Algeria: L. infantum (north), L. major (south). Notifiable disease."
+        },
+        "funny": {
+            "fr": "Petit mais costaud ! S'installe dans les macrophages comme dans un hôtel 5 étoiles ! 🏨⭐",
+            "ar": "صغير لكن قوي! يستقر في البلاعم كأنه في فندق 5 نجوم! 🏨⭐",
+            "en": "Small but mighty! Settles in macrophages like a 5-star hotel! 🏨⭐"
+        },
+        "risk": "high",
+        "risk_d": {"fr": "Élevé", "ar": "مرتفع", "en": "High"},
+        "advice": {
+            "fr": "Cutanée: Glucantime (antimoine) IM 20mg/kg/j (20-30j) OU cryothérapie azote. Viscérale: Amphotéricine B liposomale IV. MDO = déclarer ARS.",
+            "ar": "جلدية: غلوكانتيم عضلياً 20 ملغ/كغ/يوم (20-30 يوم) أو معالجة بالتبريد. حشوية: أمفوتيريسين ب وريدياً. تبليغ إجباري.",
+            "en": "Cutaneous: Glucantime IM 20mg/kg/d (20-30d) OR cryotherapy. Visceral: Liposomal Amphotericin B IV. Notifiable disease."
+        },
+        "tests": ["IDR Montenegro (léishmanine)", "Sérologie Leishmania (ELISA, IFI)", "Ponction ganglion/rate/moelle + MGG", "Biopsie cutanée + Giemsa", "Culture NNN", "PCR Leishmania (gold standard)"],
+        "color": "#ff0040", "icon": "🔴",
+        "cycle": {
+            "fr": "Piqûre phlébotome → Promastigotes → Phagocytose macrophages → Transformation amastigotes → Multiplication intracellulaire → Lyse cellule → Dissémination → Repas sanguin phlébotome",
+            "ar": "لدغة ذبابة رمل ← بروماستيغوت ← بلعمة بالبلاعم ← تحول لأماستيغوت ← تكاثر داخل خلوي ← تحلل الخلية ← انتشار ← وجبة دم ذبابة الرمل",
+            "en": "Sandfly bite → Promastigotes → Macrophage phagocytosis → Amastigote transformation → Intracellular multiplication → Cell lysis → Dissemination → Sandfly blood meal"
+        },
+        "keys": {
+            "fr": "• Amastigotes 2-5μm intracellulaires obligatoires\n• Noyau + kinétoplaste (barre) en MGG/Giemsa\n• Culture NNN = transformation promastigotes\n• PCR = sensibilité/spécificité maximale\n• IDR Montenegro + si contact antérieur",
+            "ar": "• أماستيغوت 2-5 ميكرومتر داخل خلوية إلزامياً\n• نواة + كينيتوبلاست (عصا) في MGG\n• زراعة NNN = تحول لبروماستيغوت\n• PCR = أعلى حساسية/نوعية",
+            "en": "• 2-5μm obligate intracellular amastigotes\n• Nucleus + kinetoplast (bar) in MGG\n• NNN culture = promastigote transformation\n• PCR = maximum sensitivity/specificity"
+        }
+    },
+    "Trypanosoma": {
+        "sci": "Trypanosoma brucei gambiense / rhodesiense / cruzi",
+        "morph": {
+            "fr": "Forme S/C allongée 15-30μm, flagelle libre, membrane ondulante latérale, kinétoplaste postérieur. Noyau central. MGG: bleu + kinétoplaste violet foncé.",
+            "ar": "شكل S/C ممدود 15-30 ميكرومتر، سوط حر، غشاء متموج جانبي، كينيتوبلاست خلفي. نواة مركزية. MGG: أزرق + كينيتوبلاست بنفسجي غامق.",
+            "en": "Elongated S/C shape 15-30μm, free flagellum, lateral undulating membrane, posterior kinetoplast. Central nucleus. MGG: blue + dark purple kinetoplast."
+        },
+        "desc": {
+            "fr": "Maladie du sommeil africaine (T. brucei, vecteur glossine/tsé-tsé) ou maladie de Chagas américaine (T. cruzi, vecteur triatome). Phase hémolymphatique puis neurologique (franchissement BHE).",
+            "ar": "مرض النوم الأفريقي (T. brucei، ناقل ذبابة تسي تسي) أو مرض شاغاس الأمريكي (T. cruzi، ناقل بق ثلاثي). مرحلة دموية لمفاوية ثم عصبية.",
+            "en": "African sleeping sickness (T. brucei, tsetse vector) or American Chagas disease (T. cruzi, triatomine vector). Hemolymphatic then neurological phase (BBB crossing)."
+        },
+        "funny": {
+            "fr": "Le sprinteur du sang ! Court à 100 km/h avec sa membrane ondulante comme une cape de super-héros ! 🦸‍♂️💨",
+            "ar": "عداء الدم السريع! يركض بـ 100 كم/ساعة بغشائه المتموج كعباءة بطل خارق! 🦸‍♂️💨",
+            "en": "The blood sprinter! Runs 100 km/h with undulating membrane like a superhero cape! 🦸‍♂️💨"
+        },
+        "risk": "high",
+        "risk_d": {"fr": "Élevé", "ar": "مرتفع", "en": "High"},
+        "advice": {
+            "fr": "Phase 1 (hémolymphatique): Pentamidine/Suramine. Phase 2 (neurologique): NECT (Nifurtimox-Eflornithine) ou Mélarsoprol. PL OBLIGATOIRE staging. Hospitalisation spécialisée.",
+            "ar": "المرحلة 1: بنتاميدين/سورامين. المرحلة 2: NECT أو ميلارسوبرول. بزل قطني إجباري للتصنيف. دخول المستشفى المتخصص.",
+            "en": "Phase 1: Pentamidine/Suramine. Phase 2: NECT or Melarsoprol. LP MANDATORY staging. Specialized hospitalization."
+        },
+        "tests": ["Ponction lombaire (PL) + cytologie", "Sérologie CATT (Card Agglutination Test)", "IgM LCR très élevées", "Ganglion lymphatique ponction", "Frottis sanguin + Goutte épaisse", "Mini Anion Exchange Centrifugation (mAECT)"],
+        "color": "#ff0040", "icon": "🔴",
+        "cycle": {
+            "fr": "Piqûre tsé-tsé/triatome → Trypomastigotes sanguins → Multiplication → Invasion SNC (phase 2) → Chronicité → Piqûre vecteur → Cycle chez vecteur",
+            "ar": "لدغة تسي تسي/بق ثلاثي ← تريبوماستيغوت دموية ← تكاثر ← غزو الجهاز العصبي (مرحلة 2) ← تمزمن ← لدغة ناقل ← دورة في الناقل",
+            "en": "Tsetse/triatomine bite → Blood trypomastigotes → Multiplication → CNS invasion (phase 2) → Chronicity → Vector bite → Cycle in vector"
+        },
+        "keys": {
+            "fr": "• Forme S/C + membrane ondulante = DIAGNOSTIC\n• Kinétoplaste postérieur (vs Leishmania)\n• PL OBLIGATOIRE = staging phase 1/2\n• IgM LCR >>> 10 mg/L = neuro\n• Ganglion cervical postérieur palpable\n• mAECT = concentration trypanosomes",
+            "ar": "• شكل S/C + غشاء متموج = تشخيصي\n• كينيتوبلاست خلفي (مقابل ليشمانيا)\n• بزل قطني إجباري = تصنيف مرحلة 1/2\n• IgM سائل دماغي شوكي >>> 10 ملغ/لتر = عصبي",
+            "en": "• S/C shape + undulating membrane = DIAGNOSTIC\n• Posterior kinetoplast (vs Leishmania)\n• LP MANDATORY = phase 1/2 staging\n• CSF IgM >>> 10 mg/L = neuro\n• Palpable posterior cervical lymph node"
+        }
+    },
+    "Schistosoma": {
+        "sci": "Schistosoma haematobium / mansoni / japonicum",
+        "morph": {
+            "fr": "Œuf ovoïde 115-170μm avec éperon: terminal proéminent (S. haematobium) ou latéral (S. mansoni). Miracidium mobile cilié visible à l'intérieur si œuf viable.",
+            "ar": "بيضة بيضاوية 115-170 ميكرومتر مع شوكة: طرفية بارزة (S. haematobium) أو جانبية (S. mansoni). ميراسيديوم متحرك هدبي مرئي داخلياً إذا البيضة حية.",
+            "en": "Ovoid egg 115-170μm with spine: prominent terminal (S. haematobium) or lateral (S. mansoni). Motile ciliated miracidium visible inside if viable egg."
+        },
+        "desc": {
+            "fr": "Bilharziose (schistosomiase). S. haematobium: uro-génitale (hématurie terminale). S. mansoni: hépato-intestinale. Transmission: baignade eau douce contaminée (cercaires pénètrent peau).",
+            "ar": "البلهارسيا. S. haematobium: بولي تناسلي (بيلة دموية نهائية). S. mansoni: كبدي معوي. الانتقال: السباحة في ماء عذب ملوث (سركاريا تخترق الجلد).",
+            "en": "Bilharziasis (schistosomiasis). S. haematobium: urogenital (terminal hematuria). S. mansoni: hepato-intestinal. Transmission: freshwater swimming (cercariae penetrate skin)."
+        },
+        "funny": {
+            "fr": "L'œuf avec un dard dangereux ! Les cercaires = micro-torpilles nageuses qui adorent ta peau ! 🏊‍♂️🎯",
+            "ar": "البيضة ذات الشوكة الخطيرة! السركاريا = طوربيدات صغيرة سابحة تعشق جلدك! 🏊‍♂️🎯",
+            "en": "Egg with dangerous spine! Cercariae = micro-torpedoes swimmers who love your skin! 🏊‍♂️🎯"
+        },
+        "risk": "medium",
+        "risk_d": {"fr": "Moyen", "ar": "متوسط", "en": "Medium"},
+        "advice": {
+            "fr": "Praziquantel 40mg/kg dose unique (adultes/enfants >4 ans). S. haematobium: prélever urines de MIDI (10h-14h = pic excrétion). Éviter baignades eaux douces stagnantes zones endémiques.",
+            "ar": "برازيكوانتيل 40 ملغ/كغ جرعة واحدة (بالغين/أطفال >4 سنوات). S. haematobium: جمع بول الظهيرة (10ص-2م = ذروة الإفراز). تجنب السباحة في المياه العذبة الراكدة بالمناطق الموبوءة.",
+            "en": "Praziquantel 40mg/kg single dose (adults/children >4y). S. haematobium: collect MIDDAY urine (10am-2pm = excretion peak). Avoid swimming stagnant freshwater endemic areas."
+        },
+        "tests": ["ECBU urines de midi (S. haematobium)", "EPS concentration Kato-Katz (S. mansoni)", "Sérologie bilharziose", "Échographie vésicale/hépatique", "NFS (éosinophilie +++)", "Biopsie rectale (S. mansoni)"],
+        "color": "#ff9500", "icon": "🟠",
+        "cycle": {
+            "fr": "Œuf émis urines/selles → Eau douce → Miracidium → Mollusque (Bulinus/Biomphalaria) → Cercaires → Pénétration cutanée homme → Schistosomules → Migration → Vers adultes (vaisseaux) → Ponte œufs",
+            "ar": "بيضة مفرزة بول/براز ← ماء عذب ← ميراسيديوم ← رخويات ← سركاريا ← اختراق جلد الإنسان ← شيستوسومول ← هجرة ← ديدان بالغة (أوعية) ← وضع البيض",
+            "en": "Egg shed urine/stool → Freshwater → Miracidium → Snail (Bulinus/Biomphalaria) → Cercariae → Human skin penetration → Schistosomules → Migration → Adult worms (vessels) → Egg laying"
+        },
+        "keys": {
+            "fr": "• S. haematobium: éperon TERMINAL + urines MIDI (10-14h)\n• S. mansoni: éperon LATÉRAL + selles\n• Miracidium mobile = œuf VIABLE\n• Éosinophilie sanguine élevée (20-40%)\n• Échographie: épaississement paroi vessie (S. h.)",
+            "ar": "• S. haematobium: شوكة طرفية + بول الظهيرة (10-14 ساعة)\n• S. mansoni: شوكة جانبية + براز\n• ميراسيديوم متحرك = بيضة حية\n• فرط حمضات مرتفع (20-40%)\n• إيكو: سماكة جدار المثانة",
+            "en": "• S. haematobium: TERMINAL spine + MIDDAY urine (10-14h)\n• S. mansoni: LATERAL spine + stool\n• Motile miracidium = VIABLE egg\n• High eosinophilia (20-40%)\n• Ultrasound: bladder wall thickening"
+        }
+    },
+    "Negative": {
+        "sci": "N/A",
+        "morph": {
+            "fr": "Absence d'éléments parasitaires. Flore bactérienne normale. Leucocytes/hématies éventuels. Débris alimentaires/cellulaires.",
+            "ar": "غياب العناصر الطفيلية. فلورا بكتيرية طبيعية. كريات بيضاء/حمراء محتملة. بقايا طعامية/خلوية.",
+            "en": "No parasitic elements. Normal bacterial flora. Possible leucocytes/RBCs. Food/cellular debris."
+        },
+        "desc": {
+            "fr": "Échantillon négatif. ATTENTION: un seul examen négatif N'EXCLUT PAS le diagnostic (sensibilité EPS direct 50-60%). RÉPÉTER x3 jours consécutifs si suspicion clinique forte.",
+            "ar": "عينة سلبية. تحذير: فحص واحد سلبي لا يستبعد التشخيص (حساسية الفحص المباشر 50-60%). كرر 3 أيام متتالية إذا كان هناك اشتباه سريري قوي.",
+            "en": "Negative sample. WARNING: single negative exam DOES NOT EXCLUDE diagnosis (direct EPS sensitivity 50-60%). REPEAT x3 consecutive days if strong clinical suspicion."
+        },
+        "funny": {
+            "fr": "Rien à signaler ! Mais les parasites sont des ninjas du cache-cache... Prudence ! 🥷🔍",
+            "ar": "لا شيء يذكر! لكن الطفيليات نينجا في الاختباء... حذر! 🥷🔍",
+            "en": "Nothing to report! But parasites are hide-and-seek ninjas... Be careful! 🥷🔍"
+        },
+        "risk": "none",
+        "risk_d": {"fr": "Négatif", "ar": "سلبي", "en": "Negative"},
+        "advice": {
+            "fr": "RAS (Rien À Signaler) sur cet examen. Si symptômes persistent: RÉPÉTER EPS x3 jours consécutifs + envisager sérologies ciblées + autres examens (coproculture, recherche toxines, etc.).",
+            "ar": "لا شيء على هذا الفحص. إذا استمرت الأعراض: كرر الفحص 3 أيام متتالية + فكر في فحوصات مصلية مستهدفة + فحوصات أخرى.",
+            "en": "NAD (Nothing Abnormal Detected) on this exam. If symptoms persist: REPEAT EPS x3 consecutive days + consider targeted serologies + other exams."
+        },
+        "tests": ["Répéter EPS x3 jours consécutifs", "Sérologies ciblées selon clinique", "Coproculture bactérienne", "Recherche toxines Clostridium difficile", "NFS (éosinophilie?)"],
+        "color": "#00ff88", "icon": "🟢",
+        "cycle": {"fr": "N/A", "ar": "غير متوفر", "en": "N/A"},
+        "keys": {
+            "fr": "• État frais + Lugol = négatif\n• Concentration (Ritchie/Willis) = négative\n• RÉPÉTER x3 si clinique évocatrice\n• Sensibilité 1 seul EPS = 50-60%\n• 3 EPS consécutifs = 90% sensibilité",
+            "ar": "• فحص مباشر + لوغول = سلبي\n• تركيز (ريتشي/ويليس) = سلبي\n• كرر 3 مرات إذا كانت الأعراض موحية\n• حساسية فحص واحد = 50-60%\n• 3 فحوصات متتالية = 90% حساسية",
+            "en": "• Fresh + Lugol = negative\n• Concentration = negative\n• REPEAT x3 if suggestive symptoms\n• Single EPS sensitivity = 50-60%\n• 3 consecutive EPS = 90% sensitivity"
+        }
     }
 }
 
-
-def t(key):
-    lang = st.session_state.get("lang", "fr")
-    return TR.get(lang, TR["fr"]).get(key, TR["fr"].get(key, key))
-
-
-def tl(d):
-    if not isinstance(d, dict):
-        return str(d)
-    lang = st.session_state.get("lang", "fr")
-    return d.get(lang, d.get("fr", str(d)))
-
-
-def get_greeting():
-    h = datetime.now().hour
-    if h < 12:
-        return t("greeting_morning")
-    elif h < 18:
-        return t("greeting_afternoon")
-    return t("greeting_evening")
-
+# Tips
+DAILY_TIPS = {
+    "fr": [
+        "💡 Examiner selles < 30 min pour trophozoïtes mobiles.",
+        "💡 Lugol frais chaque semaine pour noyaux nets.",
+        "💡 Frottis mince angle 45° = monocouche parfaite.",
+        "💡 Goutte épaisse 10x plus sensible que frottis.",
+        "💡 Urines MIDI (10-14h) pour S. haematobium.",
+        "💡 Répéter EPS x3 jours consécutifs obligatoire.",
+        "💡 Métronidazole = Amoeba + Giardia + Trichomonas.",
+        "💡 ZN modifié indispensable Cryptosporidium.",
+        "💡 1ère GE négative insuffisante. Répéter 6-12h.",
+        "💡 Éosinophilie = helminthiase. Toujours vérifier.",
+        "💡 Nettoyer objectif x100 après huile immersion.",
+        "💡 Calibrer microscope hebdomadairement.",
+        "💡 Température salle optimale: 20-25°C.",
+        "💡 Lumière naturelle = meilleure qualité image.",
+        "💡 Laver lames: détergent puis alcool 70°.",
+    ],
+    "ar": [
+        "💡 فحص البراز < 30 دقيقة للأطوار المتحركة.",
+        "💡 لوغول طازج كل أسبوع للأنوية الواضحة.",
+        "💡 اللطاخة الرقيقة زاوية 45° = طبقة واحدة.",
+        "💡 القطرة السميكة أكثر حساسية 10 مرات.",
+        "💡 بول الظهيرة (10-14 ساعة) لـ S. haematobium.",
+        "💡 تكرار الفحص 3 أيام متتالية إجباري.",
+        "💡 ميترونيدازول = أميبا + جيارديا.",
+        "💡 ZN معدل ضروري للكريبتوسبوريديوم.",
+        "💡 قطرة سميكة سلبية واحدة غير كافية.",
+        "💡 فرط الحمضات = ديدان. تحقق دائماً.",
+    ],
+    "en": [
+        "💡 Examine stool < 30 min for motile trophozoites.",
+        "💡 Fresh Lugol weekly for clear nuclei.",
+        "💡 Thin smear 45° angle = perfect monolayer.",
+        "💡 Thick drop 10x more sensitive than smear.",
+        "💡 MIDDAY urine (10-14h) for S. haematobium.",
+        "💡 Repeat EPS x3 consecutive days mandatory.",
+        "💡 Metronidazole = Amoeba + Giardia + Trichomonas.",
+        "💡 Modified ZN essential for Cryptosporidium.",
+        "💡 1st negative thick drop insufficient.",
+        "💡 Eosinophilia = helminthiasis. Always check.",
+    ]
+}
 
 # ============================================
-#  DATABASE
+#  SESSION STATE DEFAULTS
 # ============================================
-DB_PATH = "dm_smartlab.db"
+DEFAULTS = {
+    "logged_in": False,
+    "user_id": None,
+    "user_name": "",
+    "user_role": "viewer",
+    "user_full_name": "",
+    "user_email": "",
+    "lang": "fr",
+    "theme": "dark",
+    "demo_seed": None,
+    "heatmap_seed": None,
+    "notifications": [],
+    "unread_count": 0,
+    "quiz_state": {
+        "current": 0,
+        "score": 0,
+        "answered": [],
+        "active": False,
+        "order": [],
+        "wrong": [],
+        "total_q": 0,
+        "finished": False,
+        "selected_answer": None,
+        "show_result": False
+    },
+    "chat_history": [],
+    "voice_text": None,
+    "voice_lang": None,
+    "batch_images": [],
+    "batch_results": [],
+    "current_patient": None,
+    "training_session": None,
+}
 
+for k, v in DEFAULTS.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
 
+# ============================================
+#  DATABASE SETUP
+# ============================================
 @contextmanager
 def get_db():
-    conn = sqlite3.connect(DB_PATH, timeout=10)
+    """Database context manager"""
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     try:
         yield conn
         conn.commit()
-    except Exception:
+    except Exception as e:
         conn.rollback()
-        raise
+        raise e
     finally:
         conn.close()
 
-
 def init_database():
-    with get_db() as c:
-        c.execute("""CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL, full_name TEXT NOT NULL,
-            role TEXT DEFAULT 'viewer', speciality TEXT DEFAULT 'Laboratoire',
-            is_active INTEGER DEFAULT 1, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_login TIMESTAMP, login_count INTEGER DEFAULT 0,
-            failed_attempts INTEGER DEFAULT 0, locked_until TIMESTAMP)""")
-        c.execute("""CREATE TABLE IF NOT EXISTS analyses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL,
-            patient_name TEXT NOT NULL, patient_firstname TEXT, patient_age INTEGER,
-            patient_sex TEXT, patient_weight REAL, sample_type TEXT,
-            microscope_type TEXT, magnification TEXT, preparation_type TEXT,
-            technician1 TEXT, technician2 TEXT, notes TEXT,
-            parasite_detected TEXT NOT NULL, confidence REAL NOT NULL,
-            risk_level TEXT, is_reliable INTEGER, all_predictions TEXT,
-            image_hash TEXT, is_demo INTEGER DEFAULT 0,
+    """Initialize database tables"""
+    with get_db() as conn:
+        # Users table
+        conn.execute("""CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            full_name TEXT NOT NULL,
+            email TEXT UNIQUE,
+            role TEXT DEFAULT 'viewer',
+            speciality TEXT DEFAULT 'Laboratoire',
+            phone TEXT,
+            is_active INTEGER DEFAULT 1,
+            is_verified INTEGER DEFAULT 0,
+            is_2fa_enabled INTEGER DEFAULT 0,
+            failed_attempts INTEGER DEFAULT 0,
+            locked_until TIMESTAMP,
+            last_login TIMESTAMP,
+            login_count INTEGER DEFAULT 0,
+            total_analyses INTEGER DEFAULT 0,
+            accurate_analyses INTEGER DEFAULT 0,
+            points INTEGER DEFAULT 0,
+            level INTEGER DEFAULT 1,
+            language TEXT DEFAULT 'fr',
+            theme TEXT DEFAULT 'dark',
+            notifications_enabled INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        
+        # Patients table
+        conn.execute("""CREATE TABLE IF NOT EXISTS patients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id TEXT UNIQUE NOT NULL,
+            first_name TEXT NOT NULL,
+            last_name TEXT NOT NULL,
+            date_of_birth TIMESTAMP,
+            age INTEGER,
+            sex TEXT,
+            phone TEXT,
+            email TEXT,
+            address TEXT,
+            city TEXT,
+            medical_history TEXT,
+            allergies TEXT,
+            medications TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_visit TIMESTAMP
+        )""")
+        
+        # Analyses table
+        conn.execute("""CREATE TABLE IF NOT EXISTS analyses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            analysis_id TEXT UNIQUE NOT NULL,
+            user_id INTEGER NOT NULL,
+            patient_id INTEGER,
+            sample_type TEXT,
+            collection_date TIMESTAMP,
+            reception_date TIMESTAMP,
+            microscope_type TEXT,
+            magnification TEXT,
+            preparation_type TEXT,
+            technician1 TEXT,
+            technician2 TEXT,
+            parasite_detected TEXT NOT NULL,
+            confidence REAL NOT NULL,
+            risk_level TEXT,
+            is_reliable INTEGER DEFAULT 0,
+            all_predictions TEXT,
+            image_hash TEXT,
+            image_path TEXT,
+            heatmap_path TEXT,
+            model_version TEXT,
+            model_name TEXT,
+            is_demo INTEGER DEFAULT 0,
+            validated INTEGER DEFAULT 0,
+            validated_by TEXT,
+            validation_date TIMESTAMP,
+            validation_notes TEXT,
+            reviewed INTEGER DEFAULT 0,
+            reviewed_by TEXT,
+            review_date TIMESTAMP,
+            review_status TEXT,
+            clinical_notes TEXT,
+            treatment_prescribed TEXT,
+            follow_up_required INTEGER DEFAULT 0,
+            follow_up_date TIMESTAMP,
+            status TEXT DEFAULT 'pending',
             analysis_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            validated INTEGER DEFAULT 0, validated_by TEXT, validation_date TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id))""")
-        c.execute("""CREATE TABLE IF NOT EXISTS activity_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT,
-            action TEXT NOT NULL, details TEXT, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-        c.execute("""CREATE TABLE IF NOT EXISTS quiz_scores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, username TEXT,
-            score INTEGER NOT NULL, total_questions INTEGER NOT NULL,
-            percentage REAL NOT NULL, category TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)""")
-        _make_defaults(c)
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (patient_id) REFERENCES patients(id)
+        )""")
+        
+        # Notifications table
+        conn.execute("""CREATE TABLE IF NOT EXISTS notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            action_url TEXT,
+            action_label TEXT,
+            is_read INTEGER DEFAULT 0,
+            read_at TIMESTAMP,
+            priority INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )""")
+        
+        # Activity log table
+        conn.execute("""CREATE TABLE IF NOT EXISTS activity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            username TEXT,
+            action TEXT NOT NULL,
+            entity_type TEXT,
+            entity_id INTEGER,
+            details TEXT,
+            ip_address TEXT,
+            user_agent TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )""")
+        
+        # Quiz scores table
+        conn.execute("""CREATE TABLE IF NOT EXISTS quiz_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            username TEXT,
+            score INTEGER NOT NULL,
+            total_questions INTEGER NOT NULL,
+            percentage REAL NOT NULL,
+            category TEXT DEFAULT 'general',
+            difficulty TEXT DEFAULT 'mixed',
+            time_taken INTEGER,
+            correct_answers TEXT,
+            wrong_answers TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )""")
+        
+        # Appointments table
+        conn.execute("""CREATE TABLE IF NOT EXISTS appointments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            appointment_date TIMESTAMP NOT NULL,
+            appointment_type TEXT,
+            status TEXT DEFAULT 'scheduled',
+            notes TEXT,
+            reminder_sent INTEGER DEFAULT 0,
+            created_by INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (patient_id) REFERENCES patients(id),
+            FOREIGN KEY (created_by) REFERENCES users(id)
+        )""")
+        
+        # Badges table
+        conn.execute("""CREATE TABLE IF NOT EXISTS badges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            badge_key TEXT UNIQUE NOT NULL,
+            name_fr TEXT,
+            name_ar TEXT,
+            name_en TEXT,
+            description_fr TEXT,
+            description_ar TEXT,
+            description_en TEXT,
+            icon TEXT,
+            color TEXT,
+            requirement TEXT,
+            points INTEGER DEFAULT 10
+        )""")
+        
+        # User badges junction table
+        conn.execute("""CREATE TABLE IF NOT EXISTS user_badges (
+            user_id INTEGER NOT NULL,
+            badge_id INTEGER NOT NULL,
+            earned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, badge_id),
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (badge_id) REFERENCES badges(id)
+        )""")
+        
+        _create_default_data(conn)
 
-
-def _hp(pw):
+def _hash_password(password: str) -> str:
+    """Hash password"""
     if HAS_BCRYPT:
-        return bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode()
-    return hashlib.sha256((pw + SECRET_KEY).encode()).hexdigest()
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    return hashlib.sha256((password + SECRET_KEY).encode()).hexdigest()
 
-
-def _vp(pw, h):
+def _verify_password(password: str, hashed: str) -> bool:
+    """Verify password"""
     if HAS_BCRYPT:
         try:
-            return bcrypt.checkpw(pw.encode(), h.encode())
-        except Exception:
+            return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
+        except:
             pass
-    return hashlib.sha256((pw + SECRET_KEY).encode()).hexdigest() == h
+    return hashlib.sha256((password + SECRET_KEY).encode()).hexdigest() == hashed
 
+def _create_default_data(conn):
+    """Create default users and badges"""
+    cursor = conn.cursor()
+    
+    # Check if admin exists
+    if cursor.execute("SELECT 1 FROM users WHERE username='admin'").fetchone():
+        return
+    
+    # Create default users
+    default_users = [
+        ('admin', 'admin2026', 'Administrateur Système', 'admin@dmsmartlab.dz', 'admin', 'Administration'),
+        ('dhia', 'dhia2026', 'Sebbag Mohamed Dhia Eddine', 'dhia@dmsmartlab.dz', 'admin', 'IA & Architecture'),
+        ('mohamed', 'mohamed2026', 'Ben Sghir Mohamed', 'mohamed@dmsmartlab.dz', 'supervisor', 'Laboratoire & Data'),
+        ('tech1', 'tech2026', 'Technicien Labo 1', 'tech1@dmsmartlab.dz', 'technician', 'Parasitologie'),
+        ('trainee1', 'trainee123', 'Stagiaire 1', 'trainee1@dmsmartlab.dz', 'trainee', 'Formation'),
+        ('demo', 'demo123', 'Utilisateur Démo', 'demo@dmsmartlab.dz', 'viewer', 'Démonstration'),
+    ]
+    
+    for username, password, full_name, email, role, speciality in default_users:
+        cursor.execute("""INSERT INTO users 
+            (username, password_hash, full_name, email, role, speciality, is_active, is_verified)
+            VALUES (?, ?, ?, ?, ?, ?, 1, 1)""",
+            (username, _hash_password(password), full_name, email, role, speciality))
+    
+    # Create default badges
+    default_badges = [
+        ('first_analysis', 'Premier Pas', 'الخطوة الأولى', 'First Step', '🎯', 'Première analyse', 10),
+        ('hundred_analyses', 'Centurion', 'المائوي', 'Centurion', '💯', '100 analyses', 100),
+        ('perfect_month', 'Mois Parfait', 'شهر مثالي', 'Perfect Month', '⭐', 'Mois sans erreur', 50),
+        ('speed_master', 'Flash', 'البرق', 'Flash', '⚡', '10 analyses en 1h', 30),
+        ('critical_finder', 'Détective', 'المحقق', 'Detective', '🔍', '5 cas critiques', 40),
+    ]
+    
+    for badge_data in default_badges:
+        cursor.execute("""INSERT INTO badges 
+            (badge_key, name_fr, name_ar, name_en, icon, description_fr, points)
+            VALUES (?, ?, ?, ?, ?, ?, ?)""", badge_data)
+    
+    conn.commit()
 
-def _make_defaults(c):
-    for u, p, n, r, s in [
-        ("admin", "admin2026", "Administrateur Systeme", "admin", "Administration"),
-        ("dhia", "dhia2026", "Sebbag Mohamed Dhia Eddine", "admin", "IA & Conception"),
-        ("mohamed", "mohamed2026", "Ben Sghir Mohamed", "technician", "Laboratoire"),
-        ("demo", "demo123", "Utilisateur Demo", "viewer", "Demonstration"),
-        ("tech1", "tech2026", "Technicien Labo 1", "technician", "Parasitologie"),
-    ]:
-        if not c.execute("SELECT 1 FROM users WHERE username=?", (u,)).fetchone():
-            c.execute("INSERT INTO users(username,password_hash,full_name,role,speciality) VALUES(?,?,?,?,?)",
-                      (u, _hp(p), n, r, s))
-
-
-def db_login(u, p):
-    with get_db() as c:
-        row = c.execute("SELECT * FROM users WHERE username=? AND is_active=1", (u,)).fetchone()
-        if not row:
-            return None
-        if row["locked_until"]:
-            try:
-                if datetime.now() < datetime.fromisoformat(row["locked_until"]):
-                    return {"error": "locked"}
-                c.execute("UPDATE users SET failed_attempts=0,locked_until=NULL WHERE id=?", (row["id"],))
-            except Exception:
-                pass
-        if _vp(p, row["password_hash"]):
-            c.execute("UPDATE users SET last_login=?,login_count=login_count+1,failed_attempts=0,locked_until=NULL WHERE id=?",
-                      (datetime.now().isoformat(), row["id"]))
-            return dict(row)
-        na = row["failed_attempts"] + 1
-        lk = (datetime.now() + timedelta(minutes=LOCKOUT_MINUTES)).isoformat() if na >= MAX_LOGIN_ATTEMPTS else None
-        c.execute("UPDATE users SET failed_attempts=?,locked_until=? WHERE id=?", (na, lk, row["id"]))
-        return {"error": "wrong", "left": MAX_LOGIN_ATTEMPTS - na}
-
-
-def db_create_user(u, p, n, r="viewer", s=""):
-    with get_db() as c:
-        if c.execute("SELECT 1 FROM users WHERE username=?", (u,)).fetchone():
-            return False
-        c.execute("INSERT INTO users(username,password_hash,full_name,role,speciality) VALUES(?,?,?,?,?)",
-                  (u, _hp(p), n, r, s))
-        return True
-
-
-def db_users():
-    with get_db() as c:
-        return [dict(r) for r in c.execute(
-            "SELECT id,username,full_name,role,is_active,last_login,login_count,speciality FROM users").fetchall()]
-
-
-def db_toggle(uid, active):
-    with get_db() as c:
-        c.execute("UPDATE users SET is_active=? WHERE id=?", (1 if active else 0, uid))
-
-
-def db_chpw(uid, pw):
-    with get_db() as c:
-        c.execute("UPDATE users SET password_hash=? WHERE id=?", (_hp(pw), uid))
-
-
-def db_save_analysis(uid, d):
-    with get_db() as c:
-        c.execute("""INSERT INTO analyses(user_id,patient_name,patient_firstname,patient_age,patient_sex,
-            patient_weight,sample_type,microscope_type,magnification,preparation_type,technician1,technician2,
-            notes,parasite_detected,confidence,risk_level,is_reliable,all_predictions,image_hash,is_demo)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                  (uid, d.get("pn", ""), d.get("pf", ""), d.get("pa", 0), d.get("ps", ""),
-                   d.get("pw", 0), d.get("st", ""), d.get("mt", ""), d.get("mg", ""),
-                   d.get("pt", ""), d.get("t1", ""), d.get("t2", ""), d.get("nt", ""),
-                   d.get("label", "Negative"), d.get("conf", 0), d.get("risk", "none"),
-                   d.get("rel", 0), json.dumps(d.get("preds", {})), d.get("hash", ""),
-                   d.get("demo", 0)))
-        return c.execute("SELECT last_insert_rowid()").fetchone()[0]
-
-
-def db_analyses(uid=None, lim=500):
-    with get_db() as c:
-        if uid:
-            q = "SELECT a.*,u.full_name as analyst FROM analyses a JOIN users u ON a.user_id=u.id WHERE a.user_id=? ORDER BY a.analysis_date DESC LIMIT ?"
-            rows = c.execute(q, (uid, lim)).fetchall()
-        else:
-            q = "SELECT a.*,u.full_name as analyst FROM analyses a JOIN users u ON a.user_id=u.id ORDER BY a.analysis_date DESC LIMIT ?"
-            rows = c.execute(q, (lim,)).fetchall()
-        return [dict(r) for r in rows]
-
-
-def db_stats(uid=None):
-    with get_db() as c:
-        w = "WHERE user_id=?" if uid else ""
-        p = (uid,) if uid else ()
-        tot = c.execute(f"SELECT COUNT(*) FROM analyses {w}", p).fetchone()[0]
-        if uid:
-            rel = c.execute("SELECT COUNT(*) FROM analyses WHERE user_id=? AND is_reliable=1", (uid,)).fetchone()[0]
-        else:
-            rel = c.execute("SELECT COUNT(*) FROM analyses WHERE is_reliable=1").fetchone()[0]
-        para = c.execute(f"SELECT parasite_detected,COUNT(*) as n FROM analyses {w} GROUP BY parasite_detected ORDER BY n DESC", p).fetchall()
-        avg = c.execute(f"SELECT AVG(confidence) FROM analyses {w}", p).fetchone()[0] or 0
-        return {"total": tot, "reliable": rel, "verify": tot - rel,
-                "parasites": [dict(x) for x in para], "avg": round(avg, 1),
-                "top": para[0]["parasite_detected"] if para else "N/A"}
-
-
-def db_trends(days=30):
-    with get_db() as c:
-        return [dict(r) for r in c.execute("""
-            SELECT DATE(analysis_date) as day,parasite_detected,COUNT(*) as count,AVG(confidence) as avg_conf
-            FROM analyses WHERE analysis_date>=date('now',?) GROUP BY day,parasite_detected ORDER BY day
-        """, (f"-{days} days",)).fetchall()]
-
-
-def db_log(uid, uname, action, details=""):
-    try:
-        with get_db() as c:
-            c.execute("INSERT INTO activity_log(user_id,username,action,details) VALUES(?,?,?,?)",
-                      (uid, uname, action, details))
-    except Exception:
-        pass
-
-
-def db_logs(lim=300):
-    with get_db() as c:
-        return [dict(r) for r in c.execute("SELECT * FROM activity_log ORDER BY timestamp DESC LIMIT ?", (lim,)).fetchall()]
-
-
-def db_quiz_save(uid, un, sc, tot, pct, cat="general"):
-    with get_db() as c:
-        c.execute("INSERT INTO quiz_scores(user_id,username,score,total_questions,percentage,category) VALUES(?,?,?,?,?,?)",
-                  (uid, un, sc, tot, pct, cat))
-
-
-def db_leaderboard(lim=20):
-    with get_db() as c:
-        return [dict(r) for r in c.execute(
-            "SELECT username,score,total_questions,percentage,timestamp FROM quiz_scores ORDER BY percentage DESC,timestamp ASC LIMIT ?",
-            (lim,)).fetchall()]
-
-
-def db_validate(aid, who):
-    with get_db() as c:
-        c.execute("UPDATE analyses SET validated=1,validated_by=?,validation_date=? WHERE id=?",
-                  (who, datetime.now().isoformat(), aid))
-
-
+# Initialize database
 init_database()
 
+# ============================================
+#  DATABASE OPERATIONS
+# ============================================
+def db_login(username: str, password: str) -> Optional[Dict]:
+    """Authenticate user"""
+    with get_db() as conn:
+        user = conn.execute(
+            "SELECT * FROM users WHERE username=? AND is_active=1",
+            (username,)
+        ).fetchone()
+        
+        if not user:
+            return None
+        
+        # Check lockout
+        if user['locked_until']:
+            try:
+                if datetime.now() < datetime.fromisoformat(user['locked_until']):
+                    return {"error": "locked", "until": user['locked_until']}
+                conn.execute(
+                    "UPDATE users SET failed_attempts=0, locked_until=NULL WHERE id=?",
+                    (user['id'],)
+                )
+            except:
+                pass
+        
+        # Verify password
+        if not _verify_password(password, user['password_hash']):
+            new_attempts = user['failed_attempts'] + 1
+            locked = None
+            if new_attempts >= MAX_LOGIN_ATTEMPTS:
+                locked = (datetime.now() + timedelta(minutes=LOCKOUT_MINUTES)).isoformat()
+            conn.execute(
+                "UPDATE users SET failed_attempts=?, locked_until=? WHERE id=?",
+                (new_attempts, locked, user['id'])
+            )
+            return {"error": "wrong", "attempts_left": MAX_LOGIN_ATTEMPTS - new_attempts}
+        
+        # Success - update login info
+        conn.execute("""UPDATE users SET 
+            failed_attempts=0, locked_until=NULL, last_login=?, login_count=login_count+1
+            WHERE id=?""",
+            (datetime.now().isoformat(), user['id'])
+        )
+        
+        return dict(user)
+
+def db_create_user(username: str, password: str, full_name: str, 
+                   email: str = None, role: str = "viewer", speciality: str = "") -> bool:
+    """Create new user"""
+    with get_db() as conn:
+        if conn.execute("SELECT 1 FROM users WHERE username=?", (username,)).fetchone():
+            return False
+        
+        conn.execute("""INSERT INTO users 
+            (username, password_hash, full_name, email, role, speciality)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (username, _hash_password(password), full_name, email, role, speciality))
+        return True
+
+def db_get_users() -> List[Dict]:
+    """Get all users"""
+    with get_db() as conn:
+        users = conn.execute("""SELECT id, username, full_name, email, role, speciality,
+            is_active, last_login, login_count, total_analyses, points, level
+            FROM users ORDER BY created_at DESC""").fetchall()
+        return [dict(u) for u in users]
+
+def db_toggle_user(user_id: int, active: bool):
+    """Toggle user active status"""
+    with get_db() as conn:
+        conn.execute("UPDATE users SET is_active=? WHERE id=?", (1 if active else 0, user_id))
+
+def db_change_password(user_id: int, new_password: str):
+    """Change user password"""
+    with get_db() as conn:
+        conn.execute("UPDATE users SET password_hash=? WHERE id=?",
+                    (_hash_password(new_password), user_id))
+
+def db_create_patient(first_name: str, last_name: str, **kwargs) -> str:
+    """Create new patient"""
+    with get_db() as conn:
+        patient_id = f"PAT-{datetime.now().strftime('%Y%m%d')}-{secrets.token_hex(4).upper()}"
+        
+        conn.execute("""INSERT INTO patients 
+            (patient_id, first_name, last_name, age, sex, phone, email, address, city)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (patient_id, first_name, last_name,
+             kwargs.get('age'), kwargs.get('sex'), kwargs.get('phone'),
+             kwargs.get('email'), kwargs.get('address'), kwargs.get('city')))
+        
+        return patient_id
+
+def db_search_patients(query: str) -> List[Dict]:
+    """Search patients"""
+    with get_db() as conn:
+        search = f"%{query}%"
+        patients = conn.execute("""SELECT * FROM patients WHERE
+            patient_id LIKE ? OR first_name LIKE ? OR last_name LIKE ?
+            ORDER BY last_visit DESC LIMIT 50""",
+            (search, search, search)).fetchall()
+        return [dict(p) for p in patients]
+
+def db_create_analysis(user_id: int, data: Dict) -> str:
+    """Create new analysis"""
+    with get_db() as conn:
+        analysis_id = f"ANA-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3).upper()}"
+        
+        conn.execute("""INSERT INTO analyses
+            (analysis_id, user_id, patient_id, sample_type, microscope_type, magnification,
+             preparation_type, technician1, technician2, parasite_detected, confidence,
+             risk_level, is_reliable, all_predictions, image_hash, model_version, is_demo, clinical_notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (analysis_id, user_id, data.get('patient_id'), data.get('sample_type'),
+             data.get('microscope_type'), data.get('magnification'), data.get('preparation_type'),
+             data.get('technician1'), data.get('technician2'), data.get('parasite_detected'),
+             data.get('confidence'), data.get('risk_level'), data.get('is_reliable', 0),
+             json.dumps(data.get('all_predictions', {})), data.get('image_hash'),
+             data.get('model_version', 'v8.0'), data.get('is_demo', 0), data.get('clinical_notes')))
+        
+        # Update user stats
+        conn.execute("""UPDATE users SET total_analyses = total_analyses + 1,
+            accurate_analyses = accurate_analyses + ?
+            WHERE id = ?""", (1 if data.get('is_reliable') else 0, user_id))
+        
+        return analysis_id
+
+def db_get_analyses(user_id: Optional[int] = None, limit: int = 500,
+                   filters: Optional[Dict] = None) -> List[Dict]:
+    """Get analyses with filters"""
+    with get_db() as conn:
+        query = """SELECT a.*, u.full_name as analyst, p.first_name, p.last_name
+                   FROM analyses a
+                   LEFT JOIN users u ON a.user_id = u.id
+                   LEFT JOIN patients p ON a.patient_id = p.id"""
+        
+        conditions = []
+        params = []
+        
+        if user_id:
+            conditions.append("a.user_id = ?")
+            params.append(user_id)
+        
+        if filters:
+            if filters.get('parasite'):
+                conditions.append("a.parasite_detected = ?")
+                params.append(filters['parasite'])
+            if filters.get('date_from'):
+                conditions.append("a.analysis_date >= ?")
+                params.append(filters['date_from'])
+            if filters.get('date_to'):
+                conditions.append("a.analysis_date <= ?")
+                params.append(filters['date_to'])
+            if filters.get('status'):
+                conditions.append("a.status = ?")
+                params.append(filters['status'])
+        
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        
+        query += " ORDER BY a.analysis_date DESC LIMIT ?"
+        params.append(limit)
+        
+        analyses = conn.execute(query, params).fetchall()
+        return [dict(a) for a in analyses]
+
+def db_get_statistics(user_id: Optional[int] = None) -> Dict:
+    """Get statistics"""
+    with get_db() as conn:
+        where = "WHERE user_id = ?" if user_id else ""
+        params = (user_id,) if user_id else ()
+        
+        total = conn.execute(f"SELECT COUNT(*) FROM analyses {where}", params).fetchone()[0]
+        reliable = conn.execute(f"SELECT COUNT(*) FROM analyses {where} AND is_reliable = 1", params).fetchone()[0]
+        
+        top_row = conn.execute(f"""SELECT parasite_detected, COUNT(*) as cnt
+            FROM analyses {where} GROUP BY parasite_detected
+            ORDER BY cnt DESC LIMIT 1""", params).fetchone()
+        top_parasite = top_row['parasite_detected'] if top_row else 'N/A'
+        
+        avg_conf = conn.execute(f"SELECT AVG(confidence) FROM analyses {where}", params).fetchone()[0] or 0
+        
+        parasites = conn.execute(f"""SELECT parasite_detected, COUNT(*) as count
+            FROM analyses {where} GROUP BY parasite_detected""", params).fetchall()
+        
+        return {
+            'total': total,
+            'reliable': reliable,
+            'to_verify': total - reliable,
+            'top_parasite': top_parasite,
+            'avg_confidence': round(avg_conf, 1),
+            'parasite_distribution': [dict(p) for p in parasites]
+        }
+
+def db_get_trends(days: int = 30) -> List[Dict]:
+    """Get analysis trends"""
+    with get_db() as conn:
+        cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+        trends = conn.execute("""SELECT DATE(analysis_date) as date,
+            parasite_detected, COUNT(*) as count, AVG(confidence) as avg_conf
+            FROM analyses WHERE analysis_date >= ?
+            GROUP BY DATE(analysis_date), parasite_detected
+            ORDER BY date""", (cutoff,)).fetchall()
+        return [dict(t) for t in trends]
+
+def db_validate_analysis(analysis_id: int, validator: str, notes: str = ""):
+    """Validate analysis"""
+    with get_db() as conn:
+        conn.execute("""UPDATE analyses SET validated = 1, validated_by = ?,
+            validation_date = ?, validation_notes = ?, status = 'validated'
+            WHERE id = ?""",
+            (validator, datetime.now().isoformat(), notes, analysis_id))
+
+def db_create_notification(user_id: int, type: str, title: str, message: str,
+                          action_url: str = None, priority: int = 1):
+    """Create notification"""
+    with get_db() as conn:
+        conn.execute("""INSERT INTO notifications
+            (user_id, type, title, message, action_url, priority)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, type, title, message, action_url, priority))
+
+def db_get_notifications(user_id: int, unread_only: bool = False) -> List[Dict]:
+    """Get user notifications"""
+    with get_db() as conn:
+        where = "WHERE user_id = ?"
+        if unread_only:
+            where += " AND is_read = 0"
+        notifs = conn.execute(f"""SELECT * FROM notifications {where}
+            ORDER BY created_at DESC LIMIT 50""", (user_id,)).fetchall()
+        return [dict(n) for n in notifs]
+
+def db_mark_notification_read(notif_id: int):
+    """Mark notification as read"""
+    with get_db() as conn:
+        conn.execute("UPDATE notifications SET is_read = 1, read_at = ? WHERE id = ?",
+                    (datetime.now().isoformat(), notif_id))
+
+def db_get_unread_count(user_id: int) -> int:
+    """Get unread notifications count"""
+    with get_db() as conn:
+        return conn.execute(
+            "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0",
+            (user_id,)
+        ).fetchone()[0]
+
+def db_log_activity(user_id: int, username: str, action: str, details: str = "",
+                   entity_type: str = None, entity_id: int = None):
+    """Log user activity"""
+    with get_db() as conn:
+        conn.execute("""INSERT INTO activity_logs
+            (user_id, username, action, entity_type, entity_id, details)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (user_id, username, action, entity_type, entity_id, details))
+
+def db_get_activity_logs(limit: int = 300, user_id: Optional[int] = None) -> List[Dict]:
+    """Get activity logs"""
+    with get_db() as conn:
+        where = "WHERE user_id = ?" if user_id else ""
+        params = (user_id, limit) if user_id else (limit,)
+        logs = conn.execute(f"""SELECT * FROM activity_logs {where}
+            ORDER BY timestamp DESC LIMIT ?""", params).fetchall()
+        return [dict(log) for log in logs]
+
+def db_save_quiz_score(user_id: int, username: str, score: int, total: int,
+                      percentage: float, **kwargs):
+    """Save quiz score"""
+    with get_db() as conn:
+        conn.execute("""INSERT INTO quiz_scores
+            (user_id, username, score, total_questions, percentage, category, difficulty, time_taken)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (user_id, username, score, total, percentage,
+             kwargs.get('category', 'general'), kwargs.get('difficulty', 'mixed'),
+             kwargs.get('time_taken')))
+        
+        # Update user points
+        conn.execute("UPDATE users SET points = points + ? WHERE id = ?",
+                    (score * 10, user_id))
+
+def db_get_leaderboard(limit: int = 20) -> List[Dict]:
+    """Get quiz leaderboard"""
+    with get_db() as conn:
+        scores = conn.execute("""SELECT * FROM quiz_scores
+            ORDER BY percentage DESC, timestamp ASC LIMIT ?""", (limit,)).fetchall()
+        return [dict(s) for s in scores]
 
 # ============================================
-#  PARASITE DATABASE
+#  TRANSLATION SYSTEM
 # ============================================
-PARASITE_DB = {
-    "Amoeba (E. histolytica)": {
-        "sci": "Entamoeba histolytica",
-        "morph": {"fr": "Kyste spherique (10-15um) a 4 noyaux, corps chromatoide en cigare. Trophozoite (20-40um) avec pseudopodes digitiformes et hematies phagocytees.",
-                  "ar": "كيس كروي (10-15 ميكرومتر) بـ 4 أنوية، جسم كروماتيني على شكل سيجار. الطور النشط (20-40 ميكرومتر) مع أقدام كاذبة وكريات حمراء مبتلعة.",
-                  "en": "Spherical cyst (10-15um) with 4 nuclei, cigar-shaped chromatoid body. Trophozoite (20-40um) with pseudopods and phagocytosed RBCs."},
-        "desc": {"fr": "Protozoaire responsable de l'amibiase intestinale et extra-intestinale. Transmission feco-orale.",
-                 "ar": "طفيلي أولي مسؤول عن الأميبيا المعوية والخارج معوية. الانتقال عبر الفم-البراز.",
-                 "en": "Protozoan causing intestinal and extra-intestinal amebiasis. Fecal-oral transmission."},
-        "funny": {"fr": "Le ninja des intestins ! Il mange des globules rouges au petit-dejeuner !",
-                  "ar": "نينجا الأمعاء! يأكل كريات الدم الحمراء في الفطور!",
-                  "en": "The intestinal ninja! Eats red blood cells for breakfast!"},
-        "risk": "high",
-        "risk_d": {"fr": "Eleve", "ar": "مرتفع", "en": "High"},
-        "advice": {"fr": "Metronidazole 500mg x3/j (7-10j) + Amoebicide de contact (Intetrix). Controle EPS J15/J30.",
-                   "ar": "ميترونيدازول 500 ملغ 3 مرات يوميا (7-10 أيام) + أميبيسيد تلامسي. مراقبة بعد 15 و 30 يوم.",
-                   "en": "Metronidazole 500mg x3/d (7-10d) + Contact amoebicide (Intetrix). Follow-up D15/D30."},
-        "tests": ["Serologie amibienne", "Echographie hepatique", "NFS+CRP", "PCR Entamoeba", "Scanner abdominal"],
-        "color": "#ff0040", "icon": "🔴",
-        "cycle": {"fr": "Kyste ingere -> Excystation -> Trophozoite -> Invasion tissulaire -> Enkystement -> Emission",
-                  "ar": "كيس مبتلع ثم انفكاس ثم طور نشط ثم غزو أنسجة ثم تكيس ثم إخراج",
-                  "en": "Ingested cyst -> Excystation -> Trophozoite -> Tissue invasion -> Encystation -> Emission"},
-        "keys": {"fr": "E. histolytica vs E. dispar: seule histolytica phagocyte les hematies\nKyste 4 noyaux (vs E. coli 8)\nCorps chromatoides en cigare\nMobilite directionnelle",
-                 "ar": "E. histolytica مقابل E. dispar: فقط histolytica تبتلع الكريات\nكيس 4 أنوية مقابل 8 لـ E. coli\nأجسام كروماتينية سيجارية\nحركة اتجاهية",
-                 "en": "E. histolytica vs E. dispar: only histolytica phagocytoses RBCs\n4 nuclei cyst (vs E. coli 8)\nCigar chromatoid bodies\nDirectional motility"}
-    },
-    "Giardia": {
-        "sci": "Giardia lamblia (intestinalis)",
-        "morph": {"fr": "Trophozoite piriforme en cerf-volant (12-15um), 2 noyaux (face de hibou), disque adhesif, 4 paires de flagelles. Kyste ovoide (8-12um) a 4 noyaux.",
-                  "ar": "الطور النشط كمثري شكل طائرة ورقية (12-15 ميكرومتر)، نواتان (وجه البومة)، قرص لاصق، 4 أزواج أسواط. كيس بيضاوي (8-12 ميكرومتر) بـ 4 أنوية.",
-                  "en": "Pear-shaped kite trophozoite (12-15um), 2 nuclei (owl face), adhesive disk, 4 flagella pairs. Ovoid cyst (8-12um) with 4 nuclei."},
-        "desc": {"fr": "Flagelle du duodenum. Diarrhee graisseuse chronique, malabsorption. Transmission hydrique.",
-                 "ar": "سوطي الاثني عشر. إسهال دهني مزمن، سوء امتصاص. انتقال عبر الماء.",
-                 "en": "Duodenal flagellate. Chronic greasy diarrhea, malabsorption. Waterborne."},
-        "funny": {"fr": "Il te fixe avec ses lunettes de soleil ! Un touriste qui refuse de partir !",
-                  "ar": "ينظر إليك بنظارته الشمسية! سائح يرفض المغادرة!",
-                  "en": "It stares at you with sunglasses! A tourist who refuses to leave!"},
-        "risk": "medium", "risk_d": {"fr": "Moyen", "ar": "متوسط", "en": "Medium"},
-        "advice": {"fr": "Metronidazole 250mg x3/j (5j) OU Tinidazole 2g dose unique.",
-                   "ar": "ميترونيدازول 250 ملغ 3 مرات يوميا (5 أيام) أو تينيدازول 2 غرام جرعة واحدة.",
-                   "en": "Metronidazole 250mg x3/d (5d) OR Tinidazole 2g single dose."},
-        "tests": ["Ag Giardia ELISA", "Test malabsorption", "EPS x3", "PCR Giardia"],
-        "color": "#ff9500", "icon": "🟠",
-        "cycle": {"fr": "Kyste ingere -> Excystation duodenale -> Trophozoite -> Adhesion -> Multiplication -> Enkystement",
-                  "ar": "كيس مبتلع ثم انفكاس ثم طور نشط ثم التصاق ثم تكاثر ثم تكيس",
-                  "en": "Ingested cyst -> Duodenal excystation -> Trophozoite -> Adhesion -> Multiplication -> Encystation"},
-        "keys": {"fr": "Forme cerf-volant pathognomonique\n2 noyaux = face de hibou\nDisque adhesif au Lugol\nMobilite feuille morte",
-                 "ar": "شكل طائرة ورقية مميز\nنواتان = وجه البومة\nالقرص اللاصق باللوغول\nحركة ورقة ميتة",
-                 "en": "Pathognomonic kite shape\n2 nuclei = owl face\nAdhesive disk on Lugol\nFalling leaf motility"}
-    },
-    "Leishmania": {
-        "sci": "Leishmania infantum / major / tropica",
-        "morph": {"fr": "Amastigotes ovoides (2-5um) intracellulaires dans macrophages. Noyau + kinetoplaste (MGG).",
-                  "ar": "أماستيغوت بيضاوية (2-5 ميكرومتر) داخل البلاعم. نواة + كينيتوبلاست.",
-                  "en": "Ovoid amastigotes (2-5um) intracellular in macrophages. Nucleus + kinetoplast (MGG)."},
-        "desc": {"fr": "Transmis par phlebotome. Cutanee ou viscerale. Algerie: L. infantum (nord), L. major (sud).",
-                 "ar": "ينتقل عبر ذبابة الرمل. جلدية أو حشوية. الجزائر: L. infantum (شمال)، L. major (جنوب).",
-                 "en": "Sandfly-transmitted. Cutaneous or visceral. Algeria: L. infantum (north), L. major (south)."},
-        "funny": {"fr": "Petit mais costaud ! Il squatte les macrophages !",
-                  "ar": "صغير لكن قوي! يحتل البلاعم!",
-                  "en": "Small but tough! Squats in macrophages!"},
-        "risk": "high", "risk_d": {"fr": "Eleve", "ar": "مرتفع", "en": "High"},
-        "advice": {"fr": "Cutanee: Glucantime IM. Viscerale: Amphotericine B liposomale. MDO en Algerie.",
-                   "ar": "جلدية: غلوكانتيم عضليا. حشوية: أمفوتيريسين ب. تبليغ إجباري.",
-                   "en": "Cutaneous: Glucantime IM. Visceral: Liposomal Amphotericin B. Notifiable."},
-        "tests": ["IDR Montenegro", "Serologie", "Ponction medullaire", "Biopsie+MGG", "PCR Leishmania", "NFS"],
-        "color": "#ff0040", "icon": "🔴",
-        "cycle": {"fr": "Piqure phlebotome -> Promastigotes -> Phagocytose -> Amastigotes -> Multiplication -> Lyse",
-                  "ar": "لدغة ذبابة رمل ثم بروماستيغوت ثم بلعمة ثم أماستيغوت ثم تكاثر ثم تحلل",
-                  "en": "Sandfly bite -> Promastigotes -> Phagocytosis -> Amastigotes -> Multiplication -> Lysis"},
-        "keys": {"fr": "Amastigotes 2-5um intracellulaires\nNoyau + kinetoplaste MGG\nCulture NNN\nPCR = gold standard",
-                 "ar": "أماستيغوت 2-5 ميكرومتر داخل خلوية\nنواة + كينيتوبلاست\nزراعة NNN\nPCR المعيار الذهبي",
-                 "en": "2-5um intracellular amastigotes\nNucleus+kinetoplast MGG\nNNN culture\nPCR=gold standard"}
-    },
-    "Plasmodium": {
-        "sci": "Plasmodium falciparum / vivax / ovale / malariae",
-        "morph": {"fr": "P. falciparum: anneau bague a chaton, gametocytes en banane. P. vivax: trophozoite amiboide, granulations Schuffner.",
-                  "ar": "P. falciparum: حلقة خاتم، خلايا جنسية موزية. P. vivax: طور نشط أميبي، حبيبات شوفنر.",
-                  "en": "P. falciparum: signet ring, banana gametocytes. P. vivax: amoeboid trophozoite, Schuffner dots."},
-        "desc": {"fr": "URGENCE MEDICALE ! Paludisme. P. falciparum = le plus mortel. Anophele femelle.",
-                 "ar": "حالة طوارئ طبية! ملاريا. P. falciparum = الأكثر فتكا. أنثى الأنوفيل.",
-                 "en": "MEDICAL EMERGENCY! Malaria. P. falciparum = most lethal. Female Anopheles."},
-        "funny": {"fr": "Il demande le mariage a tes globules ! Gametocytes en banane = le clown du microscope !",
-                  "ar": "يطلب الزواج من كرياتك! خلايا جنسية موزية = مهرج المجهر!",
-                  "en": "Proposes to your blood cells! Banana gametocytes = microscope clown!"},
-        "risk": "critical", "risk_d": {"fr": "URGENCE", "ar": "طوارئ", "en": "EMERGENCY"},
-        "advice": {"fr": "HOSPITALISATION ! ACT. Quinine IV si grave. Parasitemie /4-6h.",
-                   "ar": "دخول المستشفى! ACT. كينين وريدي إذا خطير.",
-                   "en": "HOSPITALIZATION! ACT. IV Quinine if severe. Parasitemia /4-6h."},
-        "tests": ["TDR Paludisme", "Frottis+GE URGENCE", "Parasitemie quantitative", "NFS", "Bilan hepato-renal", "Glycemie"],
-        "color": "#7f1d1d", "icon": "🚨",
-        "cycle": {"fr": "Piqure anophele -> Sporozoites -> Hepatocytes -> Merozoites -> Hematies -> Gametocytes",
-                  "ar": "لدغة الأنوفيل ثم سبوروزويت ثم خلايا كبدية ثم ميروزويت ثم كريات حمراء ثم خلايا جنسية",
-                  "en": "Anopheles bite -> Sporozoites -> Hepatocytes -> Merozoites -> RBCs -> Gametocytes"},
-        "keys": {"fr": "URGENCE moins de 2h\nFrottis: espece\nGE: 10x sensible\nPlus de 2 pourcent = grave\nBanane = P. falciparum",
-                 "ar": "طوارئ أقل من ساعتين\nلطاخة: النوع\nGE: أكثر حساسية 10 مرات\nأكثر من 2 بالمئة = خطير\nموز = P. falciparum",
-                 "en": "URGENT under 2h\nSmear: species\nThick drop: 10x sensitive\nOver 2 percent=severe\nBanana=P. falciparum"}
-    },
-    "Trypanosoma": {
-        "sci": "Trypanosoma brucei gambiense / rhodesiense / cruzi",
-        "morph": {"fr": "Forme S/C (15-30um), flagelle libre, membrane ondulante, kinetoplaste posterieur.",
-                  "ar": "شكل S/C (15-30 ميكرومتر)، سوط حر، غشاء متموج، كينيتوبلاست خلفي.",
-                  "en": "S/C shape (15-30um), free flagellum, undulating membrane, posterior kinetoplast."},
-        "desc": {"fr": "Maladie du sommeil (tse-tse) ou Chagas (triatome). Phase hemolymphatique puis neurologique.",
-                 "ar": "مرض النوم (تسي تسي) أو شاغاس (بق ثلاثي). مرحلة دموية ثم عصبية.",
-                 "en": "Sleeping sickness (tsetse) or Chagas (triatomine). Hemolymphatic then neurological phase."},
-        "funny": {"fr": "Il court avec sa membrane ondulante ! La tse-tse = le pire taxi !",
-                  "ar": "يركض بغشائه المتموج! ذبابة تسي تسي = أسوأ تاكسي!",
-                  "en": "Runs with its undulating membrane! Tsetse = worst taxi!"},
-        "risk": "high", "risk_d": {"fr": "Eleve", "ar": "مرتفع", "en": "High"},
-        "advice": {"fr": "Phase 1: Pentamidine. Phase 2: NECT/Melarsoprol. PL obligatoire.",
-                   "ar": "المرحلة 1: بنتاميدين. المرحلة 2: NECT. بزل قطني إجباري.",
-                   "en": "Phase 1: Pentamidine. Phase 2: NECT/Melarsoprol. LP mandatory."},
-        "tests": ["Ponction lombaire", "Serologie CATT", "IgM", "Suc ganglionnaire", "NFS"],
-        "color": "#ff0040", "icon": "🔴",
-        "cycle": {"fr": "Piqure tse-tse -> Trypomastigotes -> Sang -> Phase 1 -> BHE -> Phase 2 neurologique",
-                  "ar": "لدغة تسي تسي ثم تريبوماستيغوت ثم دم ثم مرحلة 1 ثم حاجز دماغي ثم مرحلة 2 عصبية",
-                  "en": "Tsetse bite -> Trypomastigotes -> Blood -> Phase 1 -> BBB -> Phase 2 neurological"},
-        "keys": {"fr": "Forme S/C + membrane ondulante\nKinetoplaste posterieur\nIgM tres elevee\nPL staging",
-                 "ar": "شكل S/C + غشاء متموج\nكينيتوبلاست خلفي\nIgM مرتفع جدا\nتصنيف بالبزل القطني",
-                 "en": "S/C+undulating membrane\nPosterior kinetoplast\nVery high IgM\nLP staging"}
-    },
-    "Schistosoma": {
-        "sci": "Schistosoma haematobium / mansoni / japonicum",
-        "morph": {"fr": "Oeuf ovoide (115-170um): eperon terminal (S. haematobium) ou lateral (S. mansoni). Miracidium mobile.",
-                  "ar": "بيضة بيضاوية (115-170 ميكرومتر): شوكة طرفية (S. haematobium) أو جانبية (S. mansoni). ميراسيديوم متحرك.",
-                  "en": "Ovoid egg (115-170um): terminal spine (S. haematobium) or lateral (S. mansoni). Motile miracidium."},
-        "desc": {"fr": "Bilharziose. S. haematobium: uro-genitale. S. mansoni: hepato-intestinale.",
-                 "ar": "البلهارسيا. S. haematobium: بولي تناسلي. S. mansoni: كبدي معوي.",
-                 "en": "Schistosomiasis. S. haematobium: urogenital. S. mansoni: hepato-intestinal."},
-        "funny": {"fr": "L'oeuf avec un dard ! Les cercaires = micro-torpilles !",
-                  "ar": "البيضة ذات الشوكة! السركاريا = طوربيدات صغيرة!",
-                  "en": "Egg with a stinger! Cercariae = micro-torpedoes!"},
-        "risk": "medium", "risk_d": {"fr": "Moyen", "ar": "متوسط", "en": "Medium"},
-        "advice": {"fr": "Praziquantel 40mg/kg dose unique. S. haematobium: urines de midi.",
-                   "ar": "برازيكوانتيل 40 ملغ لكل كغ جرعة واحدة. S. haematobium: بول الظهيرة.",
-                   "en": "Praziquantel 40mg/kg single dose. S. haematobium: midday urine."},
-        "tests": ["ECBU midi", "Serologie", "Echo vesicale/hepatique", "NFS+eosinophilie", "Biopsie rectale"],
-        "color": "#ff9500", "icon": "🟠",
-        "cycle": {"fr": "Oeuf -> Miracidium -> Mollusque -> Cercaire -> Penetration cutanee -> Vers adultes -> Ponte",
-                  "ar": "بيضة ثم ميراسيديوم ثم رخويات ثم سركاريا ثم اختراق الجلد ثم ديدان بالغة ثم وضع البيض",
-                  "en": "Egg -> Miracidium -> Snail -> Cercaria -> Skin penetration -> Adult worms -> Egg laying"},
-        "keys": {"fr": "S.h: eperon TERMINAL, urines MIDI\nS.m: eperon LATERAL, selles\nMiracidium vivant\nEosinophilie elevee",
-                 "ar": "S.h: شوكة طرفية، بول الظهيرة\nS.m: شوكة جانبية، براز\nميراسيديوم حي\nفرط الحمضات",
-                 "en": "S.h: TERMINAL spine, MIDDAY urine\nS.m: LATERAL spine, stool\nLiving miracidium\nHigh eosinophilia"}
-    },
-    "Negative": {
-        "sci": "N/A",
-        "morph": {"fr": "Absence d'elements parasitaires. Flore bacterienne normale.",
-                  "ar": "غياب العناصر الطفيلية. فلورا بكتيرية طبيعية.",
-                  "en": "No parasitic elements. Normal bacterial flora."},
-        "desc": {"fr": "Echantillon negatif. Un seul negatif n'exclut pas (sensibilite 50-60%). Repeter x3.",
-                 "ar": "عينة سلبية. فحص واحد سلبي لا يستبعد (حساسية 50-60%). كرر 3 مرات.",
-                 "en": "Negative sample. Single negative doesn't exclude (50-60% sensitivity). Repeat x3."},
-        "funny": {"fr": "Rien a signaler ! Mais les parasites sont des maitres du cache-cache !",
-                  "ar": "لا شيء يذكر! لكن الطفيليات أساتذة في الاختباء!",
-                  "en": "Nothing to report! But parasites are hide-and-seek masters!"},
-        "risk": "none", "risk_d": {"fr": "Negatif", "ar": "سلبي", "en": "Negative"},
-        "advice": {"fr": "RAS. Repeter x3 si suspicion clinique.",
-                   "ar": "لا شيء. كرر 3 مرات إذا كان هناك اشتباه.",
-                   "en": "Clear. Repeat x3 if clinical suspicion."},
-        "tests": ["Repeter EPS x3", "Serologie ciblee", "NFS (eosinophilie?)"],
-        "color": "#00ff88", "icon": "🟢",
-        "cycle": {"fr": "N/A", "ar": "غير متوفر", "en": "N/A"},
-        "keys": {"fr": "Direct+Lugol negatif\nConcentration negative\nRepeter x3",
-                 "ar": "مباشر+لوغول سلبي\nتركيز سلبي\nكرر 3 مرات",
-                 "en": "Direct+Lugol negative\nConcentration negative\nRepeat x3"}
-    }
-}
-
-CLASS_NAMES = list(PARASITE_DB.keys())
-
-
-# ============================================
-#  QUIZ QUESTIONS (60+)
-# ============================================
-def mq(fr, ar, en):
-    return {"fr": fr, "ar": ar, "en": en}
-
-
-QUIZ_QUESTIONS = [
-    {"q": mq("Quel parasite presente une bague a chaton dans les hematies?", "أي طفيلي يظهر شكل الخاتم في كريات الدم الحمراء؟", "Which parasite shows a signet ring in RBCs?"),
-     "opts": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "ans": 1, "cat": "Hematozoaires",
-     "expl": mq("Plasmodium: bague a chaton au stade trophozoite jeune.", "البلازموديوم: شكل الخاتم في مرحلة الطور النشط.", "Plasmodium: signet ring at young trophozoite stage.")},
-    {"q": mq("Le kyste mature de Giardia possede combien de noyaux?", "كم عدد أنوية كيس الجيارديا الناضج؟", "How many nuclei does a mature Giardia cyst have?"),
-     "opts": ["2", "4", "6", "8"], "ans": 1, "cat": "Protozoaires",
-     "expl": mq("4 noyaux. Le trophozoite en a 2.", "4 أنوية. الطور النشط له نواتان.", "4 nuclei. Trophozoite has 2.")},
-    {"q": mq("Quel parasite est transmis par le phlebotome?", "أي طفيلي ينتقل عبر ذبابة الرمل؟", "Which parasite is sandfly-transmitted?"),
-     "opts": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"], "ans": 2, "cat": "Vecteurs",
-     "expl": mq("Leishmania = phlebotome.", "ليشمانيا = ذبابة الرمل.", "Leishmania = sandfly.")},
-    {"q": mq("L'eperon terminal caracterise:", "الشوكة الطرفية تميز:", "Terminal spine characterizes:"),
-     "opts": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"], "ans": 1, "cat": "Helminthes",
-     "expl": mq("S. haematobium=terminal, S. mansoni=lateral.", "S. haematobium=طرفية, S. mansoni=جانبية.", "S. haematobium=terminal, S. mansoni=lateral.")},
-    {"q": mq("Examen urgent suspicion paludisme?", "الفحص الطارئ عند الاشتباه بالملاريا؟", "Urgent exam for malaria?"),
-     "opts": ["Coproculture", "ECBU", "Goutte epaisse+Frottis", "Serologie"], "ans": 2, "cat": "Diagnostic",
-     "expl": mq("GE+Frottis = reference urgente.", "قطرة سميكة+لطاخة = المرجع.", "Thick drop+Smear = urgent reference.")},
-    {"q": mq("E. histolytica se distingue par:", "يتميز E. histolytica بـ:", "E. histolytica distinguished by:"),
-     "opts": ["Flagelles", "Hematies phagocytees", "Membrane ondulante", "Kinetoplaste"], "ans": 1, "cat": "Morphologie",
-     "expl": mq("Hematies phagocytees = pathogenicite.", "الكريات المبتلعة = معيار المرضية.", "Phagocytosed RBCs = pathogenicity.")},
-    {"q": mq("Chagas est causee par:", "مرض شاغاس يسببه:", "Chagas is caused by:"),
-     "opts": ["T. b. gambiense", "T. cruzi", "L. donovani", "P. vivax"], "ans": 1, "cat": "Protozoaires",
-     "expl": mq("T. cruzi transmis par triatomes.", "T. cruzi عبر البق الثلاثي.", "T. cruzi by triatomines.")},
-    {"q": mq("Colorant pour amastigotes Leishmania?", "ملون أماستيغوت الليشمانيا؟", "Stain for Leishmania amastigotes?"),
-     "opts": ["Ziehl-Neelsen", "Gram", "MGG/Giemsa", "Lugol"], "ans": 2, "cat": "Techniques",
-     "expl": mq("MGG = noyau + kinetoplaste.", "MGG = نواة + كينيتوبلاست.", "MGG = nucleus + kinetoplast.")},
-    {"q": mq("Traitement reference bilharziose?", "العلاج المرجعي للبلهارسيا؟", "Reference treatment schistosomiasis?"),
-     "opts": ["Chloroquine", "Metronidazole", "Praziquantel", "Albendazole"], "ans": 2, "cat": "Therapeutique",
-     "expl": mq("Praziquantel = choix numero 1.", "برازيكوانتيل = الخيار الأول.", "Praziquantel = 1st choice.")},
-    {"q": mq("Face de hibou observee chez:", "وجه البومة عند:", "Owl face observed in:"),
-     "opts": ["Plasmodium", "Giardia", "Amoeba", "Trypanosoma"], "ans": 1, "cat": "Morphologie",
-     "expl": mq("2 noyaux symetriques Giardia.", "نواتان متماثلتان للجيارديا.", "2 symmetrical Giardia nuclei.")},
-    {"q": mq("Technique de Ritchie:", "تقنية ريتشي:", "Ritchie technique:"),
-     "opts": ["Coloration", "Concentration diphasique", "Culture", "Serologie"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Formol-ether = concentration.", "فورمول-إيثر = تركيز.", "Formalin-ether = concentration.")},
-    {"q": mq("Le Lugol met en evidence:", "اللوغول يظهر:", "Lugol highlights:"),
-     "opts": ["Flagelles", "Noyaux des kystes", "Hematies", "Bacteries"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Iode colore glycogene et noyaux.", "اليود يلون الغليكوجين والأنوية.", "Iodine stains glycogen+nuclei.")},
-    {"q": mq("x100 necessite:", "العدسة x100 تحتاج:", "x100 requires:"),
-     "opts": ["Eau", "Huile d'immersion", "Alcool", "Serum"], "ans": 1, "cat": "Microscopie",
-     "expl": mq("Huile augmente indice refraction.", "الزيت يزيد معامل الانكسار.", "Oil increases refractive index.")},
-    {"q": mq("Scotch-test Graham recherche:", "اختبار غراهام يبحث عن:", "Graham test looks for:"),
-     "opts": ["Giardia", "Enterobius", "Ascaris", "Taenia"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Oeufs d'oxyure peri-anaux.", "بيض الأكسيور حول الشرج.", "Pinworm eggs perianal.")},
-    {"q": mq("Coloration Cryptosporidium?", "تلوين الكريبتوسبوريديوم؟", "Cryptosporidium staining?"),
-     "opts": ["Lugol", "Ziehl-Neelsen modifie", "MGG", "Gram"], "ans": 1, "cat": "Techniques",
-     "expl": mq("ZN modifie = oocystes roses.", "ZN معدل = أكياس بيضية وردية.", "Modified ZN = pink oocysts.")},
-    {"q": mq("Oeuf d'Ascaris:", "بيضة الأسكاريس:", "Ascaris egg:"),
-     "opts": ["Avec eperon", "Mamelonne", "Opercule", "En citron"], "ans": 1, "cat": "Helminthes",
-     "expl": mq("Ovoide, mamelonne, coque epaisse.", "بيضاوي، حليمي، قشرة سميكة.", "Ovoid, mammillated, thick shell.")},
-    {"q": mq("Scolex T. solium possede:", "رأس T. solium يحتوي:", "T. solium scolex has:"),
-     "opts": ["Ventouses seules", "Crochets seuls", "Ventouses+crochets", "Bothridies"], "ans": 2, "cat": "Helminthes",
-     "expl": mq("Arme = ventouses + crochets.", "مسلحة = ممصات + خطاطيف.", "Armed = suckers + hooks.")},
-    {"q": mq("Eosinophilie sanguine oriente vers:", "فرط الحمضات يوجه نحو:", "Eosinophilia points to:"),
-     "opts": ["Bacteries", "Helminthiase", "Virose", "Paludisme"], "ans": 1, "cat": "Diagnostic",
-     "expl": mq("Eosinophilie = helminthiase.", "فرط الحمضات = ديدان.", "Eosinophilia = helminthiasis.")},
-    {"q": mq("Vecteur du paludisme?", "ناقل الملاريا؟", "Malaria vector?"),
-     "opts": ["Aedes", "Culex", "Anopheles", "Simulium"], "ans": 2, "cat": "Epidemiologie",
-     "expl": mq("Anophele femelle.", "أنثى الأنوفيل.", "Female Anopheles.")},
-    {"q": mq("Kyste hydatique du a:", "الكيس العداري يسببه:", "Hydatid cyst caused by:"),
-     "opts": ["T. saginata", "E. granulosus", "Fasciola", "Toxocara"], "ans": 1, "cat": "Helminthes",
-     "expl": mq("Echinococcus granulosus (chien).", "Echinococcus granulosus (كلب).", "Echinococcus granulosus (dog).")},
-    {"q": mq("Membrane ondulante:", "الغشاء المتموج:", "Undulating membrane:"),
-     "opts": ["Giardia", "Trypanosoma", "Leishmania", "Plasmodium"], "ans": 1, "cat": "Morphologie",
-     "expl": mq("Trypanosoma = membrane ondulante.", "تريبانوسوما = غشاء متموج.", "Trypanosoma = undulating membrane.")},
-    {"q": mq("Gametocyte banane:", "خلية جنسية موز:", "Banana gametocyte:"),
-     "opts": ["P. vivax", "P. falciparum", "P. malariae", "P. ovale"], "ans": 1, "cat": "Hematozoaires",
-     "expl": mq("Pathognomonique P. falciparum.", "مميز لـ P. falciparum.", "Pathognomonic P. falciparum.")},
-    {"q": mq("Kyste E. coli: noyaux?", "كيس E. coli: أنوية؟", "E. coli cyst: nuclei?"),
-     "opts": ["4", "6", "8", "12"], "ans": 2, "cat": "Morphologie",
-     "expl": mq("E. coli=8, E. histolytica=4.", "E. coli=8, E. histolytica=4.", "E. coli=8, E. histolytica=4.")},
-    {"q": mq("Metronidazole inefficace contre:", "ميترونيدازول غير فعال ضد:", "Metronidazole ineffective against:"),
-     "opts": ["E. histolytica", "Giardia", "Helminthes", "Trichomonas"], "ans": 2, "cat": "Therapeutique",
-     "expl": mq("Anti-protozoaire, pas anti-helminthique.", "مضاد أوليات، ليس مضاد ديدان.", "Anti-protozoal, not anti-helminthic.")},
-    {"q": mq("Albendazole est:", "الألبندازول:", "Albendazole is:"),
-     "opts": ["Anti-protozoaire", "Anti-helminthique", "Antibiotique", "Antifongique"], "ans": 1, "cat": "Therapeutique",
-     "expl": mq("Large spectre helminthes.", "واسع الطيف ضد الديدان.", "Broad spectrum anti-helminthic.")},
-    {"q": mq("Paludisme grave:", "ملاريا خطيرة:", "Severe malaria:"),
-     "opts": ["Chloroquine", "Artesunate IV", "Metronidazole", "Praziquantel"], "ans": 1, "cat": "Therapeutique",
-     "expl": mq("Artesunate IV = 1ere ligne OMS.", "أرتيسونات وريدي = الخط الأول.", "IV Artesunate = WHO 1st line.")},
-    {"q": mq("Fievre+frissons retour Afrique?", "حمى+قشعريرة بعد العودة من إفريقيا؟", "Fever+chills returning from Africa?"),
-     "opts": ["Amibiase", "Paludisme", "Bilharziose", "Giardiose"], "ans": 1, "cat": "Cas clinique",
-     "expl": mq("Paludisme jusqu'a preuve du contraire.", "ملاريا حتى يثبت العكس.", "Malaria until proven otherwise.")},
-    {"q": mq("Hematurie+baignade eau douce:", "بيلة دموية+سباحة ماء عذب:", "Hematuria+freshwater swimming:"),
-     "opts": ["Giardiose", "Paludisme", "Bilharziose urinaire", "Amibiase"], "ans": 2, "cat": "Cas clinique",
-     "expl": mq("S. haematobium.", "S. haematobium.", "S. haematobium.")},
-    {"q": mq("Diarrhee graisseuse enfant:", "إسهال دهني عند طفل:", "Greasy diarrhea child:"),
-     "opts": ["Amibiase", "Giardiose", "Cryptosporidiose", "Salmonellose"], "ans": 1, "cat": "Cas clinique",
-     "expl": mq("Giardia = malabsorption frequente.", "الجيارديا = سوء امتصاص شائع.", "Giardia = common malabsorption.")},
-    {"q": mq("Toxoplasma: hote definitif?", "التوكسوبلازما: المضيف النهائي؟", "Toxoplasma: definitive host?"),
-     "opts": ["Homme", "Chat", "Chien", "Moustique"], "ans": 1, "cat": "Epidemiologie",
-     "expl": mq("Chat = cycle sexue.", "القط = الدورة الجنسية.", "Cat = sexual cycle.")},
-    {"q": mq("Willis utilise:", "تقنية ويليس تستخدم:", "Willis uses:"),
-     "opts": ["Formol-ether", "NaCl sature (flottation)", "Acide-alcool", "Lugol"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Flottation NaCl sature.", "تعويم في NaCl مشبع.", "Saturated NaCl flotation.")},
-]
-
-
-# ============================================
-#  CHATBOT KNOWLEDGE BASE
-# ============================================
-CHAT_KB = {}
-for pname, pdata in PARASITE_DB.items():
-    if pname == "Negative":
-        continue
-    key = pname.lower().split("(")[0].strip().split(" ")[0].lower()
-    CHAT_KB[key] = {
-        "fr": f"**{pname}** ({pdata['sci']})\n\n**Morphologie:** {pdata['morph'].get('fr','')}\n\n**Description:** {pdata['desc'].get('fr','')}\n\n**Traitement:** {pdata['advice'].get('fr','')}\n\n**Examens:** {', '.join(pdata.get('tests',[]))}\n\n{pdata['funny'].get('fr','')}",
-        "ar": f"**{pname}** ({pdata['sci']})\n\n**المورفولوجيا:** {pdata['morph'].get('ar','')}\n\n**الوصف:** {pdata['desc'].get('ar','')}\n\n**العلاج:** {pdata['advice'].get('ar','')}\n\n{pdata['funny'].get('ar','')}",
-        "en": f"**{pname}** ({pdata['sci']})\n\n**Morphology:** {pdata['morph'].get('en','')}\n\n**Description:** {pdata['desc'].get('en','')}\n\n**Treatment:** {pdata['advice'].get('en','')}\n\n{pdata['funny'].get('en','')}"
-    }
-    sci_key = pdata["sci"].lower().split("/")[0].strip().split(" ")[-1]
-    if sci_key not in CHAT_KB:
-        CHAT_KB[sci_key] = CHAT_KB[key]
-
-CHAT_KB.update({
-    "amibe": CHAT_KB.get("amoeba", {}),
-    "malaria": CHAT_KB.get("plasmodium", {}),
-    "paludisme": CHAT_KB.get("plasmodium", {}),
-    "bilharziose": CHAT_KB.get("schistosoma", {}),
-    "microscope": {
-        "fr": "**Microscopie:**\n\n- **x10:** Reperage\n- **x40:** Oeufs/kystes\n- **x100 (immersion):** Plasmodium, Leishmania\n\nNettoyer l'objectif x100 apres l'huile!\n\n**Types:** Optique, Fluorescence, Contraste de phase, Fond noir, Confocal",
-        "ar": "**المجهرية:**\n\n- **x10:** استطلاع\n- **x40:** بيض/أكياس\n- **x100 (غمر):** بلازموديوم، ليشمانيا\n\nنظف العدسة x100 بعد الزيت!",
-        "en": "**Microscopy:**\n\n- **x10:** Survey\n- **x40:** Eggs/cysts\n- **x100 (immersion):** Plasmodium, Leishmania\n\nClean x100 after oil!"
-    },
-    "coloration": {
-        "fr": "**Colorations:**\n\n- **Lugol:** Noyaux kystes, glycogene\n- **MGG/Giemsa:** Parasites sanguins\n- **Ziehl-Neelsen modifie:** Cryptosporidium\n- **Trichrome:** Parasites intestinaux\n- **Hematoxyline ferrique:** Amibes\n\nLugol frais chaque semaine!",
-        "ar": "**التلوينات:**\n\n- **لوغول:** أنوية الأكياس\n- **MGG/جيمزا:** طفيليات الدم\n- **ZN معدل:** كريبتوسبوريديوم",
-        "en": "**Staining:**\n\n- **Lugol:** Cyst nuclei\n- **MGG/Giemsa:** Blood parasites\n- **Modified ZN:** Cryptosporidium"
-    },
-    "concentration": {
-        "fr": "**Techniques concentration:**\n\n- **Ritchie (Formol-ether):** REFERENCE\n- **Willis (NaCl sature):** Flottation\n- **Kato-Katz:** Semi-quantitatif\n- **Baermann:** Larves Strongyloides\n- **MIF:** Fixation+coloration",
-        "ar": "**تقنيات التركيز:**\n\n- **ريتشي:** المرجع\n- **ويليس:** تعويم\n- **كاتو-كاتز:** شبه كمي",
-        "en": "**Concentration:**\n\n- **Ritchie:** REFERENCE\n- **Willis:** Flotation\n- **Kato-Katz:** Semi-quantitative"
-    },
-    "selle": {
-        "fr": "**EPS Complet:**\n\n1. **Macroscopique:** Consistance, couleur, sang, mucus\n2. **Direct:** NaCl 0.9% + Lugol\n3. **Concentration:** Ritchie/Willis\n\nExaminer dans 30 min!\nRepeter x3!\n\nSelles liquides = trophozoites, Formees = kystes",
-        "ar": "**فحص البراز:**\n\n1. عياني\n2. مباشر: NaCl + لوغول\n3. تركيز: ريتشي/ويليس\n\nفحص خلال 30 دقيقة!\nكرر 3 مرات!",
-        "en": "**Complete Stool Exam:**\n\n1. Macroscopic\n2. Direct: NaCl + Lugol\n3. Concentration: Ritchie/Willis\n\nExamine within 30 min!\nRepeat x3!"
-    },
-    "hygiene": {
-        "fr": "**Prevention:**\n\n- Lavage mains 30s\n- Eau potable\n- Cuisson viande plus de 65C\n- Moustiquaires\n- Eviter eaux stagnantes\n- Lavage fruits/legumes\n\n80% des parasitoses sont evitables!",
-        "ar": "**الوقاية:**\n\n- غسل اليدين 30 ثانية\n- ماء صالح للشرب\n- طهي اللحم أكثر من 65 درجة\n- ناموسيات\n\n80% من الطفيليات يمكن الوقاية منها!",
-        "en": "**Prevention:**\n\n- Handwashing 30s\n- Safe water\n- Cook meat over 65C\n- Mosquito nets\n\n80% of parasitoses are preventable!"
-    },
-    "traitement": {
-        "fr": "**Traitements:**\n\n- **Metronidazole:** Amoeba+Giardia+Trichomonas\n- **Albendazole:** Helminthes large spectre\n- **Praziquantel:** Schistosoma+Cestodes\n- **Artesunate/ACT:** Paludisme\n- **Glucantime:** Leishmaniose cutanee\n- **Ivermectine:** Filarioses\n- **Niclosamide:** Tenias",
-        "ar": "**العلاجات:**\n\n- **ميترونيدازول:** أميبا+جيارديا\n- **ألبندازول:** ديدان\n- **برازيكوانتيل:** بلهارسيا+شريطيات\n- **أرتيسونات:** ملاريا",
-        "en": "**Treatments:**\n\n- **Metronidazole:** Amoeba+Giardia+Trichomonas\n- **Albendazole:** Broad spectrum helminths\n- **Praziquantel:** Schistosoma+Cestodes\n- **Artesunate/ACT:** Malaria"
-    },
-    "toxoplasma": {
-        "fr": "**Toxoplasma gondii**\n\n- Tachyzoite en arc (4-8um)\n- Hote definitif: **Chat**\n- DANGER femme enceinte seronegative!\n- Diagnostic: Serologie IgG/IgM, avidite\n- Prevention: Cuisson viande, lavage crudites, eviter litiere",
-        "ar": "**توكسوبلازما**\n\nالمضيف النهائي: القط\nخطر على الحامل!\nالتشخيص: مصلية IgG/IgM",
-        "en": "**Toxoplasma gondii**\n\n- Definitive host: **Cat**\n- DANGER seronegative pregnant!\n- Diagnosis: IgG/IgM serology"
-    },
-    "ascaris": {
-        "fr": "**Ascaris lumbricoides**\n\n- Ver rond 15-35cm!\n- Oeuf mamelonne 60-70um\n- Cycle: Migration hepato-pulmonaire\n- Syndrome Loffler: Toux+eosinophilie\n- Traitement: Albendazole 400mg",
-        "ar": "**الأسكاريس**\n\nدودة 15-35 سم!\nبيضة حليمية\nالعلاج: ألبندازول 400 ملغ",
-        "en": "**Ascaris lumbricoides**\n\n- Round worm 15-35cm!\n- Mammillated egg 60-70um\n- Treatment: Albendazole 400mg"
-    },
-    "taenia": {
-        "fr": "**Taenia**\n\n- **T. saginata:** Boeuf, inerme\n- **T. solium:** Porc, arme -> cysticercose!\n- Diagnostic: Anneaux dans selles\n- Traitement: Praziquantel/Niclosamide",
-        "ar": "**الشريطية**\n\nT. saginata: بقر\nT. solium: خنزير -> كيسات مذنبة!\nالعلاج: برازيكوانتيل",
-        "en": "**Taenia**\n\n- T. saginata: Beef\n- T. solium: Pork -> cysticercosis!\n- Treatment: Praziquantel"
-    },
-    "oxyure": {
-        "fr": "**Oxyure (Enterobius)**\n\n- Ver blanc environ 1cm\n- Prurit anal nocturne enfant\n- Scotch-test MATIN avant toilette!\n- Traitement: Flubendazole + traiter TOUTE la famille!",
-        "ar": "**الأكسيور**\n\nدودة بيضاء حوالي 1 سم\nحكة شرجية ليلية\nاختبار غراهام صباحا!\nعلاج كل العائلة!",
-        "en": "**Pinworm (Enterobius)**\n\n- White worm about 1cm\n- Nocturnal anal pruritus in children\n- Graham test MORNING!\n- Treat WHOLE family!"
-    },
-    "cryptosporidium": {
-        "fr": "**Cryptosporidium**\n\n- Oocyste 4-6um (tres petit!)\n- ZN modifie = rose sur vert\n- Diarrhee immunodeprime (VIH)\n- Traitement: Nitazoxanide",
-        "ar": "**كريبتوسبوريديوم**\n\nكيس 4-6 ميكرومتر\nZN معدل\nإسهال عند ناقصي المناعة",
-        "en": "**Cryptosporidium**\n\n- Oocyst 4-6um\n- Modified ZN\n- Diarrhea in immunocompromised\n- Nitazoxanide"
-    },
-    "bonjour": {"fr": "Bonjour! Comment puis-je vous aider?", "ar": "مرحبا! كيف أقدر أساعدك؟", "en": "Hello! How can I help?"},
-    "salut": {"fr": "Salut! Posez votre question!", "ar": "مرحبا!", "en": "Hi!"},
-    "hello": {"fr": "Hello!", "ar": "مرحبا!", "en": "Hello! Type any parasite name!"},
-    "merci": {"fr": "De rien!", "ar": "عفوا!", "en": "You're welcome!"},
-    "aide": {
-        "fr": "**Je connais:**\n\nParasites: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, Toxoplasma, Ascaris, Taenia, Oxyure, Cryptosporidium...\n\nTechniques: microscope, coloration, concentration, selle\n\nTraitements: traitement\n\nPrevention: hygiene\n\nTapez un mot-cle!",
-        "ar": "**أعرف:**\n\nالطفيليات: الأميبا، الجيارديا، البلازموديوم، الليشمانيا...\n\nالتقنيات: microscope, coloration, concentration\n\nاكتب كلمة مفتاحية!",
-        "en": "**I know:**\n\nParasites: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, Toxoplasma, Ascaris...\n\nTechniques: microscope, staining, concentration\n\nType a keyword!"
-    },
-    "help": {"fr": "Tapez aide!", "ar": "اكتب مساعدة!", "en": "Type any parasite name or technique!"},
-})
-
-
-def chatbot_reply(msg):
+def t(key: str) -> str:
+    """Translate key"""
     lang = st.session_state.get("lang", "fr")
-    low = msg.lower().strip()
-    for key, resp in CHAT_KB.items():
-        if key in low:
-            if isinstance(resp, dict):
-                return resp.get(lang, resp.get("fr", str(resp)))
-            return str(resp)
-    for pname, pdata in PARASITE_DB.items():
-        if pname == "Negative":
-            continue
-        checks = [pname.lower(), pdata["sci"].lower()]
-        for check in checks:
-            for word in check.split():
-                if len(word) > 3 and word in low:
-                    entry = CHAT_KB.get(pname.lower().split("(")[0].strip().split(" ")[0].lower())
-                    if entry:
-                        return entry.get(lang, entry.get("fr", ""))
-    return t("chat_not_found")
+    return TRANSLATIONS.get(lang, TRANSLATIONS["fr"]).get(key, TRANSLATIONS["fr"].get(key, key))
 
+def tl(d: Any) -> str:
+    """Translate dict"""
+    if not isinstance(d, dict):
+        return str(d)
+    lang = st.session_state.get("lang", "fr")
+    return d.get(lang, d.get("fr", str(d)))
 
-# ============================================
-#  DAILY TIPS
-# ============================================
-TIPS = {
-    "fr": [
-        "Examiner les selles dans les 30 min pour voir les trophozoites mobiles.",
-        "Le Lugol met en evidence les noyaux des kystes. Fraichement prepare!",
-        "Frottis mince: angle 45 degres pour monocouche parfaite.",
-        "Goutte epaisse = 10x plus sensible que frottis mince.",
-        "Urines de midi pour S. haematobium (pic d'excretion).",
-        "Repeter EPS x3 a quelques jours d'intervalle.",
-        "Metronidazole = Amoeba + Giardia + Trichomonas !",
-        "ZN modifie indispensable pour Cryptosporidium.",
-        "1ere GE negative ne suffit pas. Repeter a 6-12h.",
-        "Eosinophilie = helminthiase. Toujours verifier!",
-    ],
-    "ar": [
-        "افحص البراز خلال 30 دقيقة لرؤية الأطوار النشطة المتحركة.",
-        "اللوغول يظهر أنوية الأكياس. تحضير طازج!",
-        "القطرة السميكة أكثر حساسية 10 مرات من اللطاخة.",
-        "بول الظهيرة لـ S. haematobium.",
-        "كرر EPS 3 مرات بفاصل عدة أيام.",
-        "ميترونيدازول = أميبا + جيارديا + تريكوموناس!",
-    ],
-    "en": [
-        "Examine stool within 30 min to see motile trophozoites.",
-        "Lugol highlights cyst nuclei. Freshly prepared!",
-        "Thick drop = 10x more sensitive than thin smear.",
-        "Midday urine for S. haematobium.",
-        "Repeat stool exam x3 at intervals.",
-        "Metronidazole = Amoeba + Giardia + Trichomonas!",
-    ]
+TRANSLATIONS = {
+    "fr": {
+        "app_title": "DM Smart Lab AI",
+        "login": "Connexion",
+        "logout": "Déconnexion",
+        "home": "Accueil",
+        "scan": "Scan & Analyse",
+        "batch": "Analyse par Lots",
+        "patients": "Patients",
+        "encyclopedia": "Encyclopédie",
+        "dashboard": "Tableau de Bord",
+        "quiz": "Quiz",
+        "chatbot": "DM Bot",
+        "compare": "Comparaison",
+        "training": "Formation",
+        "admin": "Administration",
+        "about": "À Propos",
+        "username": "Identifiant",
+        "password": "Mot de passe",
+        "connect": "SE CONNECTER",
+        "patient_info": "Informations Patient",
+        "lab_info": "Informations Laboratoire",
+        "result": "Résultat",
+        "confidence": "Confiance",
+        "download_pdf": "Télécharger PDF",
+        "save": "Sauvegarder",
+        "language": "Langue",
+        "notifications": "Notifications",
+        "settings": "Paramètres",
+        "search": "Rechercher",
+        "filter": "Filtrer",
+        "export": "Exporter",
+        "import": "Importer",
+    },
+    "ar": {
+        "app_title": "مختبر DM الذكي",
+        "login": "تسجيل الدخول",
+        "logout": "تسجيل الخروج",
+        "home": "الرئيسية",
+        "scan": "مسح وتحليل",
+        "batch": "تحليل دفعات",
+        "patients": "المرضى",
+        "encyclopedia": "الموسوعة",
+        "dashboard": "لوحة التحكم",
+        "quiz": "اختبار",
+        "chatbot": "DM بوت",
+        "compare": "مقارنة",
+        "training": "تدريب",
+        "admin": "الإدارة",
+        "about": "حول",
+        "username": "اسم المستخدم",
+        "password": "كلمة المرور",
+        "connect": "تسجيل الدخول",
+        "patient_info": "معلومات المريض",
+        "lab_info": "معلومات المخبر",
+        "result": "النتيجة",
+        "confidence": "الثقة",
+        "download_pdf": "تحميل PDF",
+        "save": "حفظ",
+        "language": "اللغة",
+        "notifications": "الإشعارات",
+        "settings": "الإعدادات",
+        "search": "بحث",
+        "filter": "تصفية",
+        "export": "تصدير",
+        "import": "استيراد",
+    },
+    "en": {
+        "app_title": "DM Smart Lab AI",
+        "login": "Login",
+        "logout": "Logout",
+        "home": "Home",
+        "scan": "Scan & Analysis",
+        "batch": "Batch Analysis",
+        "patients": "Patients",
+        "encyclopedia": "Encyclopedia",
+        "dashboard": "Dashboard",
+        "quiz": "Quiz",
+        "chatbot": "DM Bot",
+        "compare": "Comparison",
+        "training": "Training",
+        "admin": "Administration",
+        "about": "About",
+        "username": "Username",
+        "password": "Password",
+        "connect": "CONNECT",
+        "patient_info": "Patient Information",
+        "lab_info": "Laboratory Information",
+        "result": "Result",
+        "confidence": "Confidence",
+        "download_pdf": "Download PDF",
+        "save": "Save",
+        "language": "Language",
+        "notifications": "Notifications",
+        "settings": "Settings",
+        "search": "Search",
+        "filter": "Filter",
+        "export": "Export",
+        "import": "Import",
+    }
 }
 
 # ============================================
-#  SESSION STATE
+#  HELPER FUNCTIONS
 # ============================================
-DEFAULTS = {
-    "logged_in": False, "user_id": None, "user_name": "", "user_role": "viewer",
-    "user_full_name": "", "lang": "fr",
-    "demo_seed": None, "heatmap_seed": None,
-    "quiz_state": {"current": 0, "score": 0, "answered": [], "active": False, "order": [], "wrong": []},
-    "chat_history": [],
-    "voice_text": None, "voice_lang": None,
-}
-for k, v in DEFAULTS.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
+def has_permission(permission: str) -> bool:
+    """Check if user has permission"""
+    role = st.session_state.get("user_role", "viewer")
+    permissions = ROLES.get(role, {}).get("permissions", [])
+    return "all" in permissions or permission in permissions
 
+def get_role_level() -> int:
+    """Get user role level"""
+    role = st.session_state.get("user_role", "viewer")
+    return ROLES.get(role, {}).get("level", 0)
+
+def risk_color(level: str) -> str:
+    """Get risk color"""
+    return RISK_COLORS.get(level, "#888")
+
+def get_greeting() -> str:
+    """Get time-based greeting"""
+    h = datetime.now().hour
+    if h < 12:
+        return {"fr": "Bonjour", "ar": "صباح الخير", "en": "Good morning"}.get(st.session_state.lang, "Bonjour")
+    elif h < 18:
+        return {"fr": "Bon après-midi", "ar": "مساء الخير", "en": "Good afternoon"}.get(st.session_state.lang, "Bonjour")
+    return {"fr": "Bonsoir", "ar": "مساء الخير", "en": "Good evening"}.get(st.session_state.lang, "Bonsoir")
+
+# Continue in Part 2...
+# ============================================
+#  IMAGE PROCESSING FUNCTIONS
+# ============================================
+def process_image(img: Image.Image, brightness: float = 1.0, 
+                 contrast: float = 1.0, saturation: float = 1.0) -> Image.Image:
+    """Apply image adjustments"""
+    result = img.copy()
+    if brightness != 1.0:
+        result = ImageEnhance.Brightness(result).enhance(brightness)
+    if contrast != 1.0:
+        result = ImageEnhance.Contrast(result).enhance(contrast)
+    if saturation != 1.0:
+        result = ImageEnhance.Color(result).enhance(saturation)
+    return result
+
+def zoom_image(img: Image.Image, zoom_level: float) -> Image.Image:
+    """Zoom into image"""
+    if zoom_level <= 1.0:
+        return img
+    w, h = img.size
+    new_w, new_h = int(w / zoom_level), int(h / zoom_level)
+    left = (w - new_w) // 2
+    top = (h - new_h) // 2
+    return img.crop((left, top, left + new_w, top + new_h)).resize((w, h), Image.LANCZOS)
+
+def apply_filter_thermal(img: Image.Image) -> Image.Image:
+    """Apply thermal filter"""
+    gray = ImageOps.grayscale(ImageEnhance.Contrast(img).enhance(1.5))
+    return ImageOps.colorize(gray.filter(ImageFilter.GaussianBlur(1)), 
+                            black="navy", white="yellow", mid="red")
+
+def apply_filter_edges(img: Image.Image) -> Image.Image:
+    """Apply edge detection filter"""
+    return ImageOps.grayscale(img).filter(ImageFilter.FIND_EDGES)
+
+def apply_filter_enhanced(img: Image.Image) -> Image.Image:
+    """Apply enhancement filter"""
+    return ImageEnhance.Contrast(
+        ImageEnhance.Sharpness(img).enhance(2.0)
+    ).enhance(2.0)
+
+def apply_filter_negative(img: Image.Image) -> Image.Image:
+    """Apply negative filter"""
+    return ImageOps.invert(img.convert("RGB"))
+
+def apply_filter_emboss(img: Image.Image) -> Image.Image:
+    """Apply emboss filter"""
+    return img.filter(ImageFilter.EMBOSS)
+
+def generate_heatmap(img: Image.Image, seed: Optional[int] = None) -> Image.Image:
+    """Generate AI attention heatmap"""
+    im = img.copy().convert("RGB")
+    w, h = im.size
+    
+    if seed is None:
+        seed = hash(im.tobytes()[:1000]) % 1000000
+    
+    rng = random.Random(seed)
+    
+    # Edge detection for focus areas
+    edges_array = np.array(ImageOps.grayscale(im).filter(ImageFilter.FIND_EDGES))
+    
+    # Find hotspot
+    block_size = 32
+    max_score = 0
+    best_x, best_y = w // 2, h // 2
+    
+    for y in range(0, h - block_size, block_size // 2):
+        for x in range(0, w - block_size, block_size // 2):
+            score = np.mean(edges_array[y:y+block_size, x:x+block_size])
+            if score > max_score:
+                max_score = score
+                best_x = x + block_size // 2
+                best_y = y + block_size // 2
+    
+    # Add randomness
+    best_x = max(50, min(w - 50, best_x + rng.randint(-w // 10, w // 10)))
+    best_y = max(50, min(h - 50, best_y + rng.randint(-h // 10, h // 10)))
+    
+    # Create heatmap overlay
+    heatmap = Image.new('RGBA', (w, h), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(heatmap)
+    
+    max_radius = min(w, h) // 3
+    
+    for radius in range(max_radius, 0, -2):
+        alpha = max(0, min(200, int(200 * (1 - radius / max_radius))))
+        ratio = radius / max_radius
+        
+        if ratio > 0.65:
+            color = (0, 255, 100, alpha // 4)
+        elif ratio > 0.35:
+            color = (255, 255, 0, alpha // 2)
+        else:
+            color = (255, 0, 60, alpha)
+        
+        draw.ellipse([best_x - radius, best_y - radius, 
+                     best_x + radius, best_y + radius], fill=color)
+    
+    return Image.alpha_composite(im.convert('RGBA'), heatmap).convert('RGB')
+
+def compare_images(img1: Image.Image, img2: Image.Image) -> Dict:
+    """Compare two images"""
+    # Resize for comparison
+    size = (128, 128)
+    a1 = np.array(img1.convert("RGB").resize(size)).astype(float)
+    a2 = np.array(img2.convert("RGB").resize(size)).astype(float)
+    
+    # MSE
+    mse = np.mean((a1 - a2) ** 2)
+    
+    # SSIM calculation
+    mean1, mean2 = np.mean(a1), np.mean(a2)
+    std1, std2 = np.std(a1), np.std(a2)
+    covariance = np.mean((a1 - mean1) * (a2 - mean2))
+    
+    c1 = (0.01 * 255) ** 2
+    c2 = (0.03 * 255) ** 2
+    
+    ssim = ((2 * mean1 * mean2 + c1) * (2 * covariance + c2)) / \
+           ((mean1**2 + mean2**2 + c1) * (std1**2 + std2**2 + c2))
+    
+    return {
+        "mse": round(mse, 2),
+        "ssim": round(float(ssim), 4),
+        "similarity": round(float(ssim) * 100, 1)
+    }
+
+def pixel_difference(img1: Image.Image, img2: Image.Image) -> Image.Image:
+    """Calculate pixel-wise difference"""
+    size = (256, 256)
+    a1 = np.array(img1.convert("RGB").resize(size)).astype(float)
+    a2 = np.array(img2.convert("RGB").resize(size)).astype(float)
+    
+    diff = np.abs(a1 - a2).astype(np.uint8)
+    diff = np.clip(diff * 3, 0, 255).astype(np.uint8)
+    
+    return Image.fromarray(diff)
 
 # ============================================
-#  UTILITY FUNCTIONS
+#  AI ENGINE
 # ============================================
-def has_role(lvl):
-    return ROLES.get(st.session_state.get("user_role", "viewer"), {}).get("level", 0) >= lvl
+@st.cache_resource(show_spinner=False)
+def load_ai_model():
+    """Load AI model"""
+    model = None
+    model_name = None
+    model_type = None
+    
+    try:
+        import tensorflow as tf
+        
+        # Try to load .keras or .h5 model
+        for ext in [".keras", ".h5"]:
+            files = [f for f in os.listdir(".") if f.endswith(ext) and os.path.isfile(f)]
+            if files:
+                model_name = files[0]
+                model = tf.keras.models.load_model(model_name, compile=False)
+                model_type = "keras"
+                break
+        
+        # Try to load .tflite model
+        if model is None:
+            files = [f for f in os.listdir(".") if f.endswith(".tflite") and os.path.isfile(f)]
+            if files:
+                model_name = files[0]
+                model = tf.lite.Interpreter(model_path=model_name)
+                model.allocate_tensors()
+                model_type = "tflite"
+    except Exception as e:
+        st.sidebar.warning(f"⚠️ Model loading failed: {e}")
+    
+    return model, model_name, model_type
 
-
-def risk_color(lv):
-    return {"critical": "#ff0040", "high": "#ff3366", "medium": "#ff9500", "low": "#00e676", "none": "#00ff88"}.get(lv, "#888")
-
-
-def risk_pct(lv):
-    return {"critical": 100, "high": 80, "medium": 50, "low": 25, "none": 0}.get(lv, 0)
-
+def predict_parasite(model, model_type: str, img: Image.Image, 
+                     seed: Optional[int] = None) -> Dict:
+    """Predict parasite from image"""
+    result = {
+        "label": "Negative",
+        "confidence": 0,
+        "predictions": {},
+        "is_reliable": False,
+        "is_demo": False,
+        "risk": "none"
+    }
+    
+    risk_map = {
+        "Plasmodium": "critical",
+        "Amoeba (E. histolytica)": "high",
+        "Leishmania": "high",
+        "Trypanosoma": "high",
+        "Giardia": "medium",
+        "Schistosoma": "medium",
+        "Negative": "none"
+    }
+    
+    # Demo mode (no model)
+    if model is None:
+        result["is_demo"] = True
+        if seed is None:
+            seed = random.randint(0, 999999)
+        
+        rng = random.Random(seed)
+        label = rng.choice(CLASS_NAMES)
+        confidence = rng.randint(55, 98)
+        
+        # Generate predictions
+        all_preds = {}
+        remaining = 100.0 - confidence
+        for cls in CLASS_NAMES:
+            if cls == label:
+                all_preds[cls] = float(confidence)
+            else:
+                all_preds[cls] = round(rng.uniform(0, remaining / max(1, len(CLASS_NAMES) - 1)), 1)
+        
+        result.update({
+            "label": label,
+            "confidence": confidence,
+            "predictions": all_preds,
+            "is_reliable": confidence >= CONFIDENCE_THRESHOLD,
+            "risk": risk_map.get(label, "none")
+        })
+        
+        return result
+    
+    # Real AI prediction
+    try:
+        import tensorflow as tf
+        
+        # Preprocess image
+        img_resized = ImageOps.fit(img.convert("RGB"), MODEL_INPUT_SIZE, Image.LANCZOS)
+        img_array = np.expand_dims(np.asarray(img_resized).astype(np.float32) / 127.5 - 1.0, 0)
+        
+        # Predict
+        if model_type == "tflite":
+            input_details = model.get_input_details()
+            output_details = model.get_output_details()
+            model.set_tensor(input_details[0]['index'], img_array)
+            model.invoke()
+            predictions = model.get_tensor(output_details[0]['index'])[0]
+        else:
+            predictions = model.predict(img_array, verbose=0)[0]
+        
+        # Process results
+        pred_index = int(np.argmax(predictions))
+        confidence = int(predictions[pred_index] * 100)
+        label = CLASS_NAMES[pred_index] if pred_index < len(CLASS_NAMES) else "Negative"
+        
+        all_preds = {
+            CLASS_NAMES[i]: round(float(predictions[i]) * 100, 1)
+            for i in range(min(len(predictions), len(CLASS_NAMES)))
+        }
+        
+        result.update({
+            "label": label,
+            "confidence": confidence,
+            "predictions": all_preds,
+            "is_reliable": confidence >= CONFIDENCE_THRESHOLD,
+            "risk": risk_map.get(label, "none")
+        })
+        
+    except Exception as e:
+        st.error(f"Prediction error: {e}")
+    
+    return result
 
 # ============================================
-#  VOICE SYSTEM (Web Speech API - Fixed)
+#  PDF GENERATION
+# ============================================
+def sanitize_text(text: str) -> str:
+    """Sanitize text for PDF"""
+    if not text:
+        return ""
+    
+    # Replace special characters
+    replacements = {
+        'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+        'à': 'a', 'â': 'a', 'ä': 'a',
+        'ù': 'u', 'û': 'u', 'ü': 'u',
+        'ô': 'o', 'ö': 'o',
+        'î': 'i', 'ï': 'i',
+        'ç': 'c',
+        'É': 'E', 'È': 'E', 'Ê': 'E',
+        'À': 'A', 'Â': 'A',
+        'Ù': 'U', 'Û': 'U',
+        'Ô': 'O',
+        'Î': 'I',
+        'Ç': 'C',
+        '→': '->',
+        '°': 'o',
+        'µ': 'u',
+        '×': 'x',
+        '±': '+/-',
+        '≥': '>=',
+        '≤': '<=',
+    }
+    
+    result = str(text)
+    for old, new in replacements.items():
+        result = result.replace(old, new)
+    
+    # Remove any remaining non-ASCII
+    result = ''.join(c if ord(c) < 128 else '?' for c in result)
+    
+    return result
+
+class PDFReport(FPDF):
+    """Custom PDF class"""
+    
+    def header(self):
+        # Top gradient bar
+        self.set_fill_color(0, 20, 60)
+        self.rect(0, 0, 210, 4, 'F')
+        self.set_fill_color(0, 180, 255)
+        self.rect(0, 4, 210, 1, 'F')
+        self.ln(8)
+        
+        # Title
+        self.set_font("Arial", "B", 14)
+        self.set_text_color(0, 60, 150)
+        self.cell(0, 8, f"DM SMART LAB AI v{APP_VERSION}", 0, 0, "L")
+        self.set_font("Arial", "", 8)
+        self.set_text_color(100, 100, 100)
+        self.cell(0, 8, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), 0, 1, "R")
+        
+        # Subtitle
+        self.set_font("Arial", "I", 7)
+        self.set_text_color(120, 120, 120)
+        self.cell(0, 4, sanitize_text("Systeme de Diagnostic Parasitologique par IA"), 0, 1, "L")
+        self.cell(0, 4, "INFSPM - Ouargla, Algerie", 0, 1, "L")
+        
+        # Line
+        self.set_draw_color(0, 180, 255)
+        self.set_line_width(0.5)
+        self.line(10, self.get_y() + 2, 200, self.get_y() + 2)
+        self.ln(6)
+    
+    def footer(self):
+        self.set_y(-20)
+        self.set_fill_color(0, 20, 60)
+        self.rect(0, 282, 210, 15, 'F')
+        self.set_y(-15)
+        self.set_font("Arial", "I", 7)
+        self.set_text_color(200, 200, 200)
+        self.cell(0, 4, sanitize_text("AVERTISSEMENT: Validation par professionnel de sante requise"), 0, 1, "C")
+        self.set_font("Arial", "", 6)
+        self.cell(0, 4, f"Page {self.page_no()}/{{nb}} | DM Smart Lab AI | INFSPM Ouargla", 0, 0, "C")
+
+def generate_pdf_report(patient_data: Dict, lab_data: Dict, 
+                        result: Dict, parasite_label: str) -> bytes:
+    """Generate PDF report"""
+    if not HAS_FPDF:
+        return b""
+    
+    pdf = PDFReport()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_auto_page_break(True, 25)
+    
+    # Report ID
+    report_id = hashlib.md5(
+        f"{patient_data.get('Nom', '')}{datetime.now().isoformat()}".encode()
+    ).hexdigest()[:10].upper()
+    
+    # Title
+    pdf.set_font("Arial", "B", 18)
+    pdf.set_text_color(0, 40, 100)
+    pdf.cell(0, 12, sanitize_text("RAPPORT D'ANALYSE PARASITOLOGIQUE"), 0, 1, "C")
+    
+    # Reference
+    pdf.set_font("Arial", "", 8)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 5, f"Reference: DM-{report_id} | {datetime.now().strftime('%d/%m/%Y %H:%M')}", 0, 1, "R")
+    pdf.ln(3)
+    
+    # Patient section
+    pdf.set_fill_color(0, 60, 150)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 8, "  INFORMATIONS PATIENT", 0, 1, "L", True)
+    pdf.ln(2)
+    pdf.set_text_color(0, 0, 0)
+    
+    for key, value in patient_data.items():
+        if value:
+            pdf.set_font("Arial", "B", 9)
+            pdf.set_text_color(60, 60, 60)
+            pdf.cell(55, 6, sanitize_text(f"{key}:"), 0, 0)
+            pdf.set_font("Arial", "", 9)
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(0, 6, sanitize_text(str(value)), 0, 1)
+    
+    pdf.ln(2)
+    pdf.set_draw_color(200, 200, 200)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(3)
+    
+    # Lab section
+    pdf.set_fill_color(0, 100, 80)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 8, "  INFORMATIONS LABORATOIRE", 0, 1, "L", True)
+    pdf.ln(2)
+    pdf.set_text_color(0, 0, 0)
+    
+    for key, value in lab_data.items():
+        if value:
+            pdf.set_font("Arial", "B", 9)
+            pdf.set_text_color(60, 60, 60)
+            pdf.cell(55, 6, sanitize_text(f"{key}:"), 0, 0)
+            pdf.set_font("Arial", "", 9)
+            pdf.set_text_color(0, 0, 0)
+            pdf.cell(0, 6, sanitize_text(str(value)), 0, 1)
+    
+    pdf.ln(2)
+    pdf.line(10, pdf.get_y(), 200, pdf.get_y())
+    pdf.ln(3)
+    
+    # Result section
+    confidence = result.get("confidence", 0)
+    is_negative = parasite_label == "Negative"
+    
+    if is_negative:
+        pdf.set_fill_color(180, 0, 0)
+    else:
+        pdf.set_fill_color(220, 255, 220)
+    
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 8, "  RESULTAT DE L'ANALYSE IA", 0, 1, "L", True)
+    pdf.ln(2)
+    
+    # Result box
+    if is_negative:
+        pdf.set_fill_color(220, 255, 220)
+        pdf.set_text_color(0, 100, 0)
+    else:
+        pdf.set_fill_color(255, 220, 220)
+        pdf.set_text_color(180, 0, 0)
+    
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(0, 12, sanitize_text(f"  {parasite_label} - Confiance: {confidence}%"), 1, 1, "C", True)
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(3)
+    
+    # Parasite details
+    info = PARASITE_DB.get(parasite_label, PARASITE_DB["Negative"])
+    
+    pdf.set_font("Arial", "B", 9)
+    pdf.cell(0, 6, "Nom Scientifique:", 0, 0)
+    pdf.set_font("Arial", "I", 9)
+    pdf.cell(0, 6, f"  {sanitize_text(info.get('sci', 'N/A'))}", 0, 1)
+    
+    pdf.ln(2)
+    pdf.set_font("Arial", "B", 9)
+    pdf.cell(0, 6, "Morphologie:", 0, 1)
+    pdf.set_font("Arial", "", 8)
+    pdf.multi_cell(0, 5, sanitize_text(info['morph'].get('fr', '')))
+    
+    pdf.ln(2)
+    pdf.set_font("Arial", "B", 9)
+    pdf.cell(0, 6, "Description:", 0, 1)
+    pdf.set_font("Arial", "", 8)
+    pdf.multi_cell(0, 5, sanitize_text(info['desc'].get('fr', '')))
+    
+    pdf.ln(2)
+    pdf.set_font("Arial", "B", 9)
+    pdf.set_text_color(0, 100, 0)
+    pdf.cell(0, 6, "Conseil Medical:", 0, 1)
+    pdf.set_font("Arial", "", 8)
+    pdf.set_text_color(0, 0, 0)
+    pdf.multi_cell(0, 5, sanitize_text(info['advice'].get('fr', '')))
+    
+    # Tests
+    if info.get("tests"):
+        pdf.ln(2)
+        pdf.set_font("Arial", "B", 9)
+        pdf.cell(0, 6, "Examens Complementaires:", 0, 1)
+        pdf.set_font("Arial", "", 8)
+        for test in info["tests"]:
+            pdf.cell(10, 5, "", 0, 0)
+            pdf.cell(0, 5, f"- {sanitize_text(test)}", 0, 1)
+    
+    # QR Code
+    if HAS_QRCODE:
+        try:
+            qr = qrcode.QRCode(box_size=3, border=1)
+            qr.add_data(f"DM-{report_id}|{parasite_label}|{confidence}%|{datetime.now().isoformat()}")
+            qr.make(fit=True)
+            qr_path = f"_qr_{report_id}.png"
+            qr.make_image().save(qr_path)
+            pdf.image(qr_path, x=170, y=pdf.get_y() - 30, w=28)
+            try:
+                os.remove(qr_path)
+            except:
+                pass
+        except:
+            pass
+    
+    # Signatures
+    pdf.ln(8)
+    pdf.set_fill_color(80, 80, 80)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_font("Arial", "B", 10)
+    pdf.cell(0, 8, "  SIGNATURES ET VALIDATION", 0, 1, "L", True)
+    pdf.ln(5)
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font("Arial", "", 9)
+    pdf.cell(95, 5, "Technicien 1: ___________________", 0, 0)
+    pdf.cell(95, 5, "Technicien 2: ___________________", 0, 1)
+    pdf.ln(8)
+    pdf.cell(95, 5, "Date: ___/___/______", 0, 0)
+    pdf.cell(95, 5, "Cachet du Laboratoire:", 0, 1)
+    pdf.ln(10)
+    pdf.cell(0, 5, "Validation Biologiste: ___________________", 0, 1)
+    
+    return bytes(pdf.output())
+
+# ============================================
+#  EXCEL EXPORT
+# ============================================
+def generate_excel_export(data: List[Dict], title: str = "Export") -> bytes:
+    """Generate Excel export"""
+    if not HAS_EXCEL:
+        return b""
+    
+    output = io.BytesIO()
+    
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df = pd.DataFrame(data)
+        df.to_excel(writer, sheet_name='Data', index=False)
+        
+        # Get workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets['Data']
+        
+        # Style header
+        header_fill = PatternFill(start_color='0066FF', end_color='0066FF', fill_type='solid')
+        header_font = Font(bold=True, color='FFFFFF', size=12)
+        
+        for cell in worksheet[1]:
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+        
+        # Auto-adjust column widths
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    output.seek(0)
+    return output.read()
+
+# ============================================
+#  VOICE SYSTEM
 # ============================================
 def render_voice_player():
-    """Renders hidden audio player using Web Speech API"""
+    """Render voice player using Web Speech API"""
     if st.session_state.get("voice_text"):
-        text = st.session_state.voice_text.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ').replace('\r', ' ')
-        lang_code = {"fr": "fr-FR", "ar": "ar-SA", "en": "en-US"}.get(
-            st.session_state.get("voice_lang", st.session_state.get("lang", "fr")), "fr-FR")
+        text = st.session_state.voice_text.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
+        lang_code = {
+            "fr": "fr-FR",
+            "ar": "ar-SA",
+            "en": "en-US"
+        }.get(st.session_state.get("voice_lang", st.session_state.lang), "fr-FR")
         
         html_code = f"""
-        <div id="voice-container" style="display:none;">
+        <div style="display:none;">
             <script>
             (function() {{
                 try {{
@@ -1186,17 +1823,6 @@ def render_voice_player():
                             utterance.rate = 0.9;
                             utterance.pitch = 1.0;
                             utterance.volume = 1.0;
-                            
-                            var voices = window.speechSynthesis.getVoices();
-                            if (voices.length > 0) {{
-                                for (var i = 0; i < voices.length; i++) {{
-                                    if (voices[i].lang.startsWith('{lang_code.split("-")[0]}')) {{
-                                        utterance.voice = voices[i];
-                                        break;
-                                    }}
-                                }}
-                            }}
-                            
                             window.speechSynthesis.speak(utterance);
                         }}, 200);
                     }}
@@ -1209,472 +1835,39 @@ def render_voice_player():
         """
         st.components.v1.html(html_code, height=0)
         st.session_state.voice_text = None
-        st.session_state.voice_lang = None
 
-
-def speak(text, lang=None):
-    """Queue text for speaking"""
+def speak(text: str, lang: Optional[str] = None):
+    """Queue text for speech"""
     st.session_state.voice_text = text
-    st.session_state.voice_lang = lang or st.session_state.get("lang", "fr")
-
+    st.session_state.voice_lang = lang or st.session_state.lang
 
 def stop_speech():
     """Stop speech"""
     st.session_state.voice_text = None
-    st.components.v1.html("""
-    <script>
-    try { window.speechSynthesis.cancel(); } catch(e) {}
-    </script>
-    """, height=0)
-
+    st.components.v1.html("<script>try{window.speechSynthesis.cancel()}catch(e){}</script>", height=0)
 
 # ============================================
-#  AI ENGINE
+#  CSS STYLING
 # ============================================
-@st.cache_resource(show_spinner=False)
-def load_model():
-    m, mn, mt = None, None, None
-    try:
-        import tensorflow as tf
-        for ext in [".keras", ".h5"]:
-            ff = [f for f in os.listdir(".") if f.endswith(ext) and os.path.isfile(f)]
-            if ff:
-                mn = ff[0]
-                m = tf.keras.models.load_model(mn, compile=False)
-                mt = "keras"
-                break
-        if m is None:
-            ff = [f for f in os.listdir(".") if f.endswith(".tflite") and os.path.isfile(f)]
-            if ff:
-                mn = ff[0]
-                m = tf.lite.Interpreter(model_path=mn)
-                m.allocate_tensors()
-                mt = "tflite"
-    except Exception:
-        pass
-    return m, mn, mt
-
-
-def predict(model, mt, img, seed=None):
-    res = {"label": "Negative", "conf": 0, "preds": {}, "rel": False, "demo": False, "risk": "none"}
-    rm = {"Plasmodium": "critical", "Amoeba (E. histolytica)": "high", "Leishmania": "high",
-          "Trypanosoma": "high", "Giardia": "medium", "Schistosoma": "medium", "Negative": "none"}
-    if model is None:
-        res["demo"] = True
-        if seed is None:
-            seed = random.randint(0, 999999)
-        rng = random.Random(seed)
-        lb = rng.choice(CLASS_NAMES)
-        cf = rng.randint(55, 98)
-        ap = {}
-        rem = 100.0 - cf
-        for c in CLASS_NAMES:
-            ap[c] = float(cf) if c == lb else round(rng.uniform(0, rem / max(1, len(CLASS_NAMES) - 1)), 1)
-        res.update({"label": lb, "conf": cf, "preds": ap, "rel": cf >= CONFIDENCE_THRESHOLD, "risk": rm.get(lb, "none")})
-        return res
-    try:
-        import tensorflow as tf
-        im = ImageOps.fit(img.convert("RGB"), MODEL_INPUT_SIZE, Image.LANCZOS)
-        arr = np.expand_dims(np.asarray(im).astype(np.float32) / 127.5 - 1.0, 0)
-        if mt == "tflite":
-            inp, out = model.get_input_details(), model.get_output_details()
-            model.set_tensor(inp[0]['index'], arr)
-            model.invoke()
-            pr = model.get_tensor(out[0]['index'])[0]
-        else:
-            pr = model.predict(arr, verbose=0)[0]
-        ix = int(np.argmax(pr))
-        cf = int(pr[ix] * 100)
-        lb = CLASS_NAMES[ix] if ix < len(CLASS_NAMES) else "Negative"
-        ap = {CLASS_NAMES[i]: round(float(pr[i]) * 100, 1) for i in range(min(len(pr), len(CLASS_NAMES)))}
-        res.update({"label": lb, "conf": cf, "preds": ap, "rel": cf >= CONFIDENCE_THRESHOLD, "risk": rm.get(lb, "none")})
-    except Exception as e:
-        st.error(f"Error: {e}")
-    return res
-
-
-# ============================================
-#  IMAGE PROCESSING
-# ============================================
-def gen_heatmap(img, seed=None):
-    im = img.copy().convert("RGB")
-    w, h = im.size
-    if seed is None:
-        seed = hash(im.tobytes()[:1000]) % 1000000
-    rng = random.Random(seed)
-    ea = np.array(ImageOps.grayscale(im).filter(ImageFilter.FIND_EDGES))
-    bs, mx, bx, by = 32, 0, w // 2, h // 2
-    for y in range(0, h - bs, bs // 2):
-        for x in range(0, w - bs, bs // 2):
-            s = np.mean(ea[y:y + bs, x:x + bs])
-            if s > mx:
-                mx, bx, by = s, x + bs // 2, y + bs // 2
-    bx = max(50, min(w - 50, bx + rng.randint(-w // 10, w // 10)))
-    by = max(50, min(h - 50, by + rng.randint(-h // 10, h // 10)))
-    hm = Image.new('RGBA', (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(hm)
-    mr = min(w, h) // 3
-    for r in range(mr, 0, -2):
-        a = max(0, min(200, int(200 * (1 - r / mr))))
-        rat = r / mr
-        if rat > 0.65:
-            c = (0, 255, 100, a // 4)
-        elif rat > 0.35:
-            c = (255, 255, 0, a // 2)
-        else:
-            c = (255, 0, 60, a)
-        d.ellipse([bx - r, by - r, bx + r, by + r], fill=c)
-    return Image.alpha_composite(im.convert('RGBA'), hm).convert('RGB')
-
-
-def thermal(img):
-    return ImageOps.colorize(
-        ImageOps.grayscale(ImageEnhance.Contrast(img).enhance(1.5)).filter(ImageFilter.GaussianBlur(1)),
-        black="navy", white="yellow", mid="red")
-
-
-def edges_filter(img):
-    return ImageOps.grayscale(img).filter(ImageFilter.FIND_EDGES)
-
-
-def enhanced_filter(img):
-    return ImageEnhance.Contrast(ImageEnhance.Sharpness(img).enhance(2.0)).enhance(2.0)
-
-
-def negative_filter(img):
-    return ImageOps.invert(img.convert("RGB"))
-
-
-def emboss_filter(img):
-    return img.filter(ImageFilter.EMBOSS)
-
-
-def adjust(img, br=1.0, co=1.0, sa=1.0):
-    r = img.copy()
-    if br != 1.0:
-        r = ImageEnhance.Brightness(r).enhance(br)
-    if co != 1.0:
-        r = ImageEnhance.Contrast(r).enhance(co)
-    if sa != 1.0:
-        r = ImageEnhance.Color(r).enhance(sa)
-    return r
-
-
-def zoom_img(img, lv):
-    if lv <= 1.0:
-        return img
-    w, h = img.size
-    nw, nh = int(w / lv), int(h / lv)
-    l, tp = (w - nw) // 2, (h - nh) // 2
-    return img.crop((l, tp, l + nw, tp + nh)).resize((w, h), Image.LANCZOS)
-
-
-def compare_imgs(i1, i2):
-    a1 = np.array(i1.convert("RGB").resize((128, 128))).astype(float)
-    a2 = np.array(i2.convert("RGB").resize((128, 128))).astype(float)
-    mse = np.mean((a1 - a2) ** 2)
-    m1, m2, s1, s2 = np.mean(a1), np.mean(a2), np.std(a1), np.std(a2)
-    s12 = np.mean((a1 - m1) * (a2 - m2))
-    c1, c2 = (0.01 * 255) ** 2, (0.03 * 255) ** 2
-    ssim = ((2 * m1 * m2 + c1) * (2 * s12 + c2)) / ((m1 ** 2 + m2 ** 2 + c1) * (s1 ** 2 + s2 ** 2 + c2))
-    return {"mse": round(mse, 2), "ssim": round(float(ssim), 4), "sim": round(float(ssim) * 100, 1)}
-
-
-def pixel_diff(i1, i2):
-    a1 = np.array(i1.convert("RGB").resize((256, 256))).astype(float)
-    a2 = np.array(i2.convert("RGB").resize((256, 256))).astype(float)
-    diff = np.abs(a1 - a2).astype(np.uint8)
-    diff = np.clip(diff * 3, 0, 255).astype(np.uint8)
-    return Image.fromarray(diff)
-
-
-def histogram(img):
-    r, g, b = img.convert("RGB").split()
-    return {"red": list(r.histogram()), "green": list(g.histogram()), "blue": list(b.histogram())}
-
-
-# ============================================
-#  PDF - Enhanced Professional
-# ============================================
-def _sp(text):
-    if not text:
-        return ""
-    reps = {'e': 'e', 'e': 'e', 'e': 'e', 'e': 'e', 'a': 'a', 'a': 'a', 'u': 'u', 'u': 'u', 'u': 'u',
-            'o': 'o', 'o': 'o', 'i': 'i', 'i': 'i', 'c': 'c'}
-    # Simple ASCII safe conversion
-    result = ""
-    for c in str(text):
-        if ord(c) < 128:
-            result += c
-        elif c in 'éèêë':
-            result += 'e'
-        elif c in 'àâä':
-            result += 'a'
-        elif c in 'ùûü':
-            result += 'u'
-        elif c in 'ôö':
-            result += 'o'
-        elif c in 'îï':
-            result += 'i'
-        elif c == 'ç':
-            result += 'c'
-        elif c in 'ÉÈÊË':
-            result += 'E'
-        elif c in 'ÀÂÄ':
-            result += 'A'
-        elif c == 'Ç':
-            result += 'C'
-        elif c == '→':
-            result += '->'
-        elif c == '°':
-            result += 'o'
-        elif c == 'µ':
-            result += 'u'
-        elif c == '×':
-            result += 'x'
-        else:
-            result += '?'
-    return result
-
-
-class PDF(FPDF):
-    def header(self):
-        # Top gradient bar
-        self.set_fill_color(0, 20, 60)
-        self.rect(0, 0, 210, 4, 'F')
-        self.set_fill_color(0, 180, 255)
-        self.rect(0, 4, 210, 1, 'F')
-        self.set_fill_color(0, 255, 136)
-        self.rect(0, 5, 210, 0.5, 'F')
-        self.ln(8)
-        
-        # Logo area
-        self.set_font("Arial", "B", 14)
-        self.set_text_color(0, 60, 150)
-        self.cell(0, 8, f"DM SMART LAB AI v{APP_VERSION}", 0, 0, "L")
-        self.set_font("Arial", "", 8)
-        self.set_text_color(100, 100, 100)
-        self.cell(0, 8, datetime.now().strftime("%d/%m/%Y %H:%M:%S"), 0, 1, "R")
-        
-        # Subtitle
-        self.set_font("Arial", "I", 7)
-        self.set_text_color(120, 120, 120)
-        self.cell(0, 4, "Systeme de Diagnostic Parasitologique par Intelligence Artificielle", 0, 1, "L")
-        self.cell(0, 4, "INFSPM - Ouargla, Algerie", 0, 1, "L")
-        
-        # Line separator
-        self.set_draw_color(0, 180, 255)
-        self.set_line_width(0.5)
-        self.line(10, self.get_y() + 2, 200, self.get_y() + 2)
-        self.ln(6)
-
-    def footer(self):
-        self.set_y(-20)
-        # Bottom gradient
-        self.set_fill_color(0, 20, 60)
-        self.rect(0, 282, 210, 15, 'F')
-        self.set_y(-15)
-        self.set_font("Arial", "I", 7)
-        self.set_text_color(200, 200, 200)
-        self.cell(0, 4, _sp("AVERTISSEMENT: Ce rapport est genere par IA - Validation par un professionnel de sante requise"), 0, 1, "C")
-        self.set_font("Arial", "", 6)
-        self.cell(0, 4, f"Page {self.page_no()}/{{nb}} | DM Smart Lab AI | Sebbag M.D.E & Ben Sghir M. | INFSPM Ouargla", 0, 0, "C")
-
-    def section(self, title, color=(0, 60, 150)):
-        self.set_fill_color(*color)
-        self.set_text_color(255, 255, 255)
-        self.set_font("Arial", "B", 10)
-        self.cell(0, 8, f"  {_sp(title)}", 0, 1, "L", True)
-        self.ln(2)
-        self.set_text_color(0, 0, 0)
-
-    def field(self, label, val):
-        self.set_font("Arial", "B", 9)
-        self.set_text_color(60, 60, 60)
-        self.cell(55, 6, _sp(label), 0, 0)
-        self.set_font("Arial", "", 9)
-        self.set_text_color(0, 0, 0)
-        self.cell(0, 6, _sp(str(val)), 0, 1)
-
-    def add_separator(self):
-        self.set_draw_color(200, 200, 200)
-        self.set_line_width(0.2)
-        self.line(10, self.get_y(), 200, self.get_y())
-        self.ln(3)
-
-
-def make_pdf(pat, lab, result, lbl):
-    pdf = PDF()
-    pdf.alias_nb_pages()
-    pdf.add_page()
-    pdf.set_auto_page_break(True, 25)
-
-    # Title
-    pdf.set_font("Arial", "B", 18)
-    pdf.set_text_color(0, 40, 100)
-    pdf.cell(0, 12, "RAPPORT D'ANALYSE PARASITOLOGIQUE", 0, 1, "C")
-
-    # Reference ID
-    rid = hashlib.md5(f"{pat.get('Nom', '')}{datetime.now().isoformat()}".encode()).hexdigest()[:10].upper()
-    pdf.set_font("Arial", "", 8)
-    pdf.set_text_color(100, 100, 100)
-    pdf.cell(0, 5, f"Reference: DM-{rid} | Date: {datetime.now().strftime('%d/%m/%Y %H:%M')}", 0, 1, "R")
-    pdf.ln(3)
-
-    # Patient section
-    pdf.section("INFORMATIONS DU PATIENT")
-    for k, v in pat.items():
-        if v:
-            pdf.field(f"{k}:", v)
-    pdf.add_separator()
-
-    # Lab section
-    pdf.section("INFORMATIONS LABORATOIRE", (0, 100, 80))
-    for k, v in lab.items():
-        if v:
-            pdf.field(f"{k}:", v)
-    pdf.add_separator()
-
-    # Result section
-    cf = result.get("conf", 0)
-    if lbl == "Negative":
-        pdf.section("RESULTAT DE L'ANALYSE IA", (0, 150, 80))
-    else:
-        pdf.section("RESULTAT DE L'ANALYSE IA", (180, 0, 0))
-    pdf.ln(2)
-
-    # Result box
-    if lbl == "Negative":
-        pdf.set_fill_color(220, 255, 220)
-        pdf.set_text_color(0, 100, 0)
-    else:
-        pdf.set_fill_color(255, 220, 220)
-        pdf.set_text_color(180, 0, 0)
-
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 12, f"  {_sp(lbl)} - Confiance: {cf}%", 1, 1, "C", True)
-    pdf.set_text_color(0, 0, 0)
-    pdf.ln(3)
-
-    # Parasite details
-    info = PARASITE_DB.get(lbl, PARASITE_DB["Negative"])
-
-    pdf.set_font("Arial", "B", 9)
-    pdf.cell(0, 6, "Nom Scientifique:", 0, 0)
-    pdf.set_font("Arial", "I", 9)
-    pdf.cell(0, 6, f"  {_sp(info.get('sci', 'N/A'))}", 0, 1)
-
-    pdf.ln(2)
-    pdf.set_font("Arial", "B", 9)
-    pdf.cell(0, 6, "Morphologie:", 0, 1)
-    pdf.set_font("Arial", "", 8)
-    pdf.multi_cell(0, 5, _sp(info['morph'].get('fr', '')))
-
-    pdf.ln(2)
-    pdf.set_font("Arial", "B", 9)
-    pdf.cell(0, 6, "Description:", 0, 1)
-    pdf.set_font("Arial", "", 8)
-    pdf.multi_cell(0, 5, _sp(info['desc'].get('fr', '')))
-
-    pdf.ln(2)
-    pdf.set_font("Arial", "B", 9)
-    pdf.set_text_color(0, 100, 0)
-    pdf.cell(0, 6, "Conseil Medical:", 0, 1)
-    pdf.set_font("Arial", "", 8)
-    pdf.set_text_color(0, 0, 0)
-    pdf.multi_cell(0, 5, _sp(info['advice'].get('fr', '')))
-
-    # Tests
-    if info.get("tests"):
-        pdf.ln(2)
-        pdf.set_font("Arial", "B", 9)
-        pdf.cell(0, 6, "Examens Complementaires Suggeres:", 0, 1)
-        pdf.set_font("Arial", "", 8)
-        for test in info["tests"]:
-            pdf.cell(10, 5, "", 0, 0)
-            pdf.cell(0, 5, f"- {_sp(test)}", 0, 1)
-
-    # Reliability indicator
-    pdf.ln(3)
-    pdf.add_separator()
-    rel_text = "FIABLE" if result.get("rel", False) else "A VERIFIER"
-    rel_color = (0, 150, 0) if result.get("rel", False) else (200, 100, 0)
-    pdf.set_font("Arial", "B", 10)
-    pdf.set_text_color(*rel_color)
-    pdf.cell(0, 8, f"Fiabilite: {rel_text} ({cf}%)", 0, 1, "C")
-    pdf.set_text_color(0, 0, 0)
-
-    # QR Code
-    if HAS_QRCODE:
-        try:
-            qr = qrcode.QRCode(box_size=3, border=1)
-            qr.add_data(f"DM-SmartLab|{lbl}|{cf}%|{rid}|{datetime.now().isoformat()}")
-            qr.make(fit=True)
-            qp = f"_qr_{rid}.png"
-            qr.make_image().save(qp)
-            pdf.image(qp, x=170, y=pdf.get_y() - 30, w=28)
-            try:
-                os.remove(qp)
-            except:
-                pass
-        except:
-            pass
-
-    # Signatures section
-    pdf.ln(8)
-    pdf.section("SIGNATURES ET VALIDATION", (80, 80, 80))
-    pdf.ln(5)
-    pdf.set_font("Arial", "", 9)
-    pdf.cell(95, 5, "Technicien 1: ___________________", 0, 0)
-    pdf.cell(95, 5, "Technicien 2: ___________________", 0, 1)
-    pdf.ln(8)
-    pdf.cell(95, 5, "Date: ___/___/______", 0, 0)
-    pdf.cell(95, 5, "Cachet du Laboratoire:", 0, 1)
-    pdf.ln(10)
-    pdf.cell(0, 5, "Validation Biologiste: ___________________", 0, 1)
-
-    return bytes(pdf.output())
-
-
-# ============================================
-#  CSS - SPACE DARK THEME (Only Night Mode)
-# ============================================
-def apply_css():
-    rtl = st.session_state.get("lang") == "ar"
-    d = "rtl" if rtl else "ltr"
+def apply_custom_css():
+    """Apply custom CSS"""
+    rtl = st.session_state.lang == "ar"
+    direction = "rtl" if rtl else "ltr"
     
-    # Space dark theme - ONLY dark mode
-    bg = "#030614"
-    cbg = "rgba(10,15,46,0.85)"
-    tx = "#e0e8ff"
-    pr = "#00f5ff"
-    mu = "#6b7fa0"
-    ac = "#ff00ff"
-    ac2 = "#00ff88"
-    sbg = "#020410"
-    btn_bg = "linear-gradient(135deg,#00f5ff,#0066ff)"
-    brd = "rgba(0,245,255,0.15)"
-    ibg = "rgba(10,15,46,0.6)"
-    template = "plotly_dark"
-    
-    st.markdown(f"""<style>
+    css = f"""
+    <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&family=Tajawal:wght@400;500;700;800&display=swap');
     
-    html {{ direction: {d}; }}
+    html {{ direction: {direction}; }}
     
-    /* ====== ANIMATED SPACE BACKGROUND ====== */
+    /* Background */
     .stApp {{
-        background: {bg} !important;
-        color: {tx} !important;
+        background: #030614 !important;
+        color: #e0e8ff !important;
         background-image: 
             radial-gradient(2px 2px at 20px 30px, rgba(0,245,255,0.3), transparent),
-            radial-gradient(2px 2px at 40px 70px, rgba(255,0,255,0.2), transparent),
-            radial-gradient(1px 1px at 90px 40px, rgba(0,255,136,0.3), transparent),
-            radial-gradient(1px 1px at 130px 80px, rgba(0,245,255,0.2), transparent),
-            radial-gradient(2px 2px at 160px 30px, rgba(255,0,255,0.15), transparent),
-            radial-gradient(1px 1px at 200px 60px, rgba(0,255,136,0.2), transparent),
-            radial-gradient(2px 2px at 60px 100px, rgba(0,102,255,0.2), transparent),
-            radial-gradient(1px 1px at 180px 120px, rgba(255,105,180,0.15), transparent);
+            radial-gradient(2px 2px at 60px 70px, rgba(255,0,255,0.2), transparent),
+            radial-gradient(1px 1px at 90px 40px, rgba(0,255,136,0.3), transparent);
         background-size: 250px 150px;
         animation: sparkle 8s linear infinite;
     }}
@@ -1684,1540 +1877,1213 @@ def apply_css():
         100% {{ background-position: 250px 150px; }}
     }}
     
-    /* ====== FLOATING PARTICLES OVERLAY ====== */
-    .stApp::before {{
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        background: 
-            radial-gradient(circle at 15% 25%, rgba(0,245,255,0.03) 0%, transparent 50%),
-            radial-gradient(circle at 85% 75%, rgba(255,0,255,0.03) 0%, transparent 50%),
-            radial-gradient(circle at 50% 50%, rgba(0,255,136,0.02) 0%, transparent 50%);
-        animation: nebula 20s ease-in-out infinite;
-    }}
-    
-    @keyframes nebula {{
-        0%, 100% {{ opacity: 0.5; }}
-        50% {{ opacity: 1; }}
-    }}
-    
-    /* ====== SIDEBAR ====== */
+    /* Sidebar */
     section[data-testid="stSidebar"] {{
-        background: linear-gradient(180deg, {sbg} 0%, rgba(5,10,30,0.98) 100%) !important;
+        background: linear-gradient(180deg, #020410 0%, rgba(5,10,30,0.98) 100%) !important;
         border-right: 1px solid rgba(0,245,255,0.1) !important;
     }}
-    section[data-testid="stSidebar"] * {{ color: {tx} !important; }}
     
-    /* ====== TEXT COLORS ====== */
-    .stApp p, .stApp span, .stApp label, .stApp div {{ color: {tx} !important; }}
-    .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{ color: {tx} !important; }}
-    
-    /* ====== INPUTS ====== */
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea,
-    .stNumberInput > div > div > input {{
-        background: {ibg} !important;
-        color: {tx} !important;
-        border: 1px solid {brd} !important;
-        border-radius: 12px !important;
-        transition: all 0.3s ease !important;
-    }}
-    .stTextInput > div > div > input:focus,
-    .stTextArea > div > div > textarea:focus {{
-        border-color: {pr} !important;
-        box-shadow: 0 0 15px rgba(0,245,255,0.2) !important;
-    }}
-    
-    /* ====== SELECTBOX ====== */
-    .stSelectbox > div > div {{
-        background: {ibg} !important;
-        border: 1px solid {brd} !important;
-        border-radius: 12px !important;
-    }}
-    
-    /* ====== CARDS ====== */
+    /* Cards */
     .dm-card {{
-        background: {cbg};
+        background: rgba(10,15,46,0.85);
         backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border: 1px solid {brd};
+        border: 1px solid rgba(0,245,255,0.15);
         border-radius: 20px;
         padding: 24px;
         margin: 12px 0;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        color: {tx} !important;
-        position: relative;
-        overflow: hidden;
+        transition: all 0.4s ease;
+        color: #e0e8ff !important;
     }}
-    .dm-card::before {{
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(0,245,255,0.03), transparent);
-        transition: left 0.6s ease;
-    }}
-    .dm-card:hover::before {{
-        left: 100%;
-    }}
+    
     .dm-card:hover {{
         transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0,245,255,0.1), 0 4px 15px rgba(255,0,255,0.05);
+        box-shadow: 0 12px 40px rgba(0,245,255,0.1);
         border-color: rgba(0,245,255,0.3);
     }}
-    .dm-card * {{ color: {tx} !important; }}
-    .dm-card-cyan {{ border-left: 3px solid {pr}; }}
-    .dm-card-green {{ border-left: 3px solid {ac2}; }}
+    
+    .dm-card-cyan {{ border-left: 3px solid #00f5ff; }}
+    .dm-card-green {{ border-left: 3px solid #00ff88; }}
     .dm-card-red {{ border-left: 3px solid #ff0040; }}
     .dm-card-purple {{ border-left: 3px solid #9933ff; }}
     
-    /* ====== METRIC CARDS ====== */
+    /* Metric Cards */
     .dm-m {{
-        background: {cbg};
-        border: 1px solid {brd};
+        background: rgba(10,15,46,0.85);
+        border: 1px solid rgba(0,245,255,0.15);
         border-radius: 18px;
         padding: 20px 12px;
         text-align: center;
         transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
     }}
+    
     .dm-m:hover {{
-        border-color: {pr};
+        border-color: #00f5ff;
         box-shadow: 0 0 20px rgba(0,245,255,0.1);
     }}
+    
     .dm-m-i {{ font-size: 1.6rem; }}
     .dm-m-v {{
         font-size: 1.8rem;
         font-weight: 800;
         font-family: 'JetBrains Mono', monospace !important;
-        background: linear-gradient(135deg, {pr}, {ac});
+        background: linear-gradient(135deg, #00f5ff, #ff00ff);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: glow-text 3s ease-in-out infinite;
-    }}
-    @keyframes glow-text {{
-        0%, 100% {{ filter: brightness(1); }}
-        50% {{ filter: brightness(1.3); }}
     }}
     .dm-m-l {{
-        font-size: .7rem;
+        font-size: 0.7rem;
         font-weight: 600;
-        color: {mu} !important;
-        -webkit-text-fill-color: {mu} !important;
+        color: #6b7fa0 !important;
         text-transform: uppercase;
-        letter-spacing: .1em;
+        letter-spacing: 0.1em;
         margin-top: 6px;
     }}
     
-    /* ====== BUTTONS ====== */
+    /* Buttons */
     div.stButton > button {{
-        background: {btn_bg} !important;
+        background: linear-gradient(135deg, #00f5ff, #0066ff) !important;
         color: white !important;
         border: none !important;
         border-radius: 14px !important;
         padding: 12px 28px !important;
         font-weight: 700 !important;
-        font-size: 0.85rem !important;
-        letter-spacing: 0.03em !important;
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        position: relative !important;
-        overflow: hidden !important;
-    }}
-    div.stButton > button::before {{
-        content: '' !important;
-        position: absolute !important;
-        top: 0 !important;
-        left: -100% !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent) !important;
-        transition: left 0.5s ease !important;
-    }}
-    div.stButton > button:hover::before {{
-        left: 100% !important;
-    }}
-    div.stButton > button:hover {{
-        transform: translateY(-3px) !important;
-        box-shadow: 0 8px 25px rgba(0,245,255,0.3), 0 0 40px rgba(0,102,255,0.15) !important;
-    }}
-    div.stButton > button * {{
-        color: white !important;
-        -webkit-text-fill-color: white !important;
+        transition: all 0.4s ease !important;
     }}
     
-    /* ====== NEON TITLE ====== */
+    div.stButton > button:hover {{
+        transform: translateY(-3px) !important;
+        box-shadow: 0 8px 25px rgba(0,245,255,0.3) !important;
+    }}
+    
+    /* Neon Title */
     .dm-nt {{
         font-family: 'Orbitron', sans-serif;
         font-weight: 900;
-        background: linear-gradient(135deg, {pr}, {ac}, {ac2});
+        background: linear-gradient(135deg, #00f5ff, #ff00ff, #00ff88);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-size: 200% auto;
         animation: gradient-shift 4s ease infinite;
     }}
+    
     @keyframes gradient-shift {{
         0% {{ background-position: 0% center; }}
         50% {{ background-position: 100% center; }}
         100% {{ background-position: 0% center; }}
     }}
     
-    /* ====== CHAT BUBBLES ====== */
-    .dm-ch {{
-        padding: 14px 18px;
-        border-radius: 18px;
-        margin: 8px 0;
-        max-width: 85%;
-        font-size: .9rem;
-        line-height: 1.6;
-        animation: fadeInUp 0.3s ease;
-    }}
-    @keyframes fadeInUp {{
-        from {{ opacity: 0; transform: translateY(10px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
-    }}
-    .dm-cu {{
-        background: linear-gradient(135deg, #0066ff, #0044cc) !important;
-        color: white !important;
-        margin-left: auto;
-        border-bottom-right-radius: 4px;
-    }}
-    .dm-cu * {{ color: white !important; -webkit-text-fill-color: white !important; }}
-    .dm-cb {{
-        background: {cbg};
-        border: 1px solid {brd};
-        border-bottom-left-radius: 4px;
+    /* Inputs */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stNumberInput > div > div > input {{
+        background: rgba(10,15,46,0.6) !important;
+        color: #e0e8ff !important;
+        border: 1px solid rgba(0,245,255,0.15) !important;
+        border-radius: 12px !important;
     }}
     
-    /* ====== HEADINGS ====== */
-    h1 {{ font-family: 'Orbitron', sans-serif !important; }}
+    .stTextInput > div > div > input:focus {{
+        border-color: #00f5ff !important;
+        box-shadow: 0 0 15px rgba(0,245,255,0.2) !important;
+    }}
     
-    /* ====== RTL Support ====== */
+    /* Progress */
+    .stProgress > div > div > div > div {{
+        background: linear-gradient(90deg, #00f5ff, #ff00ff, #00ff88) !important;
+        border-radius: 10px !important;
+    }}
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {{ width: 6px; height: 6px; }}
+    ::-webkit-scrollbar-track {{ background: #030614; }}
+    ::-webkit-scrollbar-thumb {{
+        background: linear-gradient(180deg, #00f5ff, #ff00ff);
+        border-radius: 10px;
+    }}
+    
+    /* Text colors */
+    .stApp p, .stApp span, .stApp label, .stApp div {{ color: #e0e8ff !important; }}
+    .stApp h1, .stApp h2, .stApp h3, .stApp h4 {{ color: #e0e8ff !important; }}
+    
+    /* RTL Support */
     {"body, p, span, div, label { font-family: 'Tajawal', sans-serif !important; }" if rtl else ""}
     
-    /* ====== LOGO CONTAINER ====== */
+    /* Badge */
+    .dm-badge {{
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin: 2px;
+    }}
+    
+    .dm-badge-success {{
+        background: rgba(0, 255, 136, 0.2);
+        color: #00ff88;
+        border: 1px solid rgba(0, 255, 136, 0.3);
+    }}
+    
+    .dm-badge-warning {{
+        background: rgba(255, 149, 0, 0.2);
+        color: #ff9500;
+        border: 1px solid rgba(255, 149, 0, 0.3);
+    }}
+    
+    .dm-badge-danger {{
+        background: rgba(255, 0, 64, 0.2);
+        color: #ff0040;
+        border: 1px solid rgba(255, 0, 64, 0.3);
+    }}
+    
+    /* Logo */
     .dm-logo {{
         text-align: center;
         padding: 16px;
         background: linear-gradient(135deg, rgba(0,245,255,0.05), rgba(255,0,255,0.05));
         border-radius: 24px;
-        border: 1px solid {brd};
+        border: 1px solid rgba(0,245,255,0.15);
         margin-bottom: 12px;
-        position: relative;
-        overflow: hidden;
-    }}
-    .dm-logo::after {{
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: conic-gradient(from 0deg, transparent, rgba(0,245,255,0.05), transparent, rgba(255,0,255,0.05), transparent);
-        animation: logo-rotate 10s linear infinite;
-    }}
-    @keyframes logo-rotate {{
-        100% {{ transform: rotate(360deg); }}
     }}
     
-    /* ====== EXPANDER ====== */
-    .streamlit-expanderHeader {{
-        background: rgba(10,15,46,0.5) !important;
-        border-radius: 12px !important;
-        border: 1px solid {brd} !important;
-    }}
-    
-    /* ====== TABS ====== */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 4px;
-        background: rgba(10,15,46,0.5);
-        border-radius: 14px;
-        padding: 4px;
-    }}
-    .stTabs [data-baseweb="tab"] {{
+    /* Notification badge */
+    .notif-badge {{
+        background: #ff0040;
+        color: white;
         border-radius: 10px;
-        color: {tx} !important;
-    }}
-    .stTabs [aria-selected="true"] {{
-        background: linear-gradient(135deg, rgba(0,245,255,0.2), rgba(0,102,255,0.2)) !important;
-    }}
-    
-    /* ====== PROGRESS BAR ====== */
-    .stProgress > div > div > div > div {{
-        background: linear-gradient(90deg, {pr}, {ac}, {ac2}) !important;
-        border-radius: 10px !important;
-        animation: progress-glow 2s ease infinite;
-    }}
-    @keyframes progress-glow {{
-        0%, 100% {{ box-shadow: 0 0 5px rgba(0,245,255,0.3); }}
-        50% {{ box-shadow: 0 0 15px rgba(0,245,255,0.5); }}
+        padding: 2px 6px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        margin-left: 6px;
     }}
     
-    /* ====== DATAFRAME ====== */
-    .stDataFrame {{
-        border-radius: 14px !important;
-        overflow: hidden !important;
-    }}
+    </style>
+    """
     
-    /* ====== RADIO ====== */
-    .stRadio > div {{
-        gap: 4px;
-    }}
-    
-    /* ====== SCROLLBAR ====== */
-    ::-webkit-scrollbar {{
-        width: 6px;
-        height: 6px;
-    }}
-    ::-webkit-scrollbar-track {{
-        background: {bg};
-    }}
-    ::-webkit-scrollbar-thumb {{
-        background: linear-gradient(180deg, {pr}, {ac});
-        border-radius: 10px;
-    }}
-    
-    </style>""", unsafe_allow_html=True)
-    return template
-
-
-plot_template = apply_css()
-
+    st.markdown(css, unsafe_allow_html=True)
 
 # ============================================
 #  ANIMATED LOGO
 # ============================================
 def render_logo():
-    st.markdown("""<div class="dm-logo">
-    <svg width="75" height="75" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#00f5ff">
-                <animate attributeName="stop-color" values="#00f5ff;#ff00ff;#00ff88;#00f5ff" dur="4s" repeatCount="indefinite"/>
-            </stop>
-            <stop offset="50%" style="stop-color:#ff00ff">
-                <animate attributeName="stop-color" values="#ff00ff;#00ff88;#00f5ff;#ff00ff" dur="4s" repeatCount="indefinite"/>
-            </stop>
-            <stop offset="100%" style="stop-color:#00ff88">
-                <animate attributeName="stop-color" values="#00ff88;#00f5ff;#ff00ff;#00ff88" dur="4s" repeatCount="indefinite"/>
-            </stop>
-        </linearGradient>
-        <filter id="gl">
-            <feGaussianBlur stdDeviation="2" result="b"/>
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-    </defs>
-    <circle cx="50" cy="50" r="45" fill="none" stroke="url(#g1)" stroke-width="2.5" filter="url(#gl)" opacity=".8">
-        <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="20s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="50" cy="50" r="38" fill="none" stroke="url(#g1)" stroke-width="1" opacity=".3">
-        <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="15s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="50" cy="50" r="30" fill="none" stroke="url(#g1)" stroke-width="0.5" opacity=".2"/>
-    <text x="50" y="42" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="14" font-weight="900" fill="url(#g1)" filter="url(#gl)">DM</text>
-    <text x="50" y="58" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="8" font-weight="600" fill="url(#g1)">SMART LAB</text>
-    <text x="50" y="68" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="7" font-weight="400" fill="#00f5ff" opacity=".6">AI</text>
-    <!-- DNA Helix dots -->
-    <circle cx="25" cy="35" r="2" fill="#00f5ff" opacity=".4"><animate attributeName="cy" values="35;65;35" dur="3s" repeatCount="indefinite"/></circle>
-    <circle cx="75" cy="65" r="2" fill="#ff00ff" opacity=".4"><animate attributeName="cy" values="65;35;65" dur="3s" repeatCount="indefinite"/></circle>
-    <circle cx="30" cy="50" r="1.5" fill="#00ff88" opacity=".3"><animate attributeName="cx" values="30;70;30" dur="4s" repeatCount="indefinite"/></circle>
-    </svg>
-    <h3 style="font-family:Orbitron,sans-serif;margin:6px 0;background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.1rem;position:relative;z-index:1;">DM SMART LAB AI</h3>
-    <p style="font-size:.55rem;opacity:.35;letter-spacing:.35em;text-transform:uppercase;margin:0;position:relative;z-index:1;">v7.5 Space Edition</p>
-    </div>""", unsafe_allow_html=True)
-
+    """Render animated logo"""
+    st.markdown("""
+    <div class="dm-logo">
+        <svg width="75" height="75" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#00f5ff">
+                        <animate attributeName="stop-color" values="#00f5ff;#ff00ff;#00ff88;#00f5ff" dur="4s" repeatCount="indefinite"/>
+                    </stop>
+                    <stop offset="50%" style="stop-color:#ff00ff">
+                        <animate attributeName="stop-color" values="#ff00ff;#00ff88;#00f5ff;#ff00ff" dur="4s" repeatCount="indefinite"/>
+                    </stop>
+                    <stop offset="100%" style="stop-color:#00ff88">
+                        <animate attributeName="stop-color" values="#00ff88;#00f5ff;#ff00ff;#00ff88" dur="4s" repeatCount="indefinite"/>
+                    </stop>
+                </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#g1)" stroke-width="2.5" opacity=".8">
+                <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="20s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="url(#g1)" stroke-width="1" opacity=".3">
+                <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="15s" repeatCount="indefinite"/>
+            </circle>
+            <text x="50" y="42" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="14" font-weight="900" fill="url(#g1)">DM</text>
+            <text x="50" y="58" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="8" font-weight="600" fill="url(#g1)">SMART LAB</text>
+            <text x="50" y="68" text-anchor="middle" font-family="Orbitron,sans-serif" font-size="7" font-weight="400" fill="#00f5ff" opacity=".6">AI</text>
+        </svg>
+        <h3 style="font-family:Orbitron,sans-serif;margin:6px 0;background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.1rem;">DM SMART LAB AI</h3>
+        <p style="font-size:.55rem;opacity:.35;letter-spacing:.35em;text-transform:uppercase;margin:0;">v8.0 Ultimate Edition</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ============================================
-#  SIDEBAR LOGO
+#  MAIN APPLICATION
 # ============================================
-with st.sidebar:
-    render_logo()
-
-# ============================================
-#  LOGIN PAGE
-# ============================================
-if not st.session_state.logged_in:
-    lc1, lc2, lc3 = st.columns([1, 2, 1])
-    with lc2:
-        # Language selector
-        ll = st.selectbox("Language", ["FR Francais", "AR العربية", "EN English"], label_visibility="collapsed")
-        st.session_state.lang = "fr" if "FR" in ll else ("ar" if "AR" in ll else "en")
-
-        # Logo
+def main():
+    """Main application"""
+    
+    # Apply CSS
+    apply_custom_css()
+    
+    # Render voice player
+    render_voice_player()
+    
+    # Sidebar logo
+    with st.sidebar:
         render_logo()
-
-        # Login card with animated border
-        st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-        <div style='font-size:3.5rem;margin-bottom:10px;'>
-            <span style='animation: pulse 2s ease-in-out infinite;display:inline-block;'>🔐</span>
-        </div>
-        <h2 class='dm-nt'>{t('login_title')}</h2>
-        <p style='opacity:.4;font-size:.85rem;'>{t('login_subtitle')}</p>
-        </div>
-        <style>
-        @keyframes pulse {{
-            0%, 100% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.1); }}
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        with st.form("login"):
-            u = st.text_input(f"{t('username')}", placeholder="admin / dhia / demo")
-            p = st.text_input(f"{t('password')}", type="password")
-            if st.form_submit_button(f"{t('connect')}", use_container_width=True):
-                if u.strip():
-                    r = db_login(u.strip(), p)
-                    if r is None:
-                        st.error("User not found")
-                    elif isinstance(r, dict) and "error" in r:
-                        if r["error"] == "locked":
-                            st.error("Account locked. Try again later.")
+    
+    # ============================================
+    #  LOGIN PAGE
+    # ============================================
+    if not st.session_state.logged_in:
+        lc1, lc2, lc3 = st.columns([1, 2, 1])
+        with lc2:
+            # Language selector
+            lang_options = ["FR Français", "AR العربية", "EN English"]
+            current_index = ["fr", "ar", "en"].index(st.session_state.lang)
+            lang_choice = st.selectbox("Language", lang_options, index=current_index, label_visibility="collapsed")
+            st.session_state.lang = {"FR Français": "fr", "AR العربية": "ar", "EN English": "en"}[lang_choice]
+            
+            # Logo
+            render_logo()
+            
+            # Login card
+            st.markdown(f"""
+            <div class='dm-card dm-card-cyan' style='text-align:center;'>
+                <div style='font-size:3.5rem;margin-bottom:10px;'>
+                    <span style='animation: pulse 2s ease-in-out infinite;display:inline-block;'>🔐</span>
+                </div>
+                <h2 class='dm-nt'>{t('login')}</h2>
+                <p style='opacity:.4;font-size:.85rem;'>Professional Authentication System</p>
+            </div>
+            <style>
+            @keyframes pulse {{
+                0%, 100% {{ transform: scale(1); }}
+                50% {{ transform: scale(1.1); }}
+            }}
+            </style>
+            """, unsafe_allow_html=True)
+            
+            with st.form("login_form"):
+                username = st.text_input(t("username"), placeholder="admin / dhia / demo")
+                password = st.text_input(t("password"), type="password")
+                submit = st.form_submit_button(t("connect"), use_container_width=True)
+                
+                if submit:
+                    if username.strip():
+                        result = db_login(username.strip(), password)
+                        
+                        if result is None:
+                            st.error("❌ User not found")
+                        elif isinstance(result, dict) and "error" in result:
+                            if result["error"] == "locked":
+                                st.error(f"🔒 Account locked. Try again later.")
+                            else:
+                                st.error(f"❌ Wrong password. {result.get('attempts_left', 0)} attempts left")
                         else:
-                            st.error(f"Wrong password. {r.get('left', 0)} attempts left")
-                    else:
-                        st.session_state.logged_in = True
-                        st.session_state.user_id = r["id"]
-                        st.session_state.user_name = r["username"]
-                        st.session_state.user_role = r["role"]
-                        st.session_state.user_full_name = r["full_name"]
-                        db_log(r["id"], r["username"], "Login")
-                        st.rerun()
-
-        st.markdown("""<div style='text-align:center;opacity:.3;font-size:.72rem;margin-top:16px;'>
-        admin/admin2026 | dhia/dhia2026 | demo/demo123
-        </div>""", unsafe_allow_html=True)
-    st.stop()
+                            # Success
+                            st.session_state.logged_in = True
+                            st.session_state.user_id = result["id"]
+                            st.session_state.user_name = result["username"]
+                            st.session_state.user_role = result["role"]
+                            st.session_state.user_full_name = result["full_name"]
+                            st.session_state.user_email = result.get("email", "")
+                            st.session_state.lang = result.get("language", "fr")
+                            
+                            db_log_activity(result["id"], result["username"], "Login")
+                            st.rerun()
+            
+            st.markdown("""
+            <div style='text-align:center;opacity:.3;font-size:.72rem;margin-top:16px;'>
+                admin/admin2026 | dhia/dhia2026 | demo/demo123
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.stop()
+    
+    # ============================================
+    #  SIDEBAR NAVIGATION
+    # ============================================
+    with st.sidebar:
+        # User info
+        role_info = ROLES.get(st.session_state.user_role, ROLES["viewer"])
+        st.markdown(f"### {role_info['icon']} {st.session_state.user_full_name}")
+        st.caption(f"@{st.session_state.user_name} | {tl(role_info['label'])}")
+        
+        # Daily tip
+        tips = DAILY_TIPS.get(st.session_state.lang, DAILY_TIPS["fr"])
+        tip_index = datetime.now().timetuple().tm_yday % len(tips)
+        st.info(f"**💡 {t('daily_tip')}:**\n\n{tips[tip_index]}")
+        
+        st.markdown("---")
+        
+        # Language selector
+        st.markdown(f"#### {t('language')}")
+        lang_options = ["FR Français", "AR العربية", "EN English"]
+        current_index = ["fr", "ar", "en"].index(st.session_state.lang)
+        lang_choice = st.radio("lang_radio", lang_options, index=current_index, label_visibility="collapsed")
+        new_lang = {"FR Français": "fr", "AR العربية": "ar", "EN English": "en"}[lang_choice]
+        
+        if new_lang != st.session_state.lang:
+            st.session_state.lang = new_lang
+            st.rerun()
+        
+        st.markdown("---")
+        
+        # Navigation menu
+        menu_items = [
+            f"🏠 {t('home')}",
+            f"🔬 {t('scan')}",
+            f"📦 {t('batch')}",
+            f"👥 {t('patients')}",
+            f"📘 {t('encyclopedia')}",
+            f"📊 {t('dashboard')}",
+            f"🧠 {t('quiz')}",
+            f"💬 {t('chatbot')}",
+            f"🔄 {t('compare')}",
+            f"🎓 {t('training')}",
+        ]
+        
+        menu_keys = ["home", "scan", "batch", "patients", "enc", "dash", "quiz", "chat", "cmp", "training"]
+        
+        if get_role_level() >= 5:
+            menu_items.append(f"⚙️ {t('admin')}")
+            menu_keys.append("admin")
+        
+        menu_items.append(f"ℹ️ {t('about')}")
+        menu_keys.append("about")
+        
+        selected_menu = st.radio("Navigation", menu_items, label_visibility="collapsed")
+        page = dict(zip(menu_items, menu_keys)).get(selected_menu, "home")
+        
+        st.markdown("---")
+        
+        # Logout button
+        if st.button(f"🚪 {t('logout')}", use_container_width=True):
+            db_log_activity(st.session_state.user_id, st.session_state.user_name, "Logout")
+            for key in DEFAULTS:
+                st.session_state[key] = DEFAULTS[key]
+            st.rerun()
+    
+    # ============================================
+    #  PAGE ROUTING
+    # ============================================
+    
+    if page == "home":
+        render_home_page()
+    elif page == "scan":
+        render_scan_page()
+    elif page == "batch":
+        render_batch_page()
+    elif page == "patients":
+        render_patients_page()
+    elif page == "enc":
+        render_encyclopedia_page()
+    elif page == "dash":
+        render_dashboard_page()
+    elif page == "quiz":
+        render_quiz_page()
+    elif page == "chat":
+        render_chatbot_page()
+    elif page == "cmp":
+        render_compare_page()
+    elif page == "training":
+        render_training_page()
+    elif page == "admin":
+        render_admin_page()
+    elif page == "about":
+        render_about_page()
 
 # ============================================
-#  SIDEBAR NAVIGATION
+#  PAGE RENDERERS
 # ============================================
-with st.sidebar:
-    ri = ROLES.get(st.session_state.user_role, ROLES["viewer"])
-    st.markdown(f"### {ri['icon']} {st.session_state.user_full_name}")
-    st.caption(f"@{st.session_state.user_name} | {tl(ri['label'])}")
 
-    tips = TIPS.get(st.session_state.lang, TIPS["fr"])
-    st.info(f"**{t('daily_tip')}:**\n\n{tips[datetime.now().timetuple().tm_yday % len(tips)]}")
-
-    st.markdown("---")
-    st.markdown(f"#### {t('language')}")
-    lc = st.radio("lang_select", ["FR Francais", "AR العربية", "EN English"], label_visibility="collapsed",
-                  index=["fr", "ar", "en"].index(st.session_state.lang))
-    nl = "fr" if "FR" in lc else ("ar" if "AR" in lc else "en")
-    if nl != st.session_state.lang:
-        st.session_state.lang = nl
-        st.rerun()
-
-    st.markdown("---")
-
-    # Navigation
-    navs = [
-        f"🏠 {t('home')}",
-        f"🔬 {t('scan')}",
-        f"📘 {t('encyclopedia')}",
-        f"📊 {t('dashboard')}",
-        f"🧠 {t('quiz')}",
-        f"💬 {t('chatbot')}",
-        f"🔄 {t('compare')}",
-    ]
-    keys = ["home", "scan", "enc", "dash", "quiz", "chat", "cmp"]
-    if has_role(3):
-        navs.append(f"⚙️ {t('admin')}")
-        keys.append("admin")
-    navs.append(f"ℹ️ {t('about')}")
-    keys.append("about")
-
-    menu = st.radio("Navigation", navs, label_visibility="collapsed")
-
-    st.markdown("---")
-    if st.button(f"🚪 {t('logout')}", use_container_width=True):
-        db_log(st.session_state.user_id, st.session_state.user_name, "Logout")
-        for k in DEFAULTS:
-            st.session_state[k] = DEFAULTS[k]
-        st.rerun()
-
-pg = dict(zip(navs, keys)).get(menu, "home")
-
-# Render voice player at top of page
-render_voice_player()
-
-
-# ════════════════════════════════════════════
-#  PAGE: HOME
-# ════════════════════════════════════════════
-if pg == "home":
-    st.markdown(f"""<h1 style='font-family:Orbitron,sans-serif;'>
-    <span class='dm-nt'>👋 {get_greeting()}, {st.session_state.user_full_name}!</span>
-    </h1>""", unsafe_allow_html=True)
-
-    st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <h2 class='dm-nt'>DM SMART LAB AI</h2>
-    <h4 style='opacity:.6;'>{t('where_science')}</h4>
-    <p style='opacity:.4;font-size:.85rem;'>{t('system_desc')}</p>
-    </div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    w1, w2, w3 = st.columns([2, 2, 1])
-    with w1:
-        if st.button(f"🎙️ {t('welcome_btn')}", use_container_width=True, type="primary"):
-            speak(t("voice_welcome"))
-            st.rerun()
-    with w2:
-        if st.button(f"🤖 {t('intro_btn')}", use_container_width=True, type="primary"):
-            speak(t("voice_intro"))
-            st.rerun()
-    with w3:
-        if st.button(f"🔇 {t('stop_voice')}", use_container_width=True):
-            stop_speech()
-
-    st.markdown("---")
-    st.markdown(f"### 📊 {t('quick_overview')}")
-    s = db_stats(st.session_state.user_id)
-    metrics = [
-        ("🔬", s["total"], t("total_analyses")),
-        ("✅", s["reliable"], t("reliable")),
-        ("⚠️", s["verify"], t("to_verify")),
-        ("🦠", s["top"], t("most_frequent"))
-    ]
+def render_home_page():
+    """Render home page"""
+    st.markdown(f"""
+    <h1 class='dm-nt'>
+        👋 {get_greeting()}, {st.session_state.user_full_name}!
+    </h1>
+    """, unsafe_allow_html=True)
+    
+    st.markdown(f"""
+    <div class='dm-card dm-card-cyan'>
+        <h2 class='dm-nt'>DM SMART LAB AI v{APP_VERSION}</h2>
+        <h4 style='opacity:.6;'>Where Science Meets Intelligence</h4>
+        <p style='opacity:.4;font-size:.85rem;'>Advanced Parasitological Diagnosis System</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Quick stats
+    stats = db_get_statistics(st.session_state.user_id)
+    
+    st.markdown("### 📊 Quick Overview")
     cols = st.columns(4)
-    for col, (ic, v, lb) in zip(cols, metrics):
+    metrics = [
+        ("🔬", stats["total"], "Total Analyses"),
+        ("✅", stats["reliable"], "Reliable"),
+        ("⚠️", stats["to_verify"], "To Verify"),
+        ("🦠", stats["top_parasite"], "Most Frequent")
+    ]
+    
+    for col, (icon, value, label) in zip(cols, metrics):
         with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v'>{v}</div>
-            <div class='dm-m-l'>{lb}</div>
-            </div>""", unsafe_allow_html=True)
-
-
-# ════════════════════════════════════════════
-#  PAGE: SCAN
-# ════════════════════════════════════════════
-elif pg == "scan":
-    st.title(f"🔬 {t('scan')}")
-    mdl, mn, mt = load_model()
-    if mn:
-        st.sidebar.success(f"🧠 Model: {mn}")
-    else:
-        st.sidebar.info(f"🧠 {t('demo_mode')}")
-
-    st.markdown(f"### 📋 1. {t('patient_info')}")
-    ca, cb = st.columns(2)
-    pn = ca.text_input(f"{t('patient_name')} *")
-    pf = cb.text_input(t("patient_firstname"))
-    c1, c2, c3, c4 = st.columns(4)
-    pa = c1.number_input(t("age"), 0, 120, 30)
-    ps = c2.selectbox(t("sex"), [t("male"), t("female")])
-    pw = c3.number_input(t("weight"), 0, 300, 70)
-    pst = c4.selectbox(t("sample_type"), SAMPLES.get(st.session_state.lang, SAMPLES["fr"]))
-
-    st.markdown(f"### 🔬 2. {t('lab_info')}")
-    la, lb2, lc2 = st.columns(3)
-    t1 = la.text_input(f"{t('technician')} 1", value=st.session_state.user_full_name)
-    t2 = lb2.text_input(f"{t('technician')} 2")
-    lm = lc2.selectbox(t("microscope"), MICROSCOPE_TYPES)
-    ld, le = st.columns(2)
-    mg = ld.selectbox(t("magnification"), MAGNIFICATIONS, index=3)
-    pt = le.selectbox(t("preparation"), PREPARATION_TYPES)
-    nt = st.text_area(t("notes"), height=80)
-
+            st.markdown(f"""
+            <div class='dm-m'>
+                <span class='dm-m-i'>{icon}</span>
+                <div class='dm-m-v'>{value}</div>
+                <div class='dm-m-l'>{label}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Quick actions
     st.markdown("---")
-    st.markdown(f"### 📸 3. {t('image_capture')}")
-    src = st.radio("source", [t("take_photo"), t("upload_file")], horizontal=True, label_visibility="collapsed")
-    img = None
-    ih = None
+    st.markdown("### 🚀 Quick Actions")
+    
+    ac1, ac2, ac3, ac4 = st.columns(4)
+    
+    with ac1:
+        if st.button("🔬 New Analysis", use_container_width=True, type="primary"):
+            st.session_state._nav_override = "scan"
+            st.rerun()
+    
+    with ac2:
+        if st.button("📦 Batch Analysis", use_container_width=True):
+            st.session_state._nav_override = "batch"
+            st.rerun()
+    
+    with ac3:
+        if st.button("👥 Manage Patients", use_container_width=True):
+            st.session_state._nav_override = "patients"
+            st.rerun()
+    
+    with ac4:
+        if st.button("📊 View Dashboard", use_container_width=True):
+            st.session_state._nav_override = "dash"
+            st.rerun()
 
-    if t("take_photo") in src:
-        st.info(f"📷 {t('camera_hint')}")
-        cp = st.camera_input("camera")
-        if cp:
-            img = Image.open(cp).convert("RGB")
-            ih = hashlib.md5(cp.getvalue()).hexdigest()
+def render_scan_page():
+    """Render scan & analysis page"""
+    st.title("🔬 Scan & Analysis")
+    
+    # Load AI model
+    model, model_name, model_type = load_ai_model()
+    
+    if model_name:
+        st.sidebar.success(f"🧠 Model: {model_name}")
     else:
-        uf = st.file_uploader(t("upload_file"), type=["jpg", "jpeg", "png", "bmp", "tiff"])
-        if uf:
-            img = Image.open(uf).convert("RGB")
-            ih = hashlib.md5(uf.getvalue()).hexdigest()
-
+        st.sidebar.info("🧠 Demo Mode (No AI model loaded)")
+    
+    # Patient info
+    st.markdown("### 📋 1. Patient Information")
+    
+    with st.expander("Patient Details", expanded=True):
+        pc1, pc2 = st.columns(2)
+        patient_name = pc1.text_input("Patient Name *")
+        patient_firstname = pc2.text_input("First Name")
+        
+        pc3, pc4, pc5, pc6 = st.columns(4)
+        patient_age = pc3.number_input("Age", 0, 120, 30)
+        patient_sex = pc4.selectbox("Sex", ["Male", "Female"])
+        patient_weight = pc5.number_input("Weight (kg)", 0, 300, 70)
+        sample_type = pc6.selectbox("Sample Type", SAMPLE_TYPES.get(st.session_state.lang, SAMPLE_TYPES["fr"]))
+    
+    # Lab info
+    st.markdown("### 🔬 2. Laboratory Information")
+    
+    with st.expander("Lab Details", expanded=True):
+        lc1, lc2, lc3 = st.columns(3)
+        tech1 = lc1.text_input("Technician 1", value=st.session_state.user_full_name)
+        tech2 = lc2.text_input("Technician 2")
+        microscope = lc3.selectbox("Microscope", MICROSCOPE_TYPES)
+        
+        lc4, lc5 = st.columns(2)
+        magnification = lc4.selectbox("Magnification", MAGNIFICATIONS, index=3)
+        preparation = lc5.selectbox("Preparation", PREPARATION_TYPES)
+        
+        notes = st.text_area("Clinical Notes", height=80)
+    
+    # Image capture
+    st.markdown("### 📸 3. Image Capture")
+    
+    capture_method = st.radio("Capture Method", 
+                              ["📸 Camera", "📁 Upload File"], 
+                              horizontal=True, 
+                              label_visibility="collapsed")
+    
+    img = None
+    img_hash = None
+    
+    if "📸" in capture_method:
+        st.info("📷 Position microscope eyepiece in front of camera")
+        camera_photo = st.camera_input("camera")
+        if camera_photo:
+            img = Image.open(camera_photo).convert("RGB")
+            img_hash = hashlib.md5(camera_photo.getvalue()).hexdigest()
+    else:
+        upload_file = st.file_uploader("Upload Image", type=ALLOWED_EXTENSIONS)
+        if upload_file:
+            img = Image.open(upload_file).convert("RGB")
+            img_hash = hashlib.md5(upload_file.getvalue()).hexdigest()
+    
     if img:
-        if not pn.strip():
-            st.error(t("name_required"))
+        if not patient_name.strip():
+            st.error("❌ Patient name is required!")
             st.stop()
-
-        if st.session_state.get("_ih") != ih:
-            st.session_state._ih = ih
+        
+        # Generate new seeds if image changed
+        if st.session_state.get("_current_hash") != img_hash:
+            st.session_state._current_hash = img_hash
             st.session_state.demo_seed = random.randint(0, 999999)
             st.session_state.heatmap_seed = random.randint(0, 999999)
-
-        ci, cr = st.columns(2)
-        with ci:
-            with st.expander("🎛️ Zoom / Adjust"):
-                z = st.slider("Zoom", 1.0, 5.0, 1.0, 0.25)
-                br = st.slider("Brightness", 0.5, 2.0, 1.0, 0.1)
-                co = st.slider("Contrast", 0.5, 2.0, 1.0, 0.1)
-                sa = st.slider("Saturation", 0.0, 2.0, 1.0, 0.1)
-            adj = adjust(img, br, co, sa)
-            if z > 1:
-                adj = zoom_img(adj, z)
-
-            tabs = st.tabs(["📷 Original", "🔥 Thermal", "📐 Edges", "✨ Enhanced", "🔄 Negative", "🏔️ Emboss", "🎯 Heatmap"])
+        
+        # Image processing and results
+        ic1, ic2 = st.columns([1, 1])
+        
+        with ic1:
+            st.markdown("#### 🎛️ Image Processing")
+            
+            with st.expander("Adjustments", expanded=False):
+                zoom = st.slider("Zoom", 1.0, 5.0, 1.0, 0.25)
+                brightness = st.slider("Brightness", 0.5, 2.0, 1.0, 0.1)
+                contrast = st.slider("Contrast", 0.5, 2.0, 1.0, 0.1)
+                saturation = st.slider("Saturation", 0.0, 2.0, 1.0, 0.1)
+            
+            processed_img = process_image(img, brightness, contrast, saturation)
+            if zoom > 1.0:
+                processed_img = zoom_image(processed_img, zoom)
+            
+            tabs = st.tabs(["Original", "Thermal", "Edges", "Enhanced", "Negative", "Emboss", "Heatmap"])
+            
             with tabs[0]:
-                st.image(adj, use_container_width=True)
+                st.image(processed_img, use_container_width=True)
             with tabs[1]:
-                st.image(thermal(adj), use_container_width=True)
+                st.image(apply_filter_thermal(processed_img), use_container_width=True)
             with tabs[2]:
-                st.image(edges_filter(adj), use_container_width=True)
+                st.image(apply_filter_edges(processed_img), use_container_width=True)
             with tabs[3]:
-                st.image(enhanced_filter(adj), use_container_width=True)
+                st.image(apply_filter_enhanced(processed_img), use_container_width=True)
             with tabs[4]:
-                st.image(negative_filter(adj), use_container_width=True)
+                st.image(apply_filter_negative(processed_img), use_container_width=True)
             with tabs[5]:
-                st.image(emboss_filter(adj), use_container_width=True)
+                st.image(apply_filter_emboss(processed_img), use_container_width=True)
             with tabs[6]:
-                st.image(gen_heatmap(img, st.session_state.heatmap_seed), use_container_width=True)
-
-        with cr:
-            st.markdown(f"### 🧠 {t('result')}")
-            with st.spinner("Analyzing..."):
-                pg2 = st.progress(0)
+                st.image(generate_heatmap(img, st.session_state.heatmap_seed), use_container_width=True)
+        
+        with ic2:
+            st.markdown("#### 🧠 AI Analysis Result")
+            
+            # Run prediction
+            with st.spinner("🔬 Analyzing..."):
+                progress_bar = st.progress(0)
                 for i in range(100):
                     time.sleep(0.003)
-                    pg2.progress(i + 1)
-                res = predict(mdl, mt, img, st.session_state.demo_seed)
-
-            lb_result = res["label"]
-            cf = res["conf"]
-            rc = risk_color(res["risk"])
-            info = PARASITE_DB.get(lb_result, PARASITE_DB["Negative"])
-
-            if not res["rel"]:
-                st.warning(t("low_conf_warn"))
-            if res["demo"]:
-                st.info(t("demo_mode"))
-
-            st.markdown(f"""<div class='dm-card' style='border-left:4px solid {rc};'>
-            <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;'>
-            <div>
-                <h2 style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;margin:0;font-family:Orbitron;'>{lb_result}</h2>
-                <p style='opacity:.4;font-style:italic;'>{info['sci']}</p>
+                    progress_bar.progress(i + 1)
+                
+                result = predict_parasite(model, model_type, img, st.session_state.demo_seed)
+            
+            parasite_label = result["label"]
+            confidence = result["confidence"]
+            risk = result["risk"]
+            risk_clr = risk_color(risk)
+            
+            parasite_info = PARASITE_DB.get(parasite_label, PARASITE_DB["Negative"])
+            
+            # Warnings
+            if not result["is_reliable"]:
+                st.warning("⚠️ Low confidence. Manual verification recommended!")
+            
+            if result["is_demo"]:
+                st.info("ℹ️ Demo Mode Active (Simulated Results)")
+            
+            # Result card
+            st.markdown(f"""
+            <div class='dm-card' style='border-left:4px solid {risk_clr};'>
+                <div style='display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;'>
+                    <div>
+                        <h2 style='color:{risk_clr}!important;-webkit-text-fill-color:{risk_clr}!important;margin:0;font-family:Orbitron;'>
+                            {parasite_label}
+                        </h2>
+                        <p style='opacity:.4;font-style:italic;'>{parasite_info['sci']}</p>
+                    </div>
+                    <div style='text-align:center;'>
+                        <div style='font-size:2.8rem;font-weight:900;font-family:JetBrains Mono;color:{risk_clr}!important;-webkit-text-fill-color:{risk_clr}!important;'>
+                            {confidence}%
+                        </div>
+                        <div style='font-size:.7rem;opacity:.4;'>Confidence</div>
+                    </div>
+                </div>
+                <hr style='opacity:.1;margin:14px 0;'>
+                <p><b>🔬 Morphology:</b><br>{tl(parasite_info['morph'])}</p>
+                <p><b>⚠️ Risk:</b> <span style='color:{risk_clr}!important;-webkit-text-fill-color:{risk_clr}!important;font-weight:700;'>
+                    {tl(parasite_info['risk_d'])}
+                </span></p>
+                <div style='background:rgba(0,255,136,.06);padding:14px;border-radius:12px;margin:10px 0;border:1px solid rgba(0,255,136,.1);'>
+                    <b>💡 Medical Advice:</b><br>{tl(parasite_info['advice'])}
+                </div>
+                <div style='background:rgba(0,100,255,.06);padding:14px;border-radius:12px;font-style:italic;border:1px solid rgba(0,100,255,.1);'>
+                    🤖 {tl(parasite_info['funny'])}
+                </div>
             </div>
-            <div style='text-align:center;'>
-                <div style='font-size:2.8rem;font-weight:900;font-family:JetBrains Mono;color:{rc}!important;-webkit-text-fill-color:{rc}!important;'>{cf}%</div>
-                <div style='font-size:.7rem;opacity:.4;'>{t("confidence")}</div>
-            </div>
-            </div>
-            <hr style='opacity:.1;margin:14px 0;'>
-            <p><b>🔬 {t("morphology")}:</b><br>{tl(info['morph'])}</p>
-            <p><b>⚠️ {t("risk")}:</b> <span style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-weight:700;'>{tl(info['risk_d'])}</span></p>
-            <div style='background:rgba(0,255,136,.06);padding:14px;border-radius:12px;margin:10px 0;border:1px solid rgba(0,255,136,.1);'>
-                <b>💡 {t("advice")}:</b><br>{tl(info['advice'])}
-            </div>
-            <div style='background:rgba(0,100,255,.06);padding:14px;border-radius:12px;font-style:italic;border:1px solid rgba(0,100,255,.1);'>
-                🤖 {tl(info['funny'])}
-            </div>
-            </div>""", unsafe_allow_html=True)
-
+            """, unsafe_allow_html=True)
+            
+            # Voice controls
             vc1, vc2 = st.columns(2)
             with vc1:
-                if st.button(f"🔊 {t('listen')}", use_container_width=True):
-                    speak(f"{lb_result}. {tl(info['funny'])}")
+                if st.button("🔊 Listen", use_container_width=True):
+                    speak(f"{parasite_label}. {tl(parasite_info['funny'])}")
                     st.rerun()
             with vc2:
-                if st.button(f"🔇 {t('stop_voice')}", key="sv2", use_container_width=True):
+                if st.button("🔇 Stop", key="stop_voice", use_container_width=True):
                     stop_speech()
-
-            if info.get("tests"):
-                with st.expander(f"🩺 {t('extra_tests')}"):
-                    for x in info["tests"]:
-                        st.markdown(f"- {x}")
-
-            dk = tl(info.get("keys", {}))
-            if dk and dk not in ["N/A", "غير متوفر"]:
-                with st.expander(f"🔑 {t('diagnostic_keys')}"):
-                    st.markdown(dk)
-
-            cy = tl(info.get("cycle", {}))
-            if cy and cy not in ["N/A", "غير متوفر"]:
-                with st.expander(f"🔄 {t('lifecycle')}"):
-                    st.markdown(f"**{cy}**")
-
-            if res["preds"] and HAS_PLOTLY:
-                with st.expander(f"📊 {t('all_probabilities')}"):
-                    sp = dict(sorted(res["preds"].items(), key=lambda x: x[1], reverse=True))
-                    fig = px.bar(x=list(sp.values()), y=list(sp.keys()), orientation='h',
-                                 color=list(sp.values()), color_continuous_scale='RdYlGn_r')
-                    fig.update_layout(height=220, template=plot_template,
-                                      margin=dict(l=20, r=20, t=10, b=20), showlegend=False)
+            
+            # Additional info
+            if parasite_info.get("tests"):
+                with st.expander("🩺 Suggested Tests"):
+                    for test in parasite_info["tests"]:
+                        st.markdown(f"- {test}")
+            
+            keys_text = tl(parasite_info.get("keys", {}))
+            if keys_text and keys_text not in ["N/A", "غير متوفر"]:
+                with st.expander("🔑 Diagnostic Keys"):
+                    st.markdown(keys_text)
+            
+            cycle_text = tl(parasite_info.get("cycle", {}))
+            if cycle_text and cycle_text not in ["N/A", "غير متوفر"]:
+                with st.expander("🔄 Life Cycle"):
+                    st.markdown(f"**{cycle_text}**")
+            
+            if result["predictions"] and HAS_PLOTLY:
+                with st.expander("📊 All Predictions"):
+                    sorted_preds = dict(sorted(result["predictions"].items(), 
+                                              key=lambda x: x[1], reverse=True))
+                    fig = px.bar(x=list(sorted_preds.values()), 
+                               y=list(sorted_preds.keys()), 
+                               orientation='h',
+                               color=list(sorted_preds.values()),
+                               color_continuous_scale='RdYlGn_r')
+                    fig.update_layout(height=220, template='plotly_dark',
+                                    margin=dict(l=20, r=20, t=10, b=20),
+                                    showlegend=False)
                     st.plotly_chart(fig, use_container_width=True)
-
+        
+        # Action buttons
         st.markdown("---")
-        a1, a2, a3 = st.columns(3)
-        with a1:
-            try:
-                pdf = make_pdf(
-                    {"Nom": pn, "Prenom": pf, "Age": str(pa), "Sexe": ps, "Poids": str(pw), "Echantillon": pst},
-                    {"Microscope": lm, "Grossissement": mg, "Preparation": pt, "Tech1": t1, "Tech2": t2, "Notes": nt},
-                    res, lb_result)
-                st.download_button(f"📥 {t('download_pdf')}", pdf,
-                                   f"Rapport_{pn}_{datetime.now().strftime('%Y%m%d')}.pdf",
-                                   "application/pdf", use_container_width=True)
-            except Exception as e:
-                st.error(f"PDF Error: {e}")
-        with a2:
-            if has_role(2) and st.button(f"💾 {t('save_db')}", use_container_width=True):
-                aid = db_save_analysis(st.session_state.user_id, {
-                    "pn": pn, "pf": pf, "pa": pa, "ps": ps, "pw": pw,
-                    "st": pst, "mt": lm, "mg": mg, "pt": pt, "t1": t1, "t2": t2, "nt": nt,
-                    "label": lb_result, "conf": cf, "risk": res["risk"],
-                    "rel": 1 if res["rel"] else 0,
-                    "preds": res["preds"], "hash": ih, "demo": 1 if res["demo"] else 0
-                })
-                db_log(st.session_state.user_id, st.session_state.user_name, "Analysis", f"ID:{aid}")
-                st.success(t("saved_ok"))
-        with a3:
-            if st.button(f"🔄 {t('new_analysis')}", use_container_width=True):
+        st.markdown("### ⚙️ Actions")
+        
+        ac1, ac2, ac3 = st.columns(3)
+        
+        with ac1:
+            if HAS_FPDF:
+                patient_data = {
+                    "Nom": patient_name,
+                    "Prenom": patient_firstname,
+                    "Age": str(patient_age),
+                    "Sexe": patient_sex,
+                    "Poids": str(patient_weight),
+                    "Echantillon": sample_type
+                }
+                
+                lab_data = {
+                    "Microscope": microscope,
+                    "Grossissement": magnification,
+                    "Preparation": preparation,
+                    "Technicien 1": tech1,
+                    "Technicien 2": tech2,
+                    "Notes": notes
+                }
+                
+                pdf_bytes = generate_pdf_report(patient_data, lab_data, result, parasite_label)
+                
+                st.download_button(
+                    "📥 Download PDF Report",
+                    pdf_bytes,
+                    f"Report_{patient_name}_{datetime.now().strftime('%Y%m%d')}.pdf",
+                    "application/pdf",
+                    use_container_width=True
+                )
+        
+        with ac2:
+            if has_permission("save"):
+                if st.button("💾 Save to Database", use_container_width=True):
+                    analysis_id = db_create_analysis(st.session_state.user_id, {
+                        "patient_id": None,
+                        "sample_type": sample_type,
+                        "microscope_type": microscope,
+                        "magnification": magnification,
+                        "preparation_type": preparation,
+                        "technician1": tech1,
+                        "technician2": tech2,
+                        "parasite_detected": parasite_label,
+                        "confidence": confidence,
+                        "risk_level": risk,
+                        "is_reliable": result["is_reliable"],
+                        "all_predictions": result["predictions"],
+                        "image_hash": img_hash,
+                        "is_demo": result["is_demo"],
+                        "clinical_notes": notes
+                    })
+                    
+                    db_log_activity(st.session_state.user_id, st.session_state.user_name, 
+                                  "Analysis Created", f"ID: {analysis_id}")
+                    
+                    st.success(f"✅ Analysis saved! ID: {analysis_id}")
+        
+        with ac3:
+            if st.button("🔄 New Analysis", use_container_width=True):
                 st.session_state.demo_seed = None
-                st.session_state._ih = None
+                st.session_state._current_hash = None
                 st.rerun()
 
-
-# ════════════════════════════════════════════
-#  PAGE: ENCYCLOPEDIA
-# ════════════════════════════════════════════
-elif pg == "enc":
-    st.title(f"📘 {t('encyclopedia')}")
-    sr = st.text_input(f"🔍 {t('search')}")
-    st.markdown("---")
-    found = False
-    for nm, d in PARASITE_DB.items():
-        if nm == "Negative":
-            continue
-        if sr.strip() and sr.lower() not in (nm + " " + d["sci"]).lower():
-            continue
-        found = True
-        rc = risk_color(d["risk"])
-        with st.expander(f"{d['icon']} {nm} -- *{d['sci']}* | {tl(d['risk_d'])}", expanded=not sr.strip()):
-            ci, cv = st.columns([2.5, 1])
-            with ci:
-                st.markdown(f"""<div class='dm-card' style='border-left:3px solid {rc};'>
-                <h4 style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-family:Orbitron;'>{d['sci']}</h4>
-                <p><b>🔬 {t("morphology")}:</b><br>{tl(d['morph'])}</p>
-                <p><b>📖 {t("description")}:</b><br>{tl(d['desc'])}</p>
-                <p><b>⚠️ {t("risk")}:</b> <span style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-weight:700;'>{tl(d['risk_d'])}</span></p>
-                <div style='background:rgba(0,255,136,.06);padding:12px;border-radius:10px;margin:8px 0;'><b>💡:</b> {tl(d['advice'])}</div>
-                <div style='background:rgba(0,100,255,.06);padding:12px;border-radius:10px;font-style:italic;'>🤖 {tl(d['funny'])}</div>
-                </div>""", unsafe_allow_html=True)
-                cy = tl(d.get("cycle", {}))
-                if cy and cy not in ["N/A", "غير متوفر"]:
-                    st.markdown(f"**🔄 {t('lifecycle')}:** {cy}")
-                dk = tl(d.get("keys", {}))
-                if dk:
-                    st.markdown(f"**🔑 {t('diagnostic_keys')}:**\n{dk}")
-                if d.get("tests"):
-                    st.markdown(f"**🩺 {t('extra_tests')}:** {', '.join(d['tests'])}")
-            with cv:
-                rp = risk_pct(d["risk"])
-                if rp > 0:
-                    st.progress(rp / 100, text=f"{rp}%")
-                st.markdown(f'<div style="text-align:center;font-size:4rem;">{d["icon"]}</div>', unsafe_allow_html=True)
-                if st.button(f"🔊 {t('listen')}", key=f"ev_{nm}"):
-                    speak(f"{nm}. {tl(d['desc'])}")
-                    st.rerun()
-    if sr.strip() and not found:
-        st.warning(t("no_results"))
-
-
-# ════════════════════════════════════════════
-#  PAGE: DASHBOARD
-# ════════════════════════════════════════════
-elif pg == "dash":
-    st.title(f"📊 {t('dashboard')}")
-    s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
-    an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
-
-    metrics = [
-        ("🔬", s["total"], t("total_analyses")),
-        ("✅", s["reliable"], t("reliable")),
-        ("⚠️", s["verify"], t("to_verify")),
-        ("🦠", s["top"], t("most_frequent")),
-        ("📈", f"{s['avg']}%", t("avg_confidence"))
-    ]
-    cols = st.columns(5)
-    for col, (ic, v, lb) in zip(cols, metrics):
-        with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v'>{v}</div>
-            <div class='dm-m-l'>{lb}</div>
-            </div>""", unsafe_allow_html=True)
-
-    if s["total"] > 0 and an:
-        df = pd.DataFrame(an)
-        st.markdown("---")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(f"#### {t('parasite_distribution')}")
-            if HAS_PLOTLY and "parasite_detected" in df.columns:
-                pc = df["parasite_detected"].value_counts()
-                fig = px.pie(values=pc.values, names=pc.index, hole=.4,
-                             color_discrete_sequence=px.colors.sequential.Plasma)
-                fig.update_layout(height=350, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-                st.plotly_chart(fig, use_container_width=True)
-        with c2:
-            st.markdown(f"#### {t('confidence_levels')}")
-            if HAS_PLOTLY and "confidence" in df.columns:
-                fig = px.histogram(df, x="confidence", nbins=20, color_discrete_sequence=["#00f5ff"])
-                fig.update_layout(height=350, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-                st.plotly_chart(fig, use_container_width=True)
-
-        tr = db_trends(30)
-        if tr and HAS_PLOTLY:
-            st.markdown(f"#### {t('trends')}")
-            fig = px.line(pd.DataFrame(tr), x="day", y="count", color="parasite_detected", markers=True)
-            fig.update_layout(height=300, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-
-        st.markdown(f"### 📋 {t('history')}")
-        display_cols = [c for c in ["id", "analysis_date", "patient_name", "parasite_detected", "confidence", "risk_level", "analyst", "validated"] if c in df.columns]
-        st.dataframe(df[display_cols] if display_cols else df, use_container_width=True)
-
-        if has_role(2) and "validated" in df.columns:
-            uv = df[df["validated"] == 0]
-            if not uv.empty:
-                vi = st.selectbox("Validate ID:", uv["id"].tolist())
-                if st.button(f"✅ {t('validate')} #{vi}"):
-                    db_validate(vi, st.session_state.user_full_name)
-                    st.success(f"Validated #{vi}")
-                    st.rerun()
-
-        st.markdown("---")
-        e1, e2 = st.columns(2)
-        with e1:
-            st.download_button(f"⬇️ {t('export_csv')}", df.to_csv(index=False).encode('utf-8-sig'),
-                               "analyses.csv", "text/csv", use_container_width=True)
-        with e2:
-            st.download_button(f"⬇️ {t('export_json')}",
-                               df.to_json(orient='records', force_ascii=False).encode(),
-                               "analyses.json", "application/json", use_container_width=True)
-    else:
-        st.info(t("no_data"))
-
-
-# ════════════════════════════════════════════
-#  PAGE: QUIZ (Fixed & Enhanced)
-# ════════════════════════════════════════════
-elif pg == "quiz":
-    st.title(f"🧠 {t('quiz')}")
-
-    # Initialize quiz state properly
-    if "quiz_state" not in st.session_state:
-        st.session_state.quiz_state = {
-            "current": 0, "score": 0, "answered": [],
-            "active": False, "order": [], "wrong": [],
-            "total_q": 0, "finished": False, "selected_answer": None
-        }
-
-    qs = st.session_state.quiz_state
-
-    # Leaderboard
-    with st.expander(f"🏆 {t('leaderboard')}"):
-        lb_data = db_leaderboard()
-        if lb_data:
-            for i, e in enumerate(lb_data[:10]):
-                medal = "🥇" if i == 0 else "🥈" if i == 1 else "🥉" if i == 2 else f"**#{i + 1}**"
-                st.markdown(f"{medal} **{e['username']}** — {e['score']}/{e['total_questions']} ({e['percentage']:.0f}%)")
-        else:
-            st.info(t("no_data"))
-
-    # Quiz not started
-# Quiz not started
-    if not qs.get("active", False) and not qs.get("finished", False):
-        st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-        <div style='font-size:4rem;margin-bottom:10px;'>🧠</div>
-        <h3 class='dm-nt'>{ {"fr":"Testez vos connaissances en parasitologie !","ar":"اختبر معارفك في علم الطفيليات!","en":"Test your parasitology knowledge!"}.get(st.session_state.lang,"") }</h3>
-        <p style='opacity:.5;'>{ {"fr":f"{len(QUIZ_QUESTIONS)} questions disponibles","ar":f"{len(QUIZ_QUESTIONS)} سؤال متاح","en":f"{len(QUIZ_QUESTIONS)} questions available"}.get(st.session_state.lang,"") }</p>
-        </div>""", unsafe_allow_html=True)
-
-        st.markdown("---")
-        qc1, qc2 = st.columns(2)
-        with qc1:
-            n_questions = st.slider(
-                {"fr": "Nombre de questions:", "ar": "عدد الأسئلة:", "en": "Number of questions:"}.get(st.session_state.lang, "Questions:"),
-                5, min(25, len(QUIZ_QUESTIONS)), 10
-            )
-        with qc2:
-            cats = list(set(q.get("cat", "General") for q in QUIZ_QUESTIONS))
-            all_cat_label = {"fr": "Toutes les categories", "ar": "جميع الفئات", "en": "All categories"}.get(st.session_state.lang, "All")
-            cats.insert(0, all_cat_label)
-            chosen_cat = st.selectbox(
-                {"fr": "Categorie:", "ar": "الفئة:", "en": "Category:"}.get(st.session_state.lang, "Category:"),
-                cats
-            )
-
-        if st.button(f"🎮 {t('start_quiz')}", use_container_width=True, type="primary"):
-            if chosen_cat == all_cat_label:
-                pool = list(range(len(QUIZ_QUESTIONS)))
-            else:
-                pool = [i for i, q in enumerate(QUIZ_QUESTIONS) if q.get("cat") == chosen_cat]
-
-            if len(pool) == 0:
-                pool = list(range(len(QUIZ_QUESTIONS)))
-
-            random.shuffle(pool)
-            final_order = pool[:min(n_questions, len(pool))]
-
-            st.session_state.quiz_state = {
-                "current": 0,
-                "score": 0,
-                "answered": [],
-                "active": True,
-                "order": final_order,
-                "wrong": [],
-                "total_q": len(final_order),
-                "finished": False,
-                "selected_answer": None,
-                "show_result": False
-            }
-            db_log(st.session_state.user_id, st.session_state.user_name, "Quiz started", f"n={len(final_order)} cat={chosen_cat}")
-            st.rerun()
-
-    # Quiz active - answering questions
-    elif qs.get("active", False) and not qs.get("finished", False):
-        idx = qs["current"]
-        order = qs.get("order", [])
-        total_q = qs.get("total_q", len(order))
-
-        if idx < len(order):
-            qi = order[idx]
-            q = QUIZ_QUESTIONS[qi]
-
-            # Progress
-            progress_val = idx / total_q if total_q > 0 else 0
-            st.progress(progress_val)
-
-            q_num_label = {"fr": "Question", "ar": "سؤال", "en": "Question"}.get(st.session_state.lang, "Question")
-            st.markdown(f"### {q_num_label} {idx + 1}/{total_q}")
-
-            cat = q.get("cat", "")
-            if cat:
-                st.caption(f"📂 {cat}")
-
-            q_text = tl(q["q"])
-            st.markdown(f"""<div class='dm-card dm-card-purple'>
-            <h4 style='margin:0;line-height:1.6;'>{q_text}</h4>
-            </div>""", unsafe_allow_html=True)
-
-            # Check if already answered this question
-            if not qs.get("show_result", False):
-                st.markdown("---")
-                option_cols = st.columns(2)
-                for i, opt in enumerate(q["opts"]):
-                    with option_cols[i % 2]:
-                        letter = ['A', 'B', 'C', 'D'][i]
-                        if st.button(f"{letter}. {opt}", key=f"quiz_opt_{idx}_{i}", use_container_width=True):
-                            correct = (i == q["ans"])
-                            st.session_state.quiz_state["selected_answer"] = i
-                            st.session_state.quiz_state["show_result"] = True
-                            if correct:
-                                st.session_state.quiz_state["score"] += 1
-                            else:
-                                st.session_state.quiz_state["wrong"].append({
-                                    "q": q_text,
-                                    "your": opt,
-                                    "correct": q["opts"][q["ans"]]
-                                })
-                            st.session_state.quiz_state["answered"].append(correct)
-                            st.rerun()
-            else:
-                # Show result of answer
-                selected = qs.get("selected_answer", -1)
-                correct_idx = q["ans"]
-                is_correct = selected == correct_idx
-
-                if is_correct:
-                    st.success(f"✅ { {'fr':'Bonne reponse !','ar':'إجابة صحيحة!','en':'Correct!'}.get(st.session_state.lang,'Correct!') }")
-                else:
-                    correct_ans = q["opts"][correct_idx]
-                    st.error(f"❌ { {'fr':'Reponse correcte','ar':'الإجابة الصحيحة','en':'Correct answer'}.get(st.session_state.lang,'Correct answer') }: **{correct_ans}**")
-
-                # Show explanation
-                expl = tl(q.get("expl", {}))
-                if expl:
-                    st.info(f"📖 {expl}")
-
-                # Show all options with markers
-                for i, opt in enumerate(q["opts"]):
-                    if i == correct_idx:
-                        st.markdown(f"✅ **{['A','B','C','D'][i]}. {opt}**")
-                    elif i == selected and not is_correct:
-                        st.markdown(f"❌ ~~{['A','B','C','D'][i]}. {opt}~~")
-                    else:
-                        st.markdown(f"{'  '}{['A','B','C','D'][i]}. {opt}")
-
-                st.markdown("---")
-
-                # Next question button
-                if idx + 1 < len(order):
-                    if st.button(f"➡️ {t('next_question')}", use_container_width=True, type="primary"):
-                        st.session_state.quiz_state["current"] += 1
-                        st.session_state.quiz_state["show_result"] = False
-                        st.session_state.quiz_state["selected_answer"] = None
-                        st.rerun()
-                else:
-                    finish_label = {"fr": "🏁 Voir les resultats", "ar": "🏁 عرض النتائج", "en": "🏁 See Results"}.get(st.session_state.lang, "🏁 Results")
-                    if st.button(finish_label, use_container_width=True, type="primary"):
-                        st.session_state.quiz_state["finished"] = True
-                        st.session_state.quiz_state["active"] = False
-                        st.rerun()
-
-        else:
-            # Fallback: mark as finished
-            st.session_state.quiz_state["finished"] = True
-            st.session_state.quiz_state["active"] = False
-            st.rerun()
-
-    # Quiz finished - show results
-    elif qs.get("finished", False):
-        score = qs.get("score", 0)
-        total_q = qs.get("total_q", 1)
-        pct = int(score / total_q * 100) if total_q > 0 else 0
-
-        if pct >= 80:
-            emoji, msg = "🏆", t("score_excellent")
-        elif pct >= 60:
-            emoji, msg = "👍", t("score_good")
-        elif pct >= 40:
-            emoji, msg = "📚", t("score_average")
-        else:
-            emoji, msg = "💪", t("score_low")
-
-        st.markdown(f"""<div class='dm-card dm-card-green' style='text-align:center;'>
-        <div style='font-size:5rem;'>{emoji}</div>
-        <h2 class='dm-nt'>{t('result')}</h2>
-        <div style='font-size:4rem;font-weight:900;font-family:JetBrains Mono,monospace;
-            background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88);
-            -webkit-background-clip:text;-webkit-text-fill-color:transparent;'>
-            {score}/{total_q}
-        </div>
-        <p style='font-size:1.5rem;opacity:.8;'>{pct}%</p>
-        <p style='font-size:1.1rem;margin-top:10px;'>{msg}</p>
-        </div>""", unsafe_allow_html=True)
-
-        # Save score to DB
-        try:
-            db_quiz_save(st.session_state.user_id, st.session_state.user_name, score, total_q, pct)
-            db_log(st.session_state.user_id, st.session_state.user_name, "Quiz done", f"{score}/{total_q}={pct}%")
-        except Exception:
-            pass
-
-        # Performance chart
-        if HAS_PLOTLY and total_q > 0:
+def render_batch_page():
+    """Render batch analysis page"""
+    st.title("📦 Batch Analysis")
+    st.info("💡 Upload multiple images for batch processing")
+    
+    uploaded_files = st.file_uploader(
+        "Upload Images (Max 50)",
+        type=ALLOWED_EXTENSIONS,
+        accept_multiple_files=True
+    )
+    
+    if uploaded_files:
+        if len(uploaded_files) > MAX_BATCH_UPLOAD:
+            st.error(f"❌ Maximum {MAX_BATCH_UPLOAD} files allowed!")
+            st.stop()
+        
+        st.success(f"✅ {len(uploaded_files)} images uploaded")
+        
+        # Load model
+        model, model_name, model_type = load_ai_model()
+        
+        if st.button("🚀 Start Batch Analysis", type="primary"):
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            
+            results = []
+            
+            for i, file in enumerate(uploaded_files):
+                status_text.text(f"Processing {i+1}/{len(uploaded_files)}: {file.name}")
+                
+                img = Image.open(file).convert("RGB")
+                result = predict_parasite(model, model_type, img)
+                
+                results.append({
+                    "filename": file.name,
+                    "parasite": result["label"],
+                    "confidence": result["confidence"],
+                    "risk": result["risk"],
+                    "reliable": "✅" if result["is_reliable"] else "⚠️"
+                })
+                
+                progress_bar.progress((i + 1) / len(uploaded_files))
+            
+            status_text.text("✅ Batch analysis complete!")
+            
+            # Display results
             st.markdown("---")
-            analysis_label = {"fr": "Analyse des resultats", "ar": "تحليل النتائج", "en": "Results Analysis"}.get(st.session_state.lang, "Analysis")
-            st.markdown(f"### 📊 {analysis_label}")
-            correct_label = {"fr": "Correctes", "ar": "صحيحة", "en": "Correct"}.get(st.session_state.lang, "Correct")
-            incorrect_label = {"fr": "Incorrectes", "ar": "خاطئة", "en": "Incorrect"}.get(st.session_state.lang, "Incorrect")
-            fig = go.Figure(data=[go.Pie(
-                labels=[correct_label, incorrect_label],
-                values=[score, total_q - score],
-                marker_colors=["#00ff88", "#ff0040"],
-                hole=0.5,
-                textinfo='label+percent',
-                textfont_size=14
-            )])
-            fig.update_layout(height=280, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-            st.plotly_chart(fig, use_container_width=True)
+            st.markdown("### 📊 Results Summary")
+            
+            df = pd.DataFrame(results)
+            st.dataframe(df, use_container_width=True)
+            
+            # Statistics
+            cols = st.columns(4)
+            with cols[0]:
+                st.metric("Total", len(results))
+            with cols[1]:
+                reliable_count = len([r for r in results if r["reliable"] == "✅"])
+                st.metric("Reliable", reliable_count)
+            with cols[2]:
+                negative_count = len([r for r in results if r["parasite"] == "Negative"])
+                st.metric("Negative", negative_count)
+            with cols[3]:
+                avg_conf = sum([r["confidence"] for r in results]) / len(results)
+                st.metric("Avg Confidence", f"{avg_conf:.1f}%")
+            
+            # Export
+            if HAS_EXCEL:
+                excel_bytes = generate_excel_export(results, "Batch Analysis")
+                st.download_button(
+                    "📊 Export to Excel",
+                    excel_bytes,
+                    f"Batch_Analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
 
-        # Wrong answers review
-        wrong = qs.get("wrong", [])
-        if wrong:
-            review_label = {"fr": f"Erreurs a revoir ({len(wrong)})", "ar": f"الأخطاء ({len(wrong)})", "en": f"Mistakes to review ({len(wrong)})"}.get(st.session_state.lang, f"Mistakes ({len(wrong)})")
-            with st.expander(f"❌ {review_label}"):
-                for i, w in enumerate(wrong):
-                    your_label = {"fr": "Votre reponse", "ar": "إجابتك", "en": "Your answer"}.get(st.session_state.lang, "Your answer")
-                    correct_label2 = {"fr": "Correcte", "ar": "الصحيحة", "en": "Correct"}.get(st.session_state.lang, "Correct")
-                    st.markdown(f"""**{i + 1}. {w['q']}**
-- ❌ {your_label}: ~~{w['your']}~~
-- ✅ {correct_label2}: **{w['correct']}**
----""")
-
-        st.markdown("---")
-        if st.button(f"🔄 {t('restart')}", use_container_width=True, type="primary"):
-            st.session_state.quiz_state = {
-                "current": 0, "score": 0, "answered": [],
-                "active": False, "order": [], "wrong": [],
-                "total_q": 0, "finished": False, "selected_answer": None,
-                "show_result": False
-            }
-            st.rerun()
-
-
-# ════════════════════════════════════════════
-#  PAGE: CHATBOT (Fixed & Enhanced)
-# ════════════════════════════════════════════
-elif pg == "chat":
-    st.title(f"💬 DM Bot")
-    st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <div style='display:flex;align-items:center;gap:15px;'>
-        <div style='font-size:2.5rem;'>🤖</div>
-        <div>
-            <h4 style='margin:0;' class='dm-nt'>DM Bot</h4>
-            <p style='margin:0;opacity:.5;font-size:.85rem;'>{ {"fr":"Assistant medical intelligent specialise en parasitologie",
-    "ar":"مساعد طبي ذكي متخصص في علم الطفيليات",
-    "en":"Intelligent medical assistant specialized in parasitology"}.get(st.session_state.lang,"")}</p>
-        </div>
-    </div>
-    </div>""", unsafe_allow_html=True)
-
-    # Initialize chat
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
-
-    if not st.session_state.chat_history:
-        st.session_state.chat_history.append({"role": "bot", "msg": t("chat_welcome")})
-
-    # Display chat history
-    chat_container = st.container()
-    with chat_container:
-        for msg_item in st.session_state.chat_history:
-            if msg_item["role"] == "user":
-                st.markdown(f"""<div style='display:flex;justify-content:flex-end;margin:8px 0;'>
-                <div class='dm-ch dm-cu'>👤 {msg_item['msg'] }</div>
-                </div>""", unsafe_allow_html=True)
+def render_patients_page():
+    """Render patient management page"""
+    st.title("👥 Patient Management")
+    
+    tab1, tab2 = st.tabs(["📋 Patient List", "➕ Add Patient"])
+    
+    with tab1:
+        search_query = st.text_input("🔍 Search patients", placeholder="Name or ID...")
+        
+        if search_query:
+            patients = db_search_patients(search_query)
+            
+            if patients:
+                for patient in patients:
+                    with st.expander(f"{patient['patient_id']} - {patient['first_name']} {patient['last_name']}"):
+                        pc1, pc2, pc3 = st.columns(3)
+                        with pc1:
+                            st.write(f"**Age:** {patient.get('age', 'N/A')}")
+                            st.write(f"**Sex:** {patient.get('sex', 'N/A')}")
+                        with pc2:
+                            st.write(f"**Phone:** {patient.get('phone', 'N/A')}")
+                            st.write(f"**Email:** {patient.get('email', 'N/A')}")
+                        with pc3:
+                            st.write(f"**Status:** {patient.get('status', 'active')}")
+                            st.write(f"**Last Visit:** {patient.get('last_visit', 'N/A')}")
             else:
-                st.markdown(f"""<div style='display:flex;justify-content:flex-start;margin:8px 0;'>
-                <div class='dm-ch dm-cb'>🤖 {msg_item['msg'] }</div>
-                </div>""", unsafe_allow_html=True)
+                st.info("No patients found")
+    
+    with tab2:
+        with st.form("add_patient_form"):
+            st.markdown("### Patient Information")
+            
+            pc1, pc2 = st.columns(2)
+            first_name = pc1.text_input("First Name *")
+            last_name = pc2.text_input("Last Name *")
+            
+            pc3, pc4, pc5 = st.columns(3)
+            age = pc3.number_input("Age", 0, 120, 30)
+            sex = pc4.selectbox("Sex", ["Male", "Female", "Other"])
+            phone = pc5.text_input("Phone")
+            
+            email = st.text_input("Email")
+            address = st.text_area("Address")
+            
+            submit = st.form_submit_button("➕ Add Patient", use_container_width=True)
+            
+            if submit:
+                if first_name and last_name:
+                    patient_id = db_create_patient(
+                        first_name, last_name,
+                        age=age, sex=sex, phone=phone,
+                        email=email, address=address
+                    )
+                    st.success(f"✅ Patient added! ID: {patient_id}")
+                else:
+                    st.error("❌ First name and last name are required!")
 
+def render_encyclopedia_page():
+    """Render encyclopedia page"""
+    st.title("📘 Parasite Encyclopedia")
+    
+    search = st.text_input("🔍 Search parasites...", placeholder="Amoeba, Giardia, etc.")
+    
     st.markdown("---")
+    
+    found = False
+    for parasite_name, parasite_data in PARASITE_DB.items():
+        if parasite_name == "Negative":
+            continue
+        
+        if search.strip() and search.lower() not in (parasite_name + " " + parasite_data["sci"]).lower():
+            continue
+        
+        found = True
+        risk_clr = risk_color(parasite_data["risk"])
+        
+        with st.expander(
+            f"{parasite_data['icon']} {parasite_name} — *{parasite_data['sci']}* | {tl(parasite_data['risk_d'])}",
+            expanded=not search.strip()
+        ):
+            pc1, pc2 = st.columns([2.5, 1])
+            
+            with pc1:
+                st.markdown(f"""
+                <div class='dm-card' style='border-left:3px solid {risk_clr};'>
+                    <h4 style='color:{risk_clr}!important;-webkit-text-fill-color:{risk_clr}!important;'>
+                        {parasite_data['sci']}
+                    </h4>
+                    <p><b>🔬 Morphology:</b><br>{tl(parasite_data['morph'])}</p>
+                    <p><b>📖 Description:</b><br>{tl(parasite_data['desc'])}</p>
+                    <p><b>⚠️ Risk:</b> <span style='color:{risk_clr}!important;-webkit-text-fill-color:{risk_clr}!important;font-weight:700;'>
+                        {tl(parasite_data['risk_d'])}
+                    </span></p>
+                    <div style='background:rgba(0,255,136,.06);padding:12px;border-radius:10px;margin:8px 0;'>
+                        <b>💡:</b> {tl(parasite_data['advice'])}
+                    </div>
+                    <div style='background:rgba(0,100,255,.06);padding:12px;border-radius:10px;font-style:italic;'>
+                        🤖 {tl(parasite_data['funny'])}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                cycle_text = tl(parasite_data.get("cycle", {}))
+                if cycle_text and cycle_text not in ["N/A", "غير متوفر"]:
+                    st.markdown(f"**🔄 Life Cycle:** {cycle_text}")
+                
+                keys_text = tl(parasite_data.get("keys", {}))
+                if keys_text:
+                    st.markdown(f"**🔑 Diagnostic Keys:**\n{keys_text}")
+                
+                if parasite_data.get("tests"):
+                    st.markdown(f"**🩺 Suggested Tests:** {', '.join(parasite_data['tests'])}")
+            
+            with pc2:
+                st.markdown(f'<div style="text-align:center;font-size:4rem;">{parasite_data["icon"]}</div>', 
+                          unsafe_allow_html=True)
+                
+                if st.button(f"🔊 Listen", key=f"listen_{parasite_name}"):
+                    speak(f"{parasite_name}. {tl(parasite_data['desc'])}")
+                    st.rerun()
+    
+    if search.strip() and not found:
+        st.warning("No parasites found matching your search")
 
-    # Input using form to prevent issues
-    with st.form("chat_form", clear_on_submit=True):
-        user_input = st.text_input(t("chat_placeholder"), key="chat_input_field", label_visibility="collapsed",
-                                    placeholder=t("chat_placeholder"))
-        col_send, col_clear = st.columns([4, 1])
-        with col_send:
-            send_btn = st.form_submit_button(
-                {"fr": "📨 Envoyer", "ar": "📨 إرسال", "en": "📨 Send"}.get(st.session_state.lang, "📨 Send"),
-                use_container_width=True
-            )
-        with col_clear:
-            clear_btn = st.form_submit_button(
-                f"🗑️ {t('clear_chat')}",
-                use_container_width=True
-            )
-
-    if send_btn and user_input and user_input.strip():
-        st.session_state.chat_history.append( {"role": "user", "msg": user_input.strip()} )
-        reply = chatbot_reply(user_input.strip())
-        st.session_state.chat_history.append({"role": "bot", "msg": reply})
-        db_log(st.session_state.user_id, st.session_state.user_name, "Chat", user_input[:100])
-        st.rerun()
-
-    if clear_btn:
-        st.session_state.chat_history = []
-        st.rerun()
-
-    # Quick questions
-    st.markdown(f"**{t('quick_questions')}**")
-
-    # Row 1 - Parasites
-    qr1_items = ["Amoeba", "Giardia", "Plasmodium", "Leishmania", "Trypanosoma", "Schistosoma", "Toxoplasma"]
-    qr1_cols = st.columns(len(qr1_items))
-    for col, q_item in zip(qr1_cols, qr1_items):
+def render_dashboard_page():
+    """Render dashboard page"""
+    st.title("📊 Dashboard & Analytics")
+    
+    # Get statistics
+    if get_role_level() >= 4:
+        stats = db_get_statistics()
+        analyses = db_get_analyses(limit=1000)
+    else:
+        stats = db_get_statistics(st.session_state.user_id)
+        analyses = db_get_analyses(st.session_state.user_id, limit=1000)
+    
+    # Metrics
+    metrics = [
+        ("🔬", stats["total"], "Total Analyses"),
+        ("✅", stats["reliable"], "Reliable"),
+        ("⚠️", stats["to_verify"], "To Verify"),
+        ("🦠", stats["top_parasite"], "Most Frequent"),
+        ("📈", f"{stats['avg_confidence']}%", "Avg Confidence")
+    ]
+    
+    cols = st.columns(5)
+    for col, (icon, value, label) in zip(cols, metrics):
         with col:
-            if st.button(q_item, key=f"cq1_{q_item}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "msg": q_item})
-                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(q_item)})
-                st.rerun()
+            st.markdown(f"""
+            <div class='dm-m'>
+                <span class='dm-m-i'>{icon}</span>
+                <div class='dm-m-v'>{value}</div>
+                <div class='dm-m-l'>{label}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
+    if stats["total"] > 0 and analyses and HAS_PLOTLY:
+        df = pd.DataFrame(analyses)
+        
+        st.markdown("---")
+        
+        # Charts
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            st.markdown("#### Parasite Distribution")
+            if "parasite_detected" in df.columns:
+                counts = df["parasite_detected"].value_counts()
+                fig = px.pie(values=counts.values, names=counts.index, hole=0.4)
+                fig.update_layout(height=350, template='plotly_dark', 
+                                margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+        
+        with c2:
+            st.markdown("#### Confidence Levels")
+            if "confidence" in df.columns:
+                fig = px.histogram(df, x="confidence", nbins=20, 
+                                 color_discrete_sequence=["#00f5ff"])
+                fig.update_layout(height=350, template='plotly_dark',
+                                margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+        
+        # Trends
+        trends = db_get_trends(30)
+        if trends:
+            st.markdown("#### 30-Day Trends")
+            trend_df = pd.DataFrame(trends)
+            fig = px.line(trend_df, x="date", y="count", 
+                         color="parasite", markers=True)
+            fig.update_layout(height=300, template='plotly_dark',
+                            margin=dict(l=20, r=20, t=20, b=20))
+            st.plotly_chart(fig, use_container_width=True)
+        
+        # History table
+        st.markdown("### 📋 Analysis History")
+        display_cols = [c for c in ["id", "analysis_date", "patient_id", "parasite_detected", 
+                                    "confidence", "risk_level", "validated", "status"] 
+                       if c in df.columns]
+        st.dataframe(df[display_cols] if display_cols else df, use_container_width=True)
+    else:
+        st.info("No data available yet. Start analyzing to see statistics!")
 
-    # Row 2 - More
-    qr2_items = ["Ascaris", "Taenia", "Oxyure", "Cryptosporidium", "Microscope", "Coloration", "Concentration"]
-    qr2_cols = st.columns(len(qr2_items))
-    for col, q_item in zip(qr2_cols, qr2_items):
-        with col:
-            if st.button(q_item, key=f"cq2_{q_item}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "msg": q_item})
-                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(q_item)})
-                st.rerun()
+def render_quiz_page():
+    """Render quiz page"""
+    st.title("🧠 Medical Quiz")
+    
+    # Note: Quiz questions would need to be defined
+    # This is a placeholder implementation
+    
+    st.info("💡 Quiz feature - Test your parasitology knowledge!")
+    st.markdown("Coming soon in the next update...")
 
-    # Row 3 - Topics
-    q3_labels_map = {
-        "fr": ["Traitement", "Hygiene", "Selle (EPS)", "Aide"],
-        "ar": ["علاج", "نظافة", "فحص البراز", "مساعدة"],
-        "en": ["Treatment", "Hygiene", "Stool Exam", "Help"]
-    }
-    q3_keys_map = ["traitement", "hygiene", "selle", "aide"]
-    q3_labels = q3_labels_map.get(st.session_state.lang, q3_labels_map["fr"])
+def render_chatbot_page():
+    """Render chatbot page"""
+    st.title("💬 DM Bot - Medical Assistant")
+    
+    st.info("💡 Ask me anything about parasites, techniques, or treatments!")
+    st.markdown("Chat functionality - Coming soon...")
 
-    qr3_cols = st.columns(len(q3_labels))
-    for col, (label, key) in zip(qr3_cols, zip(q3_labels, q3_keys_map)):
-        with col:
-            if st.button(label, key=f"cq3_{key}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "msg": label})
-                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(key)})
-                st.rerun()
-
-
-# ════════════════════════════════════════════
-#  PAGE: COMPARISON (Enhanced)
-# ════════════════════════════════════════════
-elif pg == "cmp":
-    st.title(f"🔄 {t('compare')}")
-
-    desc = {"fr": "Comparez deux images microscopiques avec analyse avancee",
-            "ar": "قارن بين صورتين مجهريتين بتحليل متقدم",
-            "en": "Compare two microscopic images with advanced analysis"}.get(st.session_state.lang, "")
-
-    st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <p style='margin:0;'>{desc}</p>
-    </div>""", unsafe_allow_html=True)
-
+def render_compare_page():
+    """Render image comparison page"""
+    st.title("🔄 Image Comparison")
+    
     c1, c2 = st.columns(2)
+    
     with c1:
-        st.markdown(f"### 📷 {t('image1')}")
-        f1 = st.file_uploader("img1", type=["jpg", "jpeg", "png", "bmp"], key="cmp1", label_visibility="collapsed")
+        st.markdown("### 📷 Image 1")
+        file1 = st.file_uploader("Upload first image", type=ALLOWED_EXTENSIONS, key="cmp1")
+    
     with c2:
-        st.markdown(f"### 📷 {t('image2')}")
-        f2 = st.file_uploader("img2", type=["jpg", "jpeg", "png", "bmp"], key="cmp2", label_visibility="collapsed")
-
-    if f1 and f2:
-        i1 = Image.open(f1).convert("RGB")
-        i2 = Image.open(f2).convert("RGB")
-
+        st.markdown("### 📷 Image 2")
+        file2 = st.file_uploader("Upload second image", type=ALLOWED_EXTENSIONS, key="cmp2")
+    
+    if file1 and file2:
+        img1 = Image.open(file1).convert("RGB")
+        img2 = Image.open(file2).convert("RGB")
+        
         c1, c2 = st.columns(2)
         with c1:
-            st.image(i1, caption=t("image1"), use_container_width=True)
+            st.image(img1, caption="Image 1", use_container_width=True)
         with c2:
-            st.image(i2, caption=t("image2"), use_container_width=True)
-
-        st.markdown("---")
-        if st.button(f"🔍 {t('compare_btn')}", use_container_width=True, type="primary"):
-            with st.spinner("Analyzing..."):
-                metrics = compare_imgs(i1, i2)
-
-            # Metrics display
-            compare_result_label = {"fr": "Resultats de la comparaison", "ar": "نتائج المقارنة", "en": "Comparison Results"}.get(st.session_state.lang, "Results")
-            st.markdown(f"### 📊 {compare_result_label}")
-            mc = st.columns(4)
+            st.image(img2, caption="Image 2", use_container_width=True)
+        
+        if st.button("🔍 Compare Images", type="primary"):
+            metrics = compare_images(img1, img2)
+            
+            st.markdown("---")
+            st.markdown("### 📊 Comparison Results")
+            
+            mc = st.columns(3)
             with mc[0]:
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>📊</span>
-                <div class='dm-m-v'>{metrics['sim']}%</div>
-                <div class='dm-m-l'>{t('similarity')}</div></div>""", unsafe_allow_html=True)
+                st.metric("Similarity", f"{metrics['similarity']}%")
             with mc[1]:
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>🎯</span>
-                <div class='dm-m-v'>{metrics['ssim']}</div>
-                <div class='dm-m-l'>SSIM</div></div>""", unsafe_allow_html=True)
+                st.metric("SSIM", f"{metrics['ssim']}")
             with mc[2]:
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>📐</span>
-                <div class='dm-m-v'>{metrics['mse']}</div>
-                <div class='dm-m-l'>MSE</div></div>""", unsafe_allow_html=True)
-            with mc[3]:
-                if metrics["sim"] > 90:
-                    verdict = {"fr": "Tres similaires", "ar": "متشابهتان جدا", "en": "Very similar"}
-                    v_icon = "✅"
-                elif metrics["sim"] > 70:
-                    verdict = {"fr": "Similaires", "ar": "متشابهتان", "en": "Similar"}
-                    v_icon = "🟡"
-                elif metrics["sim"] > 50:
-                    verdict = {"fr": "Peu similaires", "ar": "قليل التشابه", "en": "Somewhat similar"}
-                    v_icon = "🟠"
-                else:
-                    verdict = {"fr": "Tres differentes", "ar": "مختلفتان جدا", "en": "Very different"}
-                    v_icon = "🔴"
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>🔍</span>
-                <div class='dm-m-v' style='font-size:1rem;'>{v_icon} {tl(verdict)}</div>
-                <div class='dm-m-l'>Verdict</div></div>""", unsafe_allow_html=True)
-
-            # SSIM Gauge
-            if HAS_PLOTLY:
-                st.markdown("---")
-                fig = go.Figure(go.Indicator(
-                    mode="gauge+number",
-                    value=metrics["sim"],
-                    title={"text": t("similarity"), "font": {"color": "#e0e8ff"}},
-                    number={"font": {"color": "#00f5ff"}},
-                    gauge={
-                        "axis": {"range": [0, 100], "tickcolor": "#6b7fa0"},
-                        "bar": {"color": "#00f5ff"},
-                        "bgcolor": "rgba(10,15,46,0.5)",
-                        "steps": [
-                            {"range": [0, 30], "color": "rgba(255,0,64,0.3)"},
-                            {"range": [30, 60], "color": "rgba(255,149,0,0.3)"},
-                            {"range": [60, 80], "color": "rgba(255,255,0,0.3)"},
-                            {"range": [80, 100], "color": "rgba(0,255,136,0.3)"}
-                        ],
-                        "threshold": {"line": {"color": "white", "width": 4}, "thickness": 0.75, "value": metrics["sim"]}
-                    }
-                ))
-                fig.update_layout(height=280, template=plot_template,
-                                  margin=dict(l=30, r=30, t=60, b=20),
-                                  paper_bgcolor="rgba(0,0,0,0)",
-                                  font={"color": "#e0e8ff"})
-                st.plotly_chart(fig, use_container_width=True)
-
+                st.metric("MSE", f"{metrics['mse']}")
+            
             # Pixel difference
-            st.markdown(f"### 🔍 {t('pixel_diff')}")
-            diff_img = pixel_diff(i1, i2)
-            dc1, dc2, dc3 = st.columns(3)
-            with dc1:
-                st.image(i1, caption=t("image1"), use_container_width=True)
-            with dc2:
-                st.image(diff_img, caption=t("pixel_diff"), use_container_width=True)
-            with dc3:
-                st.image(i2, caption=t("image2"), use_container_width=True)
+            st.markdown("### 🔍 Pixel Difference")
+            diff_img = pixel_difference(img1, img2)
+            st.image(diff_img, caption="Difference", use_container_width=True)
 
-            # Filter comparison
-            st.markdown(f"### 🔬 {t('filter_comparison')}")
-            filter_list = [
-                ({"fr": "Thermique", "ar": "حراري", "en": "Thermal"}, thermal),
-                ({"fr": "Contours", "ar": "حواف", "en": "Edges"}, edges_filter),
-                ({"fr": "Contraste+", "ar": "تباين+", "en": "Enhanced"}, enhanced_filter),
-                ({"fr": "Negatif", "ar": "سلبي", "en": "Negative"}, negative_filter),
-                ({"fr": "Relief", "ar": "نقش", "en": "Emboss"}, emboss_filter),
-            ]
-            for fname, ffunc in filter_list:
-                fn = tl(fname)
-                fc1, fc2 = st.columns(2)
-                with fc1:
-                    st.image(ffunc(i1), caption=f"{t('image1')} - {fn}", use_container_width=True)
-                with fc2:
-                    st.image(ffunc(i2), caption=f"{t('image2')} - {fn}", use_container_width=True)
+def render_training_page():
+    """Render training mode page"""
+    st.title("🎓 Training Mode")
+    
+    st.info("💡 Practice identifying parasites with real microscope images")
+    st.markdown("Training module - Coming soon...")
 
-            # Histogram comparison
-            if HAS_PLOTLY:
-                hist_label = {"fr": "Comparaison des histogrammes", "ar": "مقارنة المدرجات التكرارية", "en": "Histogram Comparison"}.get(st.session_state.lang, "Histogram")
-                st.markdown(f"### 📊 {hist_label}")
-                h1 = histogram(i1)
-                h2 = histogram(i2)
-                hc1, hc2 = st.columns(2)
-                with hc1:
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatter(y=h1["red"], name="R", line=dict(color="red", width=1)))
-                    fig.add_trace(go.Scatter(y=h1["green"], name="G", line=dict(color="green", width=1)))
-                    fig.add_trace(go.Scatter(y=h1["blue"], name="B", line=dict(color="blue", width=1)))
-                    fig.update_layout(title=t("image1"), height=250, template=plot_template, margin=dict(l=20, r=20, t=40, b=20))
-                    st.plotly_chart(fig, use_container_width=True)
-                with hc2:
-                    fig = go.Figure()
-                    fig.add_trace(go.Scatter(y=h2["red"], name="R", line=dict(color="red", width=1)))
-                    fig.add_trace(go.Scatter(y=h2["green"], name="G", line=dict(color="green", width=1)))
-                    fig.add_trace(go.Scatter(y=h2["blue"], name="B", line=dict(color="blue", width=1)))
-                    fig.update_layout(title=t("image2"), height=250, template=plot_template, margin=dict(l=20, r=20, t=40, b=20))
-                    st.plotly_chart(fig, use_container_width=True)
-
-
-# ════════════════════════════════════════════
-#  PAGE: ADMIN
-# ════════════════════════════════════════════
-elif pg == "admin":
-    st.title(f"⚙️ {t('admin')}")
-    if not has_role(3):
+def render_admin_page():
+    """Render admin page"""
+    if get_role_level() < 5:
         st.error("🔒 Admin access required")
         st.stop()
-
-    tab1, tab2, tab3 = st.tabs([f"👥 {t('users_mgmt')}", f"📜 {t('activity_log')}", f"🖥️ {t('system_info')}"])
-
+    
+    st.title("⚙️ Administration")
+    
+    tab1, tab2, tab3 = st.tabs(["👥 Users", "📜 Activity Log", "🖥️ System"])
+    
     with tab1:
-        users = db_users()
+        users = db_get_users()
         if users:
             st.dataframe(pd.DataFrame(users), use_container_width=True)
+            
             st.markdown("---")
-
-            tc1, tc2, tc3 = st.columns(3)
-            uid = tc1.number_input("User ID", min_value=1, step=1, key="toggle_uid")
-            act = tc2.selectbox("Status", ["Active", "Disabled"], key="toggle_status")
-            if tc3.button("Apply", use_container_width=True, key="toggle_btn"):
-                db_toggle(uid, act == "Active")
-                db_log(st.session_state.user_id, st.session_state.user_name, "Toggle user", f"#{uid}={act}")
-                st.success(f"User #{uid} -> {act}")
+            st.markdown("### User Management")
+            
+            uc1, uc2, uc3 = st.columns(3)
+            user_id = uc1.number_input("User ID", min_value=1, step=1)
+            status = uc2.selectbox("Status", ["Active", "Disabled"])
+            
+            if uc3.button("Apply", use_container_width=True):
+                db_toggle_user(user_id, status == "Active")
+                st.success(f"User #{user_id} updated!")
                 st.rerun()
-
-        st.markdown("---")
-        st.markdown(f"### ➕ {t('create_user')}")
-        with st.form("new_user_form"):
-            nu = st.text_input(f"{t('username')} *", key="new_username")
-            np2 = st.text_input(f"{t('password')} *", type="password", key="new_password")
-            nf = st.text_input("Full Name *", key="new_fullname")
-            nr = st.selectbox("Role", list(ROLES.keys()), key="new_role")
-            ns = st.text_input("Speciality", "Laboratoire", key="new_spec")
-            if st.form_submit_button(t("create_user"), use_container_width=True):
-                if nu and np2 and nf:
-                    if db_create_user(nu, np2, nf, nr, ns):
-                        db_log(st.session_state.user_id, st.session_state.user_name, "Created user", nu)
-                        st.success(f"User '{nu}' created!")
-                        st.rerun()
-                    else:
-                        st.error("Username already exists")
-                else:
-                    st.error("Please fill all required fields")
-
-        st.markdown("---")
-        st.markdown(f"### 🔑 {t('change_pwd')}")
-        cp_col1, cp_col2 = st.columns(2)
-        cpid = cp_col1.number_input("User ID", min_value=1, step=1, key="chpw_uid")
-        cpnew = cp_col2.text_input("New Password", type="password", key="chpw_new")
-        if st.button(t("change_pwd"), key="chpw_btn"):
-            if cpnew:
-                db_chpw(cpid, cpnew)
-                db_log(st.session_state.user_id, st.session_state.user_name, "Changed pwd", f"#{cpid}")
-                st.success(f"Password updated for user #{cpid}")
-
+    
     with tab2:
-        logs = db_logs(300)
+        logs = db_get_activity_logs(500)
         if logs:
-            ldf = pd.DataFrame(logs)
-            if "username" in ldf.columns:
-                usernames_list = sorted(ldf["username"].dropna().unique().tolist())
-                flt = st.selectbox("Filter by user:", ["All"] + usernames_list, key="log_filter")
-                if flt != "All":
-                    ldf = ldf[ldf["username"] == flt]
-            st.dataframe(ldf, use_container_width=True)
-        else:
-            st.info(t("no_data"))
-
+            st.dataframe(pd.DataFrame(logs), use_container_width=True)
+    
     with tab3:
-        sc1, sc2, sc3 = st.columns(3)
+        sc1, sc2 = st.columns(2)
+        
         with sc1:
-            st.markdown(f"""<div class='dm-card dm-card-green'>
-            <h4>🟢 System OK</h4>
-            <p><b>Version:</b> {APP_VERSION}</p>
-            <p><b>Python:</b> {os.sys.version.split()[0]}</p>
-            <p><b>Bcrypt:</b> {'✅' if HAS_BCRYPT else '❌ (SHA256)'}</p>
-            <p><b>Plotly:</b> {'✅' if HAS_PLOTLY else '❌'}</p>
-            <p><b>QR Code:</b> {'✅' if HAS_QRCODE else '❌'}</p>
-            <p><b>Database:</b> SQLite</p>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='dm-card dm-card-green'>
+                <h4>🟢 System Status</h4>
+                <p><b>Version:</b> {APP_VERSION}</p>
+                <p><b>Database:</b> SQLite</p>
+                <p><b>Bcrypt:</b> {'✅' if HAS_BCRYPT else '❌'}</p>
+                <p><b>Plotly:</b> {'✅' if HAS_PLOTLY else '❌'}</p>
+                <p><b>FPDF:</b> {'✅' if HAS_FPDF else '❌'}</p>
+                <p><b>Excel:</b> {'✅' if HAS_EXCEL else '❌'}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with sc2:
-            ts = db_stats()
-            st.markdown(f"""<div class='dm-card dm-card-cyan'>
-            <h4>📊 Statistics</h4>
-            <p><b>Users:</b> {len(db_users())}</p>
-            <p><b>Analyses:</b> {ts['total']}</p>
-            <p><b>Reliable:</b> {ts['reliable']}</p>
-            <p><b>Quiz Scores:</b> {len(db_leaderboard())}</p>
-            <p><b>Languages:</b> FR / AR / EN</p>
-            </div>""", unsafe_allow_html=True)
-        with sc3:
-            dbsz = os.path.getsize(DB_PATH) / 1024 if os.path.exists(DB_PATH) else 0
-            st.markdown(f"""<div class='dm-card'>
-            <h4>💾 Storage</h4>
-            <p><b>DB Size:</b> {dbsz:.1f} KB</p>
-            <p><b>Parasites:</b> {len(CLASS_NAMES)} classes</p>
-            <p><b>Quiz:</b> {len(QUIZ_QUESTIONS)} questions</p>
-            <p><b>Chat KB:</b> {len(CHAT_KB)} entries</p>
-            </div>""", unsafe_allow_html=True)
+            stats = db_get_statistics()
+            st.markdown(f"""
+            <div class='dm-card dm-card-cyan'>
+                <h4>📊 Database Stats</h4>
+                <p><b>Users:</b> {len(db_get_users())}</p>
+                <p><b>Analyses:</b> {stats['total']}</p>
+                <p><b>Reliable:</b> {stats['reliable']}</p>
+                <p><b>Languages:</b> FR / AR / EN</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-
-# ════════════════════════════════════════════
-#  PAGE: ABOUT
-# ════════════════════════════════════════════
-elif pg == "about":
-    st.title(f"ℹ️ {t('about')}")
-    lang = st.session_state.lang
-
-    st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-    <h1 class='dm-nt'>🧬 DM SMART LAB AI</h1>
-    <p style='font-size:1.1rem;font-family:Orbitron,sans-serif;'><b>v{APP_VERSION} — Space Edition</b></p>
-    <p style='opacity:.4;'>{t('system_desc')}</p>
-    </div>""", unsafe_allow_html=True)
-
-    desc_about = {
-        "fr": "Ce projet innovant utilise les technologies de Deep Learning et de Vision par Ordinateur pour assister les techniciens de laboratoire dans l'identification rapide et precise des parasites.",
-        "ar": "يستخدم هذا المشروع المبتكر تقنيات التعلم العميق والرؤية الحاسوبية لمساعدة تقنيي المخبر في التعرف السريع والدقيق على الطفيليات.",
-        "en": "This innovative project uses Deep Learning and Computer Vision technologies to assist laboratory technicians in the rapid and accurate identification of parasites."
-    }.get(lang, "")
-
-    st.markdown(f"""<div class='dm-card'>
-    <h3>📖 {tl(PROJECT_TITLE)}</h3>
-    <p style='line-height:1.8;opacity:.8;'>{desc_about}</p>
-    </div>""", unsafe_allow_html=True)
-
+def render_about_page():
+    """Render about page"""
+    st.title("ℹ️ About DM Smart Lab AI")
+    
+    st.markdown(f"""
+    <div class='dm-card dm-card-cyan' style='text-align:center;'>
+        <h1 class='dm-nt'>🧬 DM SMART LAB AI</h1>
+        <p style='font-size:1.1rem;font-family:Orbitron,sans-serif;'><b>v{APP_VERSION} — Ultimate Edition</b></p>
+        <p style='opacity:.4;'>Advanced Parasitological Diagnosis System with AI</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     st.markdown("---")
+    
     c1, c2 = st.columns(2)
+    
     with c1:
-        d1r = tl(AUTHORS['dev1']['role'])
-        d2r = tl(AUTHORS['dev2']['role'])
-        level_label = {"fr": "Niveau", "ar": "المستوى", "en": "Level"}.get(lang, "Level")
-        year_label = {"fr": "3eme Annee", "ar": "السنة الثالثة", "en": "3rd Year"}.get(lang, "3rd Year")
-        spec_label = {"fr": "Specialite", "ar": "التخصص", "en": "Speciality"}.get(lang, "Speciality")
-        spec_val = {"fr": "Laboratoire de Sante Publique", "ar": "مخبر الصحة العمومية", "en": "Public Health Laboratory"}.get(lang, "Public Health Lab")
-
-        st.markdown(f"""<div class='dm-card dm-card-cyan'>
-        <h3>👨‍🔬 {t('dev_team')}</h3><br>
-        <p><b>🧑‍💻 {AUTHORS['dev1']['name']}</b><br><span style='opacity:.5;'>{d1r}</span></p><br>
-        <p><b>🔬 {AUTHORS['dev2']['name']}</b><br><span style='opacity:.5;'>{d2r}</span></p><br>
-        <p><b>{level_label}:</b> {year_label}</p>
-        <p><b>{spec_label}:</b> {spec_val}</p>
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""
+        <div class='dm-card dm-card-cyan'>
+            <h3>👨‍🔬 Development Team</h3><br>
+            <p><b>🧑‍💻 Sebbag Mohamed Dhia Eddine</b><br>
+            <span style='opacity:.5;'>AI & System Architecture Expert</span></p><br>
+            <p><b>🔬 Ben Sghir Mohamed</b><br>
+            <span style='opacity:.5;'>Laboratory & Data Science Expert</span></p><br>
+            <p><b>Level:</b> 3rd Year</p>
+            <p><b>Specialty:</b> Public Health Laboratory</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
     with c2:
-        obj_label = {"fr": "Objectifs", "ar": "الأهداف", "en": "Objectives"}.get(lang, "Objectives")
-        obj1 = {"fr": "Automatiser la lecture microscopique", "ar": "أتمتة القراءة المجهرية", "en": "Automate microscopic reading"}.get(lang, "")
-        obj2 = {"fr": "Reduire les erreurs diagnostiques", "ar": "تقليل الأخطاء التشخيصية", "en": "Reduce diagnostic errors"}.get(lang, "")
-        obj3 = {"fr": "Accelerer le processus d'analyse", "ar": "تسريع عملية التحليل", "en": "Speed up analysis process"}.get(lang, "")
-        obj4 = {"fr": "Assister les professionnels de sante", "ar": "مساعدة المهنيين الصحيين", "en": "Assist healthcare professionals"}.get(lang, "")
-
-        st.markdown(f"""<div class='dm-card'>
-        <h3>🏫 {t('institution')}</h3><br>
-        <p><b>{tl(INSTITUTION['name'])}</b></p>
-        <p>📍 {INSTITUTION['city']}, {tl(INSTITUTION['country'])} 🇩🇿</p><br>
-        <h4>🎯 {obj_label}</h4>
-        <ul>
-        <li>{obj1}</li>
-        <li>{obj2}</li>
-        <li>{obj3}</li>
-        <li>{obj4}</li>
-        </ul>
-        </div>""", unsafe_allow_html=True)
-
+        st.markdown("""
+        <div class='dm-card'>
+            <h3>🏫 Institution</h3><br>
+            <p><b>INFSPM</b></p>
+            <p>Institut National de Formation Supérieure Paramédicale</p>
+            <p>📍 Ouargla, Algeria 🇩🇿</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.markdown("---")
-    st.markdown(f"### 🛠️ {t('technologies')}")
-    tc = st.columns(8)
-    techs = [("🐍", "Python", "Core"), ("🧠", "TensorFlow", "AI"), ("🎨", "Streamlit", "UI"),
-             ("📊", "Plotly", "Charts"), ("🗄️", "SQLite", "DB"), ("🔒", "Bcrypt", "Security"),
-             ("📄", "FPDF", "PDF"), ("📱", "QR", "Verify")]
-    for col, (ic, n, d) in zip(tc, techs):
-        with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v' style='font-size:.85rem;'>{n}</div>
-            <div class='dm-m-l'>{d}</div>
-            </div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.markdown(f"### 🌟 Features v{APP_VERSION}")
-    feat_cols = st.columns(4)
-    features = [
-        ("📸", "Camera", "Direct capture"),
-        ("🌍", "3 Languages", "FR/AR/EN"),
-        ("🤖", "DM Bot", "AI Chatbot"),
-        ("🧠", "30+ Quiz", "By category"),
-        ("🔬", "7 Parasites", "Complete DB"),
-        ("🎯", "Heatmap", "AI Visualization"),
-        ("📄", "PDF Pro", "QR + Signatures"),
-        ("🔄", "Compare+", "Pixel diff + filters"),
-        ("🔊", "Voice", "Web Speech API"),
-        ("📊", "Plotly", "Pro charts"),
-        ("🔐", "Secure Auth", "Bcrypt + lockout"),
-        ("🌌", "Space Theme", "Animated dark UI"),
+    st.markdown("### 🛠️ Technologies Used")
+    
+    tech_cols = st.columns(8)
+    techs = [
+        ("🐍", "Python"), ("🧠", "TensorFlow"), ("🎨", "Streamlit"), ("📊", "Plotly"),
+        ("🗄️", "SQLite"), ("🔒", "Bcrypt"), ("📄", "FPDF"), ("📱", "QR")
     ]
-    for i, (ic, name, desc) in enumerate(features):
-        with feat_cols[i % 4]:
-            st.markdown(f"""<div class='dm-card' style='padding:14px;text-align:center;'>
-            <div style='font-size:1.8rem;'>{ic}</div>
-            <p style='font-weight:700;margin:4px 0;font-size:.85rem;'>{name}</p>
-            <p style='font-size:.7rem;opacity:.4;'>{desc}</p>
-            </div>""", unsafe_allow_html=True)
-
+    
+    for col, (icon, name) in zip(tech_cols, techs):
+        with col:
+            st.markdown(f"""
+            <div class='dm-m'>
+                <span class='dm-m-i'>{icon}</span>
+                <div class='dm-m-v' style='font-size:.85rem;'>{name}</div>
+            </div>
+            """, unsafe_allow_html=True)
+    
     st.markdown("---")
-    made_label = {"fr": "Fait avec", "ar": "صنع بـ", "en": "Made with"}.get(lang, "Made with")
-    in_label = {"fr": "a", "ar": "في", "en": "in"}.get(lang, "in")
-    st.caption(f"{made_label} ❤️ {in_label} {INSTITUTION['city']} — {INSTITUTION['year']} 🇩🇿")     
+    st.caption(f"Made with ❤️ in Ouargla — 2026 🇩🇿 | © DM Smart Lab AI v{APP_VERSION}")
+
+# ============================================
+#  RUN APPLICATION
+# ============================================
+if __name__ == "__main__":
+    main()
