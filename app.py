@@ -2697,6 +2697,83 @@ def export_to_excel(df):
 def export_to_json(data):
     """Export data to formatted JSON"""
     return json.dumps(data, indent=2, ensure_ascii=False).encode('utf-8')
+# ════════════════════════════════════════════
+#  UTILITY FUNCTIONS
+# ════════════════════════════════════════════
+
+def has_role(level):
+    """Check if user has required role level"""
+    user_role = st.session_state.get("user_role", "viewer")
+    return ROLES.get(user_role, {}).get("level", 0) >= level
+
+def risk_color(level):
+    """Get color for risk level"""
+    colors = {
+        "critical": "#ff0040",
+        "high": "#ff3366",
+        "medium": "#ff9500",
+        "low": "#00e676",
+        "none": "#00ff88"
+    }
+    return colors.get(level, "#888")
+
+def risk_percentage(level):
+    """Get percentage for risk level"""
+    percentages = {
+        "critical": 100,
+        "high": 80,
+        "medium": 50,
+        "low": 25,
+        "none": 0
+    }
+    return percentages.get(level, 0)
+
+def create_metric_card(icon, value, label, delta=None):
+    """Create professional animated metric card"""
+    delta_html = ""
+    if delta is not None:
+        delta_color = "#00ff88" if delta >= 0 else "#ff0040"
+        delta_icon = "↑" if delta >= 0 else "↓"
+        delta_html = f'<div style="color: {delta_color}; font-size: 0.85rem; margin-top: 0.5rem; font-weight: 600;">{delta_icon} {abs(delta)}%</div>'
+    
+    st.markdown(f"""
+    <div class="metric-card">
+        <div class="metric-icon">{icon}</div>
+        <div class="metric-value">{value}</div>
+        <div class="metric-label">{label}</div>
+        {delta_html}
+    </div>
+    """, unsafe_allow_html=True)
+
+def format_date(date_str):
+    """Format date string"""
+    try:
+        dt = datetime.fromisoformat(date_str)
+        return dt.strftime("%d/%m/%Y %H:%M")
+    except:
+        return str(date_str) if date_str else ""
+
+def time_ago(date_str):
+    """Get human-readable time ago"""
+    try:
+        dt = datetime.fromisoformat(date_str)
+        diff = datetime.now() - dt
+        
+        if diff.days > 365:
+            return f"{diff.days // 365} an(s)"
+        elif diff.days > 30:
+            return f"{diff.days // 30} mois"
+        elif diff.days > 0:
+            return f"{diff.days} jour(s)"
+        elif diff.seconds > 3600:
+            return f"{diff.seconds // 3600} heure(s)"
+        elif diff.seconds > 60:
+            return f"{diff.seconds // 60} min"
+        else:
+            return "À l'instant"
+    except:
+        return ""
+
 
 # ============================================
 #  SESSION STATE INITIALIZATION
