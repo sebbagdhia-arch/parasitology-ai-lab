@@ -1361,35 +1361,91 @@ def db_analyses(user_id=None, limit=500, filters=None):
         return [dict(r) for r in c.execute(query, params).fetchall()]
 
 def db_stats(user_id=None):
-    """Get enhanced statistics"""
+    """Get enhanced statistics - FIXED VERSION"""
     with get_db() as c:
-        where = "WHERE user_id=?" if user_id else ""
-        params = (user_id,) if user_id else ()
+        # Build conditions dynamically
+        base_conditions = []
+        base_params = []
         
-        total = c.execute(f"SELECT COUNT(*) FROM analyses {where}", params).fetchone()[0]
-        reliable = c.execute(f"SELECT COUNT(*) FROM analyses {where} AND is_reliable=1",
-                            (user_id,) if user_id else ()).fetchone()[0]
-        validated = c.execute(f"SELECT COUNT(*) FROM analyses {where} AND validated=1",
-                             (user_id,) if user_id else ()).fetchone()[0]
+        if user_id:
+            base_conditions.append("user_id=?")
+            base_params.append(user_id)
         
-        parasites = c.execute(f"""SELECT parasite_detected, COUNT(*) as count 
-                                 FROM analyses {where} 
-                                 GROUP BY parasite_detected 
-                                 ORDER BY count DESC""", params).fetchall()
+        # WHERE clause
+        where_clause = f"WHERE {' AND '.join(base_conditions)}" if base_conditions else ""
         
-        avg_conf = c.execute(f"SELECT AVG(confidence) FROM analyses {where}", params).fetchone()[0] or 0
-        avg_time = c.execute(f"SELECT AVG(processing_time) FROM analyses {where}", params).fetchone()[0] or 0
+        # 1. Total analyses
+        total = c.execute(
+            f"SELECT COUNT(*) FROM analyses {where_clause}",
+            tuple(base_params)
+        ).fetchone()[0]
         
-        # Monthly trends
-        monthly = c.execute(f"""SELECT 
-                               strftime('%Y-%m', analysis_date) as month,
-                               COUNT(*) as count,
-                               AVG(confidence) as avg_conf
-                               FROM analyses {where}
-                               GROUP BY month
-                               ORDER BY month DESC
-                               LIMIT 12""", params).fetchall()
+        # 2. Reliable analyses
+        reliable_conditions = base_conditions.copy()
+        reliable_conditions.append("is_reliable=1")
+        reliable_where = f"WHERE {' AND '.join(reliable_conditions)}"
         
+        reliable = c.execute(
+            f"SELECT COUNT(*) FROM analyses {reliable_where}",
+            tuple(base_params)
+        ).fetchone()[0]
+        
+        # 3. Validated analyses
+        validated_conditions = base_conditions.copy()
+        validated_conditions.append("validated=1")
+        validated_where = f"WHERE {' AND '.join(validated_conditions)}"
+        
+        try:
+            validated = c.execute(
+                f"SELECT COUNT(*) FROM analyses {validated_where}",
+                tuple(base_params)
+            ).fetchone()[0]
+        except:
+            validated = 0
+        
+        # 4. Parasite distribution
+        parasites = c.execute(
+            f"""SELECT parasite_detected, COUNT(*) as count 
+                FROM analyses {where_clause}
+                GROUP BY parasite_detected 
+                ORDER BY count DESC""",
+            tuple(base_params)
+        ).fetchall()
+        
+        # 5. Average confidence
+        avg_conf_result = c.execute(
+            f"SELECT AVG(confidence) FROM analyses {where_clause}",
+            tuple(base_params)
+        ).fetchone()[0]
+        avg_conf = avg_conf_result if avg_conf_result is not None else 0
+        
+        # 6. Average processing time
+        try:
+            avg_time_result = c.execute(
+                f"SELECT AVG(processing_time) FROM analyses {where_clause}",
+                tuple(base_params)
+            ).fetchone()[0]
+            avg_time = avg_time_result if avg_time_result is not None else 0
+        except:
+            avg_time = 0
+        
+        # 7. Monthly trends
+        try:
+            monthly = c.execute(
+                f"""SELECT 
+                       strftime('%Y-%m', analysis_date) as month,
+                       COUNT(*) as count,
+                       AVG(confidence) as avg_conf
+                       FROM analyses {where_clause}
+                       GROUP BY month
+                       ORDER BY month DESC
+                       LIMIT 12""",
+                tuple(base_params)
+            ).fetchall()
+        except:
+            monthly = []
+        
+        # Return results
         return {
             "total": total,
             "reliable": reliable,
