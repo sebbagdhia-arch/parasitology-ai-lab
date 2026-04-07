@@ -3184,13 +3184,12 @@ render_voice_player()
 # ════════════════════════════════════════════
 
 if selected_page == "home":
-    # Welcome header
     st.markdown(f"""
     <h1 class="neon-text" style="text-align: center; font-size: 2.5rem; margin-bottom: 0;">
         {get_greeting()}, {st.session_state.user_full_name}! 👋
     </h1>
     <p style="text-align: center; opacity: 0.6; margin-top: 0.5rem;">
-        {t('where_science')}
+        Où la Science Rencontre l'Intelligence
     </p>
     """, unsafe_allow_html=True)
     
@@ -3200,96 +3199,61 @@ if selected_page == "home":
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("🎙️ " + t("welcome_btn"), use_container_width=True, type="primary"):
+        if st.button("🎙️ Message de Bienvenue", use_container_width=True, type="primary"):
             speak(t("voice_welcome"))
             st.rerun()
     
     with col2:
-        if st.button("🤖 " + t("intro_btn"), use_container_width=True, type="primary"):
+        if st.button("🤖 Présentation du Système", use_container_width=True, type="primary"):
             speak(t("voice_intro"))
             st.rerun()
     
     with col3:
-        if st.button("🔇 " + t("stop_voice"), use_container_width=True):
+        if st.button("🔇 Arrêter", use_container_width=True):
             stop_speech()
     
     st.markdown("---")
     
-    # Quick stats
+    # Stats - HTML DIRECTE
     stats = db_stats(st.session_state.user_id)
     
-    st.markdown(f"### 📊 {t('quick_overview')}")
+    st.markdown(f"### 📊 Aperçu Rapide")
     
-    col1, col2, col3, col4, col5 = st.columns(5)
-    
-    with col1:
-        create_metric_card("🔬", stats["total"], t("total_analyses"), delta=12)
-    
-    with col2:
-        create_metric_card("✅", stats["reliable"], t("reliable"), delta=8)
-    
-    with col3:
-        create_metric_card("⚠️", stats["to_verify"], t("to_verify"), delta=-3)
-    
-    with col4:
-        create_metric_card("🦠", stats["top"], t("most_frequent"))
-    
-    with col5:
-        create_metric_card("📈", f"{stats['avg_confidence']}%", t("avg_confidence"), delta=5)
-    
-    st.markdown("---")
-    
-    # Recent activity
-    st.markdown(f"### 📋 {t('recent')}")
-    
-    recent = db_analyses(st.session_state.user_id, limit=5)
-    
-    if recent:
-        for analysis in recent:
-            with st.expander(f"{analysis['parasite_detected']} - {format_date(analysis['analysis_date'])}", expanded=False):
-                col1, col2, col3 = st.columns(3)
-                
-                with col1:
-                    st.write(f"**Patient:** {analysis['patient_name']}")
-                    st.write(f"**Confiance:** {analysis['confidence']}%")
-                
-                with col2:
-                    st.write(f"**Risque:** {tl(PARASITE_DB.get(analysis['parasite_detected'], {}).get('risk_d', {}))}")
-                    st.write(f"**Validé:** {'✅' if analysis.get('validated') else '⏳'}")
-                
-                with col3:
-                    st.write(f"**Analyste:** {analysis.get('analyst', 'N/A')}")
-                    st.write(f"**ID:** #{analysis['id']}")
-    else:
-        st.info(t("no_data"))
-    
-    st.markdown("---")
-    
-    # Quick links
-    st.markdown(f"### 🚀 {t('quick_actions')}")
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        if st.button("🔬 " + t("scan"), use_container_width=True):
-            st.session_state.current_page = "scan"
-            st.rerun()
-    
-    with col2:
-        if st.button("📊 " + t("dashboard"), use_container_width=True):
-            st.session_state.current_page = "dashboard"
-            st.rerun()
-    
-    with col3:
-        if st.button("🧠 " + t("quiz"), use_container_width=True):
-            st.session_state.current_page = "quiz"
-            st.rerun()
-    
-    with col4:
-        if st.button("💬 " + t("chatbot"), use_container_width=True):
-            st.session_state.current_page = "chatbot"
-            st.rerun()
-
+    st.markdown(f"""
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin: 2rem 0;">
+        
+        <div class="metric-card">
+            <div class="metric-icon">🔬</div>
+            <div class="metric-value">{stats["total"]}</div>
+            <div class="metric-label">Total Analyses</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">✅</div>
+            <div class="metric-value">{stats["reliable"]}</div>
+            <div class="metric-label">Fiables</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">⚠️</div>
+            <div class="metric-value">{stats["to_verify"]}</div>
+            <div class="metric-label">À Vérifier</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">🦠</div>
+            <div class="metric-value">{stats["top"]}</div>
+            <div class="metric-label">Plus Fréquent</div>
+        </div>
+        
+        <div class="metric-card">
+            <div class="metric-icon">📈</div>
+            <div class="metric-value">{stats['avg_confidence']:.0f}%</div>
+            <div class="metric-label">Confiance Moy.</div>
+        </div>
+        
+    </div>
+    """, unsafe_allow_html=True)
 # ════════════════════════════════════════════
 #  PAGE: SCAN - ENHANCED
 # ════════════════════════════════════════════
@@ -5366,23 +5330,56 @@ elif selected_page == "about":
     
     st.markdown("---")
     
-    # Stats
-    st.markdown("### 📈 Statistiques")
-    try:
-        stats = db_stats()
-        stats_cols = st.columns(5)
-        for col, (icon, val, lbl) in zip(stats_cols, [
-            ("🔬", stats["total"], "Analyses"),
-            ("👥", len(db_users()), "Users"),
-            ("📝", len(QUIZ_QUESTIONS), "Questions"),
-            ("🦠", len(CLASS_NAMES)-1, "Parasites"),
-            ("⭐", f"{stats['avg_confidence']:.0f}%", "Confiance")
-        ]):
-            with col:
-                create_metric_card(icon, val, lbl)
-    except:
-        st.info("Stats non disponibles")
+# Statistics - VERSION HTML DIRECTE
+st.markdown("### 📈 Statistiques du système")
+
+try:
+    stats = db_stats()
     
+    # HTML مباشر بدون دوال
+    st.markdown(f"""
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin: 2rem 0;">
+        
+        <!-- Card 1 -->
+        <div class="metric-card">
+            <div class="metric-icon">🔬</div>
+            <div class="metric-value">{stats["total"]}</div>
+            <div class="metric-label">Analyses totales</div>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="metric-card">
+            <div class="metric-icon">👥</div>
+            <div class="metric-value">{len(db_users())}</div>
+            <div class="metric-label">Utilisateurs</div>
+        </div>
+        
+        <!-- Card 3 -->
+        <div class="metric-card">
+            <div class="metric-icon">📝</div>
+            <div class="metric-value">{len(QUIZ_QUESTIONS)}</div>
+            <div class="metric-label">Questions quiz</div>
+        </div>
+        
+        <!-- Card 4 -->
+        <div class="metric-card">
+            <div class="metric-icon">🦠</div>
+            <div class="metric-value">{len(CLASS_NAMES)-1}</div>
+            <div class="metric-label">Parasites</div>
+        </div>
+        
+        <!-- Card 5 -->
+        <div class="metric-card">
+            <div class="metric-icon">⭐</div>
+            <div class="metric-value">{stats['avg_confidence']:.0f}%</div>
+            <div class="metric-label">Confiance moy.</div>
+        </div>
+        
+    </div>
+    """, unsafe_allow_html=True)
+    
+except Exception as e:
+    st.info("📊 Statistiques seront disponibles après les premières analyses")
     st.markdown("---")
     
     # Footer UNIQUE
