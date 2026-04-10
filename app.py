@@ -2438,720 +2438,359 @@ elif pg == "enc":
 # ════════════════════════════════════════════
 #  PAGE: DASHBOARD
 # ════════════════════════════════════════════
-# ════════════════════════════════════════════
-#  PAGE: DASHBOARD - PROFESSIONAL EDITION v2.0
-# ════════════════════════════════════════════
-elif pg == "dash":
-    st.markdown(f"""<h1 style='font-family:Orbitron,sans-serif;'>
-    <span class='dm-nt'>📊 {t('dashboard')} — Analytics Hub</span>
-    </h1>""", unsafe_allow_html=True)
-    
-    # ════════════════════════════════════════════
-    # 1. FILTERS & DATE RANGE
-    # ════════════════════════════════════════════
-    with st.expander("🔍 Filtres avancés", expanded=False):
-        fcol1, fcol2, fcol3, fcol4 = st.columns(4)
-        
-        with fcol1:
-            date_range = st.selectbox(
-                "📅 Période",
-                ["7 jours", "30 jours", "90 jours", "1 an", "Tout", "Personnalisé"],
-                index=1
-            )
-        
-        with fcol2:
-            if date_range == "Personnalisé":
-                start_date = st.date_input("Date début", datetime.now() - timedelta(days=30))
-                end_date = st.date_input("Date fin", datetime.now())
-        
-        with fcol3:
-            parasite_filter = st.multiselect(
-                "🦠 Parasites",
-                options=CLASS_NAMES,
-                default=[]
-            )
-        
-        with fcol4:
-            confidence_range = st.slider(
-                "🎯 Confiance (%)",
-                0, 100, (0, 100)
-            )
-    
-    # Calculate date range
-    if date_range == "7 jours":
-        days_back = 7
-    elif date_range == "30 jours":
-        days_back = 30
-    elif date_range == "90 jours":
-        days_back = 90
-    elif date_range == "1 an":
-        days_back = 365
-    else:
-        days_back = 9999
-    
-    # ════════════════════════════════════════════
-    # 2. GET DATA
-    # ════════════════════════════════════════════
-    s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
-    an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
-    
-    if an:
-        df = pd.DataFrame(an)
-        
-        # Apply filters
-        if "analysis_date" in df.columns:
-            df['analysis_date'] = pd.to_datetime(df['analysis_date'])
-            cutoff_date = datetime.now() - timedelta(days=days_back)
-            df = df[df['analysis_date'] >= cutoff_date]
-        
-        if parasite_filter:
-            df = df[df['parasite_detected'].isin(parasite_filter)]
-        
-        if "confidence" in df.columns:
-            df = df[(df['confidence'] >= confidence_range[0]) & 
-                    (df['confidence'] <= confidence_range[1])]
-    else:
-        df = pd.DataFrame()
-        # ════════════════════════════════════════════
-    # 3. KPI CARDS - ULTRA PROFESSIONAL EDITION
-    # ════════════════════════════════════════════
-    st.markdown("### 📊 Tableau de bord analytique")
-    
-    kpi_data = []
-    if not df.empty:
-        total = len(df)
-        reliable = len(df[df.get('is_reliable', 0) == 1]) if 'is_reliable' in df.columns else 0
-        avg_conf = df['confidence'].mean() if 'confidence' in df.columns else 0
-        
-        # Top parasite
-        if 'parasite_detected' in df.columns:
-            top_para = df['parasite_detected'].value_counts()
-            most_freq = top_para.index[0] if len(top_para) > 0 else "N/A"
-            most_freq_count = top_para.iloc[0] if len(top_para) > 0 else 0
+# ════════════════════════════════════════════════════════════════════════════════
+#  DASHBOARD HELPER FUNCTIONS - PROFESSIONAL COMPONENTS
+# ════════════════════════════════════════════════════════════════════════════════
+
+def create_circular_progress(percentage, size=120, label="", icon="", color=None):
+    """
+    إنشاء دائرة نسبة مئوية متحركة SVG
+    """
+    # تحديد اللون حسب النسبة
+    if color is None:
+        if percentage >= 80:
+            color = "#00ff88"
+        elif percentage >= 60:
+            color = "#00f5ff"
+        elif percentage >= 40:
+            color = "#ff9500"
         else:
-            most_freq = "N/A"
-            most_freq_count = 0
-        
-        # Calculate trends (compare with previous period)
-        if 'analysis_date' in df.columns:
-            mid_date = datetime.now() - timedelta(days=days_back/2)
-            recent = df[df['analysis_date'] >= mid_date]
-            old = df[df['analysis_date'] < mid_date]
-            
-            trend_total = ((len(recent) - len(old)) / max(len(old), 1)) * 100 if len(old) > 0 else 0
-            trend_reliable = ((len(recent[recent.get('is_reliable', 0) == 1]) - len(old[old.get('is_reliable', 0) == 1])) / max(len(old[old.get('is_reliable', 0) == 1]), 1)) * 100 if len(old) > 0 else 0
-            trend_conf = ((recent['confidence'].mean() - old['confidence'].mean()) if len(old) > 0 and 'confidence' in df.columns else 0)
-            
-            # Calculate sparkline data (last 7 days)
-            if 'analysis_date' in df.columns:
-                last_7_days = df[df['analysis_date'] >= datetime.now() - timedelta(days=7)]
-                daily_counts = last_7_days.groupby(last_7_days['analysis_date'].dt.date).size()
-                sparkline_data = list(daily_counts.values) if len(daily_counts) > 0 else [0, 0, 0, 0, 0, 0, 0]
-                # Pad to 7 days
-                sparkline_data = ([0] * (7 - len(sparkline_data))) + sparkline_data
-                sparkline_data = sparkline_data[-7:]  # Keep only last 7
-            else:
-                sparkline_data = [0, 0, 0, 0, 0, 0, 0]
-        else:
-            trend_total = 0
-            trend_reliable = 0
-            trend_conf = 0
-            sparkline_data = [0, 0, 0, 0, 0, 0, 0]
-        
-        # Reliability rate
-        reliability_rate = (reliable / total * 100) if total > 0 else 0
-        
-        kpi_data = [
-            {
-                "icon": "🔬",
-                "value": total,
-                "label": "Total Analyses",
-                "trend": trend_total,
-                "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                "sparkline": sparkline_data,
-                "progress": min(100, (total / max(s.get('total', 1), 1)) * 100)
-            },
-            {
-                "icon": "✅",
-                "value": reliable,
-                "label": "Analyses Fiables",
-                "trend": trend_reliable,
-                "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                "sparkline": None,
-                "progress": reliability_rate,
-                "sub": f"{reliability_rate:.1f}% fiabilité"
-            },
-            {
-                "icon": "⚠️",
-                "value": total - reliable,
-                "label": "À Vérifier",
-                "trend": -trend_reliable,
-                "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                "sparkline": None,
-                "progress": ((total - reliable) / max(total, 1) * 100) if total > 0 else 0
-            },
-            {
-                "icon": "🦠",
-                "value": most_freq[:20],
-                "label": "Plus Fréquent",
-                "sub": f"{most_freq_count} cas détectés",
-                "trend": 0,
-                "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                "sparkline": None,
-                "progress": (most_freq_count / max(total, 1) * 100) if total > 0 else 0
-            },
-            {
-                "icon": "📈",
-                "value": f"{avg_conf:.1f}%",
-                "label": "Confiance Moyenne",
-                "trend": trend_conf,
-                "gradient": "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-                "sparkline": None,
-                "progress": avg_conf
-            }
-        ]
-    else:
-        kpi_data = [
-            {"icon": "🔬", "value": 0, "label": "Total Analyses", "trend": 0, 
-             "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "progress": 0},
-            {"icon": "✅", "value": 0, "label": "Analyses Fiables", "trend": 0, 
-             "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", "progress": 0},
-            {"icon": "⚠️", "value": 0, "label": "À Vérifier", "trend": 0, 
-             "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", "progress": 0},
-            {"icon": "🦠", "value": "N/A", "label": "Plus Fréquent", "trend": 0, 
-             "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", "progress": 0},
-            {"icon": "📈", "value": "0%", "label": "Confiance Moyenne", "trend": 0, 
-             "gradient": "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", "progress": 0}
-        ]
+            color = "#ff0040"
     
-    # Render KPI Cards with advanced styling
-    kpi_cols = st.columns(5)
-    for idx, (col, kpi) in enumerate(zip(kpi_cols, kpi_data)):
-        with col:
-            # Trend calculation
-            trend_val = kpi.get("trend", 0)
-            if trend_val > 2:
-                trend_icon = "📈"
-                trend_color = "#00ff88"
-                trend_text = f"+{trend_val:.1f}%"
-            elif trend_val < -2:
-                trend_icon = "📉"
-                trend_color = "#ff0040"
-                trend_text = f"{trend_val:.1f}%"
-            else:
-                trend_icon = "➡️"
-                trend_color = "#6b7fa0"
-                trend_text = "stable"
-            
-            # Progress bar value
-            progress_val = kpi.get("progress", 0)
-            
-            # Sparkline SVG (mini chart)
-            sparkline_svg = ""
-            if kpi.get("sparkline"):
-                spark_data = kpi["sparkline"]
-                max_val = max(spark_data) if max(spark_data) > 0 else 1
-                points = []
-                width = 80
-                height = 20
-                x_step = width / (len(spark_data) - 1) if len(spark_data) > 1 else width
+    radius = 45
+    circumference = 2 * 3.14159 * radius
+    offset = circumference - (percentage / 100) * circumference
+    
+    return f"""
+    <div style='
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px 16px;
+        background: linear-gradient(135deg, rgba(10,15,46,0.6), rgba(10,15,46,0.3));
+        border-radius: 20px;
+        border: 1px solid rgba(0,245,255,0.15);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        min-height: 240px;
+    ' onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 12px 40px {color}40';" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        
+        <!-- Glow effect -->
+        <div style='
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, {color}15 0%, transparent 70%);
+            animation: pulse{abs(hash(label)) % 1000} 3s ease-in-out infinite;
+        '></div>
+        
+        <!-- Icon -->
+        {f"<div style='font-size:2.5rem;margin-bottom:12px;position:relative;z-index:2;animation:float{abs(hash(label)) % 1000} 3s ease-in-out infinite;'>{icon}</div>" if icon else ""}
+        
+        <!-- SVG Circle -->
+        <div style='position:relative;z-index:2;'>
+            <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
+                <!-- Background circle -->
+                <circle
+                    cx="{size/2}"
+                    cy="{size/2}"
+                    r="{radius}"
+                    fill="none"
+                    stroke="rgba(255,255,255,0.08)"
+                    stroke-width="10"
+                />
                 
-                for i, val in enumerate(spark_data):
-                    x = i * x_step
-                    y = height - (val / max_val * height) if max_val > 0 else height
-                    points.append(f"{x},{y}")
-                
-                polyline_points = " ".join(points)
-                
-                sparkline_svg = f"""
-                <svg width="{width}" height="{height}" style="margin-top:8px;">
-                    <polyline points="{polyline_points}" 
-                              fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
-                </svg>
-                """
+                <!-- Progress circle -->
+                <circle
+                    cx="{size/2}"
+                    cy="{size/2}"
+                    r="{radius}"
+                    fill="none"
+                    stroke="{color}"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-dasharray="{circumference}"
+                    stroke-dashoffset="{circumference}"
+                    style="
+                        filter: drop-shadow(0 0 8px {color});
+                    "
+                >
+                    <animate
+                        attributeName="stroke-dashoffset"
+                        from="{circumference}"
+                        to="{offset}"
+                        dur="1.5s"
+                        fill="freeze"
+                    />
+                </circle>
+            </svg>
             
-            # Sub text
-            sub_html = f"<div style='font-size:.7rem;opacity:.6;margin-top:4px;'>{kpi.get('sub', '')}</div>" if kpi.get('sub') else ""
-            
-            # Enhanced KPI Card HTML
-            st.markdown(f"""
+            <!-- Percentage text -->
             <div style='
-                background: {kpi["gradient"]};
-                border-radius: 20px;
-                padding: 20px 16px;
-                position: relative;
-                overflow: hidden;
-                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-                border: 1px solid rgba(255,255,255,0.1);
-                backdrop-filter: blur(10px);
-                cursor: pointer;
-            '
-            onmouseover="this.style.transform='translateY(-8px) scale(1.02)'; this.style.boxShadow='0 12px 48px rgba(0,0,0,0.4)';"
-            onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.3)';">
-                
-                <!-- Background decoration -->
-                <div style='
-                    position: absolute;
-                    top: -50%;
-                    right: -30%;
-                    width: 150px;
-                    height: 150px;
-                    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-                    border-radius: 50%;
-                    pointer-events: none;
-                '></div>
-                
-                <!-- Icon with animation -->
-                <div style='
-                    font-size: 2.2rem;
-                    margin-bottom: 8px;
-                    animation: float{idx} 3s ease-in-out infinite;
-                    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
-                '>
-                    {kpi["icon"]}
-                </div>
-                
-                <!-- Value -->
-                <div style='
-                    font-size: 2rem;
-                    font-weight: 900;
-                    font-family: "JetBrains Mono", monospace;
-                    color: white;
-                    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                    margin: 8px 0;
-                    line-height: 1;
-                '>
-                    {kpi["value"]}
-                </div>
-                
-                <!-- Sub text -->
-                {sub_html}
-                
-                <!-- Label -->
-                <div style='
-                    font-size: .75rem;
-                    font-weight: 600;
-                    color: rgba(255,255,255,0.9);
-                    text-transform: uppercase;
-                    letter-spacing: 0.1em;
-                    margin-top: 8px;
-                '>
-                    {kpi["label"]}
-                </div>
-                
-                <!-- Progress bar -->
-                <div style='
-                    width: 100%;
-                    height: 4px;
-                    background: rgba(0,0,0,0.2);
-                    border-radius: 10px;
-                    margin-top: 12px;
-                    overflow: hidden;
-                '>
-                    <div style='
-                        width: {min(100, progress_val)}%;
-                        height: 100%;
-                        background: linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
-                        border-radius: 10px;
-                        transition: width 1s ease;
-                        box-shadow: 0 0 10px rgba(255,255,255,0.5);
-                    '></div>
-                </div>
-                
-                <!-- Trend indicator -->
-                <div style='
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    margin-top: 10px;
-                    font-size: .75rem;
-                    color: {trend_color};
-                    font-weight: 700;
-                '>
-                    <span style='font-size:1rem;'>{trend_icon}</span>
-                    <span>{trend_text}</span>
-                </div>
-                
-                <!-- Sparkline -->
-                {sparkline_svg}
-                
-                <!-- Floating particles animation -->
-                <style>
-                    @keyframes float{idx} {{
-                        0%, 100% {{ transform: translateY(0px); }}
-                        50% {{ transform: translateY(-10px); }}
-                    }}
-                </style>
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 2rem;
+                font-weight: 900;
+                font-family: "JetBrains Mono", monospace;
+                color: {color};
+                text-shadow: 0 0 20px {color}80;
+            '>
+                {percentage}<span style='font-size:1.2rem;'>%</span>
             </div>
-            """, unsafe_allow_html=True)
+        </div>
+        
+        <!-- Label -->
+        <div style='
+            margin-top: 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            position: relative;
+            z-index: 2;
+        '>
+            {label}
+        </div>
+    </div>
     
-    # ════════════════════════════════════════════
-    # 4. CHARTS SECTION
-    # ════════════════════════════════════════════
-    if not df.empty and HAS_PLOTLY:
-        st.markdown("---")
-        
-        # ════════════════════════════════════════════
-        # 4.1 ROW 1 - DISTRIBUTION & TRENDS
-        # ════════════════════════════════════════════
-        chart_row1_col1, chart_row1_col2 = st.columns([1, 1])
-        
-        with chart_row1_col1:
-            st.markdown(f"#### 🦠 {t('parasite_distribution')}")
-            
-            if 'parasite_detected' in df.columns:
-                pc = df['parasite_detected'].value_counts().head(10)
-                
-                # Donut chart with custom colors
-                colors_map = {name: PARASITE_DB.get(name, {}).get('color', '#888888') 
-                             for name in pc.index}
-                colors = [colors_map.get(name, '#888888') for name in pc.index]
-                
-                fig = go.Figure(data=[go.Pie(
-                    labels=pc.index,
-                    values=pc.values,
-                    hole=.5,
-                    marker=dict(colors=colors, line=dict(color='#030614', width=2)),
-                    textposition='inside',
-                    textinfo='label+percent',
-                    hovertemplate='<b>%{label}</b><br>Count: %{value}<br>Percent: %{percent}<extra></extra>'
-                )])
-                
-                fig.update_layout(
-                    height=380,
-                    template=plot_template,
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    showlegend=True,
-                    legend=dict(
-                        orientation="v",
-                        yanchor="middle",
-                        y=0.5,
-                        xanchor="left",
-                        x=1.02,
-                        font=dict(size=10)
-                    )
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, key="pie_parasites")
-        
-        with chart_row1_col2:
-            st.markdown(f"#### 📈 Tendances temporelles")
-            
-            if 'analysis_date' in df.columns:
-                # Group by date
-                df_daily = df.copy()
-                df_daily['date'] = df_daily['analysis_date'].dt.date
-                daily_counts = df_daily.groupby('date').size().reset_index(name='count')
-                
-                fig = go.Figure()
-                
-                fig.add_trace(go.Scatter(
-                    x=daily_counts['date'],
-                    y=daily_counts['count'],
-                    mode='lines+markers',
-                    name='Analyses',
-                    line=dict(color='#00f5ff', width=3),
-                    marker=dict(size=8, symbol='circle'),
-                    fill='tozeroy',
-                    fillcolor='rgba(0,245,255,0.1)',
-                    hovertemplate='<b>%{x}</b><br>Analyses: %{y}<extra></extra>'
-                ))
-                
-                # Add moving average (7 days)
-                if len(daily_counts) >= 7:
-                    daily_counts['ma7'] = daily_counts['count'].rolling(window=7, min_periods=1).mean()
-                    fig.add_trace(go.Scatter(
-                        x=daily_counts['date'],
-                        y=daily_counts['ma7'],
-                        mode='lines',
-                        name='Moyenne 7j',
-                        line=dict(color='#ff00ff', width=2, dash='dash'),
-                        hovertemplate='<b>%{x}</b><br>MA(7): %{y:.1f}<extra></extra>'
-                    ))
-                
-                fig.update_layout(
-                    height=380,
-                    template=plot_template,
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    xaxis_title="Date",
-                    yaxis_title="Nombre d'analyses",
-                    hovermode='x unified'
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, key="line_trend")
-        
-        # ════════════════════════════════════════════
-        # 4.2 ROW 2 - CONFIDENCE & HEATMAP
-        # ════════════════════════════════════════════
-        st.markdown("---")
-        chart_row2_col1, chart_row2_col2 = st.columns([1, 1])
-        
-        with chart_row2_col1:
-            st.markdown(f"#### 🎯 {t('confidence_levels')}")
-            
-            if 'confidence' in df.columns and 'parasite_detected' in df.columns:
-                # Box plot by parasite
-                top_parasites = df['parasite_detected'].value_counts().head(7).index.tolist()
-                df_box = df[df['parasite_detected'].isin(top_parasites)]
-                
-                fig = go.Figure()
-                
-                for parasite in top_parasites:
-                    data = df_box[df_box['parasite_detected'] == parasite]['confidence']
-                    color = PARASITE_DB.get(parasite, {}).get('color', '#888888')
-                    
-                    fig.add_trace(go.Box(
-                        y=data,
-                        name=parasite[:20],
-                        marker_color=color,
-                        boxmean='sd',
-                        hovertemplate='<b>%{fullData.name}</b><br>Confiance: %{y}%<extra></extra>'
-                    ))
-                
-                fig.update_layout(
-                    height=380,
-                    template=plot_template,
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    yaxis_title="Confiance (%)",
-                    showlegend=False,
-                    yaxis=dict(range=[0, 105])
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, key="box_confidence")
-        
-        with chart_row2_col2:
-            st.markdown(f"#### 🔥 Calendrier d'activité")
-            
-            if 'analysis_date' in df.columns:
-                # Heatmap calendar
-                df_cal = df.copy()
-                df_cal['date'] = df_cal['analysis_date'].dt.date
-                df_cal['weekday'] = df_cal['analysis_date'].dt.dayofweek
-                df_cal['week'] = df_cal['analysis_date'].dt.isocalendar().week
-                
-                heatmap_data = df_cal.groupby(['week', 'weekday']).size().reset_index(name='count')
-                
-                # Pivot for heatmap
-                pivot = heatmap_data.pivot(index='weekday', columns='week', values='count').fillna(0)
-                
-                # Weekday names
-                weekday_names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-                
-                fig = go.Figure(data=go.Heatmap(
-                    z=pivot.values,
-                    x=pivot.columns,
-                    y=weekday_names,
-                    colorscale='Viridis',
-                    hovertemplate='Semaine %{x}<br>%{y}<br>Analyses: %{z}<extra></extra>',
-                    colorbar=dict(title="Analyses")
-                ))
-                
-                fig.update_layout(
-                    height=380,
-                    template=plot_template,
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    xaxis_title="Semaine",
-                    yaxis_title="Jour"
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, key="heatmap_calendar")
-        
-        # ════════════════════════════════════════════
-        # 4.3 ROW 3 - RISK DISTRIBUTION & PERFORMANCE
-        # ════════════════════════════════════════════
-        st.markdown("---")
-        chart_row3_col1, chart_row3_col2 = st.columns([1, 1])
-        
-        with chart_row3_col1:
-            st.markdown(f"#### ⚠️ Distribution par niveau de risque")
-            
-            if 'risk_level' in df.columns:
-                risk_counts = df['risk_level'].value_counts()
-                
-                risk_colors = {
-                    'critical': '#ff0040',
-                    'high': '#ff3366',
-                    'medium': '#ff9500',
-                    'low': '#00e676',
-                    'none': '#00ff88'
-                }
-                
-                colors = [risk_colors.get(risk, '#888888') for risk in risk_counts.index]
-                
-                fig = go.Figure(data=[go.Bar(
-                    x=risk_counts.index,
-                    y=risk_counts.values,
-                    marker=dict(
-                        color=colors,
-                        line=dict(color='#030614', width=2)
-                    ),
-                    text=risk_counts.values,
-                    textposition='outside',
-                    hovertemplate='<b>%{x}</b><br>Count: %{y}<extra></extra>'
-                )])
-                
-                fig.update_layout(
-                    height=380,
-                    template=plot_template,
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    xaxis_title="Niveau de risque",
-                    yaxis_title="Nombre de cas",
-                    showlegend=False
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, key="bar_risk")
-        
-        with chart_row3_col2:
-            st.markdown(f"#### 📊 Performance par technicien")
-            
-            if 'analyst' in df.columns:
-                analyst_data = df.groupby('analyst').agg({
-                    'id': 'count',
-                    'confidence': 'mean',
-                    'is_reliable': 'sum'
-                }).reset_index()
-                
-                analyst_data.columns = ['Analyste', 'Total', 'Conf_Moy', 'Fiables']
-                analyst_data = analyst_data.sort_values('Total', ascending=False).head(10)
-                
-                fig = go.Figure()
-                
-                fig.add_trace(go.Bar(
-                    name='Total',
-                    x=analyst_data['Analyste'],
-                    y=analyst_data['Total'],
-                    marker_color='#00f5ff',
-                    hovertemplate='<b>%{x}</b><br>Total: %{y}<extra></extra>'
-                ))
-                
-                fig.add_trace(go.Bar(
-                    name='Fiables',
-                    x=analyst_data['Analyste'],
-                    y=analyst_data['Fiables'],
-                    marker_color='#00ff88',
-                    hovertemplate='<b>%{x}</b><br>Fiables: %{y}<extra></extra>'
-                ))
-                
-                fig.update_layout(
-                    height=380,
-                    template=plot_template,
-                    margin=dict(l=10, r=10, t=30, b=10),
-                    xaxis_title="Technicien",
-                    yaxis_title="Nombre d'analyses",
-                    barmode='group',
-                    hovermode='x unified'
-                )
-                
-                st.plotly_chart(fig, use_container_width=True, key="bar_analyst")
+    <style>
+        @keyframes pulse{abs(hash(label)) % 1000} {{
+            0%, 100% {{ opacity: 0.3; }}
+            50% {{ opacity: 0.6; }}
+        }}
+        @keyframes float{abs(hash(label)) % 1000} {{
+            0%, 100% {{ transform: translateY(0px); }}
+            50% {{ transform: translateY(-8px); }}
+        }}
+    </style>
+    """
+
+
+def create_mini_ring(percentage, label="", color="#00f5ff", size=90, count=None):
+    """
+    دائرة صغيرة للمؤشرات السريعة
+    """
+    radius = 32
+    circumference = 2 * 3.14159 * radius
+    offset = circumference - (percentage / 100) * circumference
     
-    # ════════════════════════════════════════════
-    # 5. DATA TABLE WITH ACTIONS
-    # ════════════════════════════════════════════
-    if not df.empty:
-        st.markdown("---")
-        st.markdown(f"### 📋 {t('history')}")
+    return f"""
+    <div style='
+        text-align:center;
+        padding:16px 12px;
+        background: rgba(10,15,46,0.4);
+        border-radius: 16px;
+        border: 1px solid rgba(0,245,255,0.1);
+        transition: all 0.3s ease;
+    ' onmouseover="this.style.borderColor='{color}'; this.style.transform='scale(1.05)';" 
+       onmouseout="this.style.borderColor='rgba(0,245,255,0.1)'; this.style.transform='scale(1)';">
         
-        # Column selector
-        with st.expander("⚙️ Personnaliser les colonnes"):
-            all_cols = df.columns.tolist()
-            default_cols = [c for c in ["id", "analysis_date", "patient_name", "parasite_detected", 
-                                       "confidence", "risk_level", "analyst", "validated"] if c in all_cols]
-            selected_cols = st.multiselect(
-                "Colonnes à afficher",
-                options=all_cols,
-                default=default_cols
-            )
+        <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
+            <circle cx="{size/2}" cy="{size/2}" r="{radius}" 
+                    fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
+            <circle cx="{size/2}" cy="{size/2}" r="{radius}" 
+                    fill="none" stroke="{color}" stroke-width="7"
+                    stroke-linecap="round"
+                    stroke-dasharray="{circumference}"
+                    stroke-dashoffset="{circumference}"
+                    style="filter: drop-shadow(0 0 6px {color});">
+                <animate
+                    attributeName="stroke-dashoffset"
+                    from="{circumference}"
+                    to="{offset}"
+                    dur="1.2s"
+                    fill="freeze"
+                />
+            </circle>
+        </svg>
         
-        if selected_cols:
-            display_df = df[selected_cols].copy()
-            
-            # Format columns
-            if 'analysis_date' in display_df.columns:
-                display_df['analysis_date'] = pd.to_datetime(display_df['analysis_date']).dt.strftime('%Y-%m-%d %H:%M')
-            
-            if 'confidence' in display_df.columns:
-                display_df['confidence'] = display_df['confidence'].apply(lambda x: f"{x:.1f}%")
-            
-            st.dataframe(
-                display_df,
-                use_container_width=True,
-                height=400
-            )
+        <div style='
+            margin-top:-{size-12}px;
+            font-size:1.4rem;
+            font-weight:900;
+            font-family:"JetBrains Mono",monospace;
+            color:{color};
+            text-shadow: 0 0 10px {color}60;
+        '>
+            {percentage}%
+        </div>
         
-        # ════════════════════════════════════════════
-        # 6. VALIDATION & EXPORT
-        # ════════════════════════════════════════════
-        st.markdown("---")
+        <div style='
+            font-size:.75rem;
+            opacity:.7;
+            margin-top:10px;
+            font-weight:600;
+            color:rgba(255,255,255,0.8);
+        '>
+            {label[:15]}
+        </div>
         
-        action_col1, action_col2, action_col3, action_col4 = st.columns(4)
-        
-        # Validation
-        if has_role(2) and "validated" in df.columns:
-            with action_col1:
-                uv = df[df["validated"] == 0]
-                if not uv.empty:
-                    vi = st.selectbox("✅ Valider analyse:", ["--"] + uv["id"].tolist())
-                    if vi != "--" and st.button(f"Valider #{vi}", use_container_width=True):
-                        db_validate(vi, st.session_state.user_full_name)
-                        st.success(f"✅ Analyse #{vi} validée!")
-                        st.rerun()
-                else:
-                    st.info("✅ Tout validé!")
-        
-        # Export CSV
-        with action_col2:
-            csv = df.to_csv(index=False).encode('utf-8-sig')
-            st.download_button(
-                f"⬇️ CSV",
-                csv,
-                f"analyses_{datetime.now().strftime('%Y%m%d')}.csv",
-                "text/csv",
-                use_container_width=True
-            )
-        
-        # Export JSON
-        with action_col3:
-            json_data = df.to_json(orient='records', force_ascii=False, indent=2).encode()
-            st.download_button(
-                f"⬇️ JSON",
-                json_data,
-                f"analyses_{datetime.now().strftime('%Y%m%d')}.json",
-                "application/json",
-                use_container_width=True
-            )
-        
-        # Export Excel (if available)
-        with action_col4:
-            try:
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df.to_excel(writer, index=False, sheet_name='Analyses')
-                    
-                    # Auto-adjust columns width
-                    worksheet = writer.sheets['Analyses']
-                    for i, col in enumerate(df.columns):
-                        max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
-                        worksheet.set_column(i, i, max_len)
-                
-                st.download_button(
-                    f"⬇️ Excel",
-                    output.getvalue(),
-                    f"analyses_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
-            except:
-                st.button("⬇️ Excel (unavailable)", disabled=True, use_container_width=True)
-    
+        {f"<div style='font-size:.65rem;opacity:.5;margin-top:4px;'>{count} cas</div>" if count else ""}
+    </div>
+    """
+
+
+def create_kpi_card_advanced(icon, value, label, trend=0, color="#00f5ff", sparkline_data=None):
+    """
+    بطاقة KPI متقدمة مع Sparkline
+    """
+    # Trend arrow
+    if trend > 5:
+        trend_arrow = "↗️"
+        trend_color = "#00ff88"
+        trend_text = "hausse"
+    elif trend < -5:
+        trend_arrow = "↘️"
+        trend_color = "#ff0040"
+        trend_text = "baisse"
     else:
-        st.info(t("no_data"))
+        trend_arrow = "→"
+        trend_color = "#6b7fa0"
+        trend_text = "stable"
+    
+    # Sparkline SVG
+    sparkline_svg = ""
+    if sparkline_data and len(sparkline_data) > 1:
+        width = 100
+        height = 30
+        max_val = max(sparkline_data) if max(sparkline_data) > 0 else 1
+        points = []
+        for i, val in enumerate(sparkline_data):
+            x = i * (width / (len(sparkline_data) - 1))
+            y = height - (val / max_val * height)
+            points.append(f"{x},{y}")
         
-        # Show sample charts with empty state
-        st.markdown("---")
-        st.markdown("### 📊 Exemple de visualisations")
-        st.image("https://via.placeholder.com/1200x400/030614/00f5ff?text=Statistiques+vides+-+Commencez+vos+analyses!", 
-                use_container_width=True)
+        sparkline_svg = f"""
+        <svg width="{width}" height="{height}" style="margin-top:12px;">
+            <polyline points="{' '.join(points)}" 
+                      fill="none" stroke="{color}" stroke-width="2.5"
+                      style="filter: drop-shadow(0 0 4px {color});"/>
+        </svg>
+        """
+    
+    return f"""
+    <div style='
+        background: linear-gradient(135deg, {color}15, {color}05);
+        border: 1px solid {color}30;
+        border-left: 4px solid {color};
+        border-radius: 18px;
+        padding: 20px 18px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    ' onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 12px 40px {color}30';" 
+       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+        
+        <!-- Glow background -->
+        <div style='
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, {color}20 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        '></div>
+        
+        <!-- Icon -->
+        <div style='
+            font-size: 2rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+            animation: float{abs(hash(label)) % 1000} 3s ease-in-out infinite;
+        '>
+            {icon}
+        </div>
+        
+        <!-- Value -->
+        <div style='
+            font-size: 2.2rem;
+            font-weight: 900;
+            font-family: "JetBrains Mono", monospace;
+            color: {color};
+            text-shadow: 0 2px 10px {color}40;
+            margin: 8px 0;
+            position: relative;
+            z-index: 1;
+        '>
+            {value}
+        </div>
+        
+        <!-- Label -->
+        <div style='
+            font-size: .75rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            position: relative;
+            z-index: 1;
+        '>
+            {label}
+        </div>
+        
+        <!-- Trend -->
+        <div style='
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            font-size: .75rem;
+            color: {trend_color};
+            font-weight: 700;
+            position: relative;
+            z-index: 1;
+        '>
+            <span style='font-size:1.1rem;'>{trend_arrow}</span>
+            <span>{abs(trend):.1f}% {trend_text}</span>
+        </div>
+        
+        <!-- Sparkline -->
+        {sparkline_svg}
+    </div>
+    
+    <style>
+        @keyframes float{abs(hash(label)) % 1000} {{
+            0%, 100% {{ transform: translateY(0px); }}
+            50% {{ transform: translateY(-6px); }}
+        }}
+    </style>
+    """
+
+
+def create_stat_badge(label, value, color="#00f5ff"):
+    """شارة إحصائية صغيرة"""
+    return f"""
+    <div style='
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: {color}15;
+        border: 1px solid {color}30;
+        border-radius: 20px;
+        padding: 8px 16px;
+        margin: 4px;
+    '>
+        <span style='
+            width: 8px;
+            height: 8px;
+            background: {color};
+            border-radius: 50%;
+            box-shadow: 0 0 8px {color};
+        '></span>
+        <span style='font-size:.85rem;font-weight:600;color:{color};'>{label}</span>
+        <span style='font-size:1rem;font-weight:900;font-family:"JetBrains Mono",monospace;color:{color};'>{value}</span>
+    </div>
+    """
 # ════════════════════════════════════════════
 #  PAGE: QUIZ (Fixed & Enhanced)
 # ════════════════════════════════════════════
