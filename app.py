@@ -2512,11 +2512,10 @@ elif pg == "dash":
                     (df['confidence'] <= confidence_range[1])]
     else:
         df = pd.DataFrame()
-    
+        # ════════════════════════════════════════════
+    # 3. KPI CARDS - ULTRA PROFESSIONAL EDITION
     # ════════════════════════════════════════════
-    # 3. KPI CARDS - ANIMATED
-    # ════════════════════════════════════════════
-    st.markdown("### 📊 KPI Dashboard")
+    st.markdown("### 📊 Tableau de bord analytique")
     
     kpi_data = []
     if not df.empty:
@@ -2539,85 +2538,253 @@ elif pg == "dash":
             recent = df[df['analysis_date'] >= mid_date]
             old = df[df['analysis_date'] < mid_date]
             
-            trend_total = ((len(recent) - len(old)) / max(len(old), 1)) * 100
-            trend_conf = ((recent['confidence'].mean() - old['confidence'].mean()) 
-                         if 'confidence' in df.columns else 0)
+            trend_total = ((len(recent) - len(old)) / max(len(old), 1)) * 100 if len(old) > 0 else 0
+            trend_reliable = ((len(recent[recent.get('is_reliable', 0) == 1]) - len(old[old.get('is_reliable', 0) == 1])) / max(len(old[old.get('is_reliable', 0) == 1]), 1)) * 100 if len(old) > 0 else 0
+            trend_conf = ((recent['confidence'].mean() - old['confidence'].mean()) if len(old) > 0 and 'confidence' in df.columns else 0)
+            
+            # Calculate sparkline data (last 7 days)
+            if 'analysis_date' in df.columns:
+                last_7_days = df[df['analysis_date'] >= datetime.now() - timedelta(days=7)]
+                daily_counts = last_7_days.groupby(last_7_days['analysis_date'].dt.date).size()
+                sparkline_data = list(daily_counts.values) if len(daily_counts) > 0 else [0, 0, 0, 0, 0, 0, 0]
+                # Pad to 7 days
+                sparkline_data = ([0] * (7 - len(sparkline_data))) + sparkline_data
+                sparkline_data = sparkline_data[-7:]  # Keep only last 7
+            else:
+                sparkline_data = [0, 0, 0, 0, 0, 0, 0]
         else:
             trend_total = 0
+            trend_reliable = 0
             trend_conf = 0
+            sparkline_data = [0, 0, 0, 0, 0, 0, 0]
+        
+        # Reliability rate
+        reliability_rate = (reliable / total * 100) if total > 0 else 0
         
         kpi_data = [
             {
                 "icon": "🔬",
                 "value": total,
-                "label": t("total_analyses"),
+                "label": "Total Analyses",
                 "trend": trend_total,
-                "color": "#00f5ff"
+                "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                "sparkline": sparkline_data,
+                "progress": min(100, (total / max(s.get('total', 1), 1)) * 100)
             },
             {
                 "icon": "✅",
                 "value": reliable,
-                "label": t("reliable"),
-                "trend": 0,
-                "color": "#00ff88"
+                "label": "Analyses Fiables",
+                "trend": trend_reliable,
+                "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                "sparkline": None,
+                "progress": reliability_rate,
+                "sub": f"{reliability_rate:.1f}% fiabilité"
             },
             {
                 "icon": "⚠️",
                 "value": total - reliable,
-                "label": t("to_verify"),
-                "trend": 0,
-                "color": "#ff9500"
+                "label": "À Vérifier",
+                "trend": -trend_reliable,
+                "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                "sparkline": None,
+                "progress": ((total - reliable) / max(total, 1) * 100) if total > 0 else 0
             },
             {
                 "icon": "🦠",
-                "value": f"{most_freq[:15]}",
-                "label": t("most_frequent"),
-                "sub": f"({most_freq_count}x)",
+                "value": most_freq[:20],
+                "label": "Plus Fréquent",
+                "sub": f"{most_freq_count} cas détectés",
                 "trend": 0,
-                "color": "#ff00ff"
+                "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                "sparkline": None,
+                "progress": (most_freq_count / max(total, 1) * 100) if total > 0 else 0
             },
             {
                 "icon": "📈",
                 "value": f"{avg_conf:.1f}%",
-                "label": t("avg_confidence"),
+                "label": "Confiance Moyenne",
                 "trend": trend_conf,
-                "color": "#0066ff"
+                "gradient": "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                "sparkline": None,
+                "progress": avg_conf
             }
         ]
     else:
         kpi_data = [
-            {"icon": "🔬", "value": 0, "label": t("total_analyses"), "trend": 0, "color": "#00f5ff"},
-            {"icon": "✅", "value": 0, "label": t("reliable"), "trend": 0, "color": "#00ff88"},
-            {"icon": "⚠️", "value": 0, "label": t("to_verify"), "trend": 0, "color": "#ff9500"},
-            {"icon": "🦠", "value": "N/A", "label": t("most_frequent"), "trend": 0, "color": "#ff00ff"},
-            {"icon": "📈", "value": "0%", "label": t("avg_confidence"), "trend": 0, "color": "#0066ff"}
+            {"icon": "🔬", "value": 0, "label": "Total Analyses", "trend": 0, 
+             "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", "progress": 0},
+            {"icon": "✅", "value": 0, "label": "Analyses Fiables", "trend": 0, 
+             "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)", "progress": 0},
+            {"icon": "⚠️", "value": 0, "label": "À Vérifier", "trend": 0, 
+             "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)", "progress": 0},
+            {"icon": "🦠", "value": "N/A", "label": "Plus Fréquent", "trend": 0, 
+             "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)", "progress": 0},
+            {"icon": "📈", "value": "0%", "label": "Confiance Moyenne", "trend": 0, 
+             "gradient": "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)", "progress": 0}
         ]
     
+    # Render KPI Cards with advanced styling
     kpi_cols = st.columns(5)
-    for col, kpi in zip(kpi_cols, kpi_data):
+    for idx, (col, kpi) in enumerate(zip(kpi_cols, kpi_data)):
         with col:
-            trend_arrow = ""
-            trend_color = "#6b7fa0"
-            if kpi.get("trend", 0) > 5:
-                trend_arrow = "↗️"
+            # Trend calculation
+            trend_val = kpi.get("trend", 0)
+            if trend_val > 2:
+                trend_icon = "📈"
                 trend_color = "#00ff88"
-            elif kpi.get("trend", 0) < -5:
-                trend_arrow = "↘️"
+                trend_text = f"+{trend_val:.1f}%"
+            elif trend_val < -2:
+                trend_icon = "📉"
                 trend_color = "#ff0040"
+                trend_text = f"{trend_val:.1f}%"
             else:
-                trend_arrow = "→"
+                trend_icon = "➡️"
+                trend_color = "#6b7fa0"
+                trend_text = "stable"
             
-            sub_text = f"<div style='font-size:.65rem;opacity:.5;margin-top:2px;'>{kpi.get('sub', '')}</div>" if kpi.get('sub') else ""
+            # Progress bar value
+            progress_val = kpi.get("progress", 0)
             
-            st.markdown(f"""<div class='dm-m' style='border-top:3px solid {kpi["color"]};'>
-            <span class='dm-m-i'>{kpi["icon"]}</span>
-            <div class='dm-m-v' style='color:{kpi["color"]};'>{kpi["value"]}</div>
-            {sub_text}
-            <div class='dm-m-l'>{kpi["label"]}</div>
-            <div style='font-size:.7rem;color:{trend_color};margin-top:4px;'>
-                {trend_arrow} {abs(kpi.get("trend", 0)):.1f}%
+            # Sparkline SVG (mini chart)
+            sparkline_svg = ""
+            if kpi.get("sparkline"):
+                spark_data = kpi["sparkline"]
+                max_val = max(spark_data) if max(spark_data) > 0 else 1
+                points = []
+                width = 80
+                height = 20
+                x_step = width / (len(spark_data) - 1) if len(spark_data) > 1 else width
+                
+                for i, val in enumerate(spark_data):
+                    x = i * x_step
+                    y = height - (val / max_val * height) if max_val > 0 else height
+                    points.append(f"{x},{y}")
+                
+                polyline_points = " ".join(points)
+                
+                sparkline_svg = f"""
+                <svg width="{width}" height="{height}" style="margin-top:8px;">
+                    <polyline points="{polyline_points}" 
+                              fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+                </svg>
+                """
+            
+            # Sub text
+            sub_html = f"<div style='font-size:.7rem;opacity:.6;margin-top:4px;'>{kpi.get('sub', '')}</div>" if kpi.get('sub') else ""
+            
+            # Enhanced KPI Card HTML
+            st.markdown(f"""
+            <div style='
+                background: {kpi["gradient"]};
+                border-radius: 20px;
+                padding: 20px 16px;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                border: 1px solid rgba(255,255,255,0.1);
+                backdrop-filter: blur(10px);
+                cursor: pointer;
+            '
+            onmouseover="this.style.transform='translateY(-8px) scale(1.02)'; this.style.boxShadow='0 12px 48px rgba(0,0,0,0.4)';"
+            onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.3)';">
+                
+                <!-- Background decoration -->
+                <div style='
+                    position: absolute;
+                    top: -50%;
+                    right: -30%;
+                    width: 150px;
+                    height: 150px;
+                    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+                    border-radius: 50%;
+                    pointer-events: none;
+                '></div>
+                
+                <!-- Icon with animation -->
+                <div style='
+                    font-size: 2.2rem;
+                    margin-bottom: 8px;
+                    animation: float{idx} 3s ease-in-out infinite;
+                    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+                '>
+                    {kpi["icon"]}
+                </div>
+                
+                <!-- Value -->
+                <div style='
+                    font-size: 2rem;
+                    font-weight: 900;
+                    font-family: "JetBrains Mono", monospace;
+                    color: white;
+                    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                    margin: 8px 0;
+                    line-height: 1;
+                '>
+                    {kpi["value"]}
+                </div>
+                
+                <!-- Sub text -->
+                {sub_html}
+                
+                <!-- Label -->
+                <div style='
+                    font-size: .75rem;
+                    font-weight: 600;
+                    color: rgba(255,255,255,0.9);
+                    text-transform: uppercase;
+                    letter-spacing: 0.1em;
+                    margin-top: 8px;
+                '>
+                    {kpi["label"]}
+                </div>
+                
+                <!-- Progress bar -->
+                <div style='
+                    width: 100%;
+                    height: 4px;
+                    background: rgba(0,0,0,0.2);
+                    border-radius: 10px;
+                    margin-top: 12px;
+                    overflow: hidden;
+                '>
+                    <div style='
+                        width: {min(100, progress_val)}%;
+                        height: 100%;
+                        background: linear-gradient(90deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+                        border-radius: 10px;
+                        transition: width 1s ease;
+                        box-shadow: 0 0 10px rgba(255,255,255,0.5);
+                    '></div>
+                </div>
+                
+                <!-- Trend indicator -->
+                <div style='
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    margin-top: 10px;
+                    font-size: .75rem;
+                    color: {trend_color};
+                    font-weight: 700;
+                '>
+                    <span style='font-size:1rem;'>{trend_icon}</span>
+                    <span>{trend_text}</span>
+                </div>
+                
+                <!-- Sparkline -->
+                {sparkline_svg}
+                
+                <!-- Floating particles animation -->
+                <style>
+                    @keyframes float{idx} {{
+                        0%, 100% {{ transform: translateY(0px); }}
+                        50% {{ transform: translateY(-10px); }}
+                    }}
+                </style>
             </div>
-            </div>""", unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
     
     # ════════════════════════════════════════════
     # 4. CHARTS SECTION
