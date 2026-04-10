@@ -3435,7 +3435,7 @@ TR["en"].update({
 # ============================================================
 # ADMIN
 # ============================================================
-elif selected_page == "admin":
+if selected_page == "admin":
     st.markdown(f"<h1 class='dm-title'>⚙️ {t('admin')}</h1>", unsafe_allow_html=True)
 
     if not has_role(3):
@@ -3718,7 +3718,7 @@ elif selected_page == "admin":
 # ============================================================
 # ABOUT
 # ============================================================
-elif selected_page == "about":
+if selected_page == "about":
     st.markdown(f"<h1 class='dm-title'>ℹ️ {t('about')}</h1>", unsafe_allow_html=True)
 
     st.markdown(
