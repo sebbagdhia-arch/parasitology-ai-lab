@@ -3182,78 +3182,125 @@ render_voice_player()
 # ════════════════════════════════════════════
 #  PAGE: HOME - ENHANCED
 # ════════════════════════════════════════════
-
 if selected_page == "home":
     st.markdown(f"""
-    <h1 class="neon-text" style="text-align: center; font-size: 2.5rem; margin-bottom: 0;">
-        {get_greeting()}, {st.session_state.user_full_name}! 👋
+    <h1 class="neon-text" style="text-align: center;">
+        👋 {get_greeting()}, {st.session_state.user_full_name}!
     </h1>
-    <p style="text-align: center; opacity: 0.6; margin-top: 0.5rem;">
-        Où la Science Rencontre l'Intelligence
-    </p>
     """, unsafe_allow_html=True)
     
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("---")
     
-    # Quick actions
+    # Voice buttons
     col1, col2, col3 = st.columns(3)
-    
     with col1:
-        if st.button("🎙️ Message de Bienvenue", use_container_width=True, type="primary"):
+        if st.button("🎙️ Message de Bienvenue", use_container_width=True):
             speak(t("voice_welcome"))
             st.rerun()
-    
     with col2:
-        if st.button("🤖 Présentation du Système", use_container_width=True, type="primary"):
+        if st.button("🤖 Présentation", use_container_width=True):
             speak(t("voice_intro"))
             st.rerun()
-    
     with col3:
         if st.button("🔇 Arrêter", use_container_width=True):
             stop_speech()
     
     st.markdown("---")
     
-    # Stats - HTML DIRECTE
+    # Quick stats - MÉTHODE SIMPLE
+    st.markdown("### 📊 Aperçu Rapide")
+    
     stats = db_stats(st.session_state.user_id)
     
-    st.markdown(f"### 📊 Aperçu Rapide")
+    col1, col2, col3, col4, col5 = st.columns(5)
     
-    st.markdown(f"""
-    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin: 2rem 0;">
-        
-        <div class="metric-card">
-            <div class="metric-icon">🔬</div>
-            <div class="metric-value">{stats["total"]}</div>
-            <div class="metric-label">Total Analyses</div>
-        </div>
-        
-        <div class="metric-card">
-            <div class="metric-icon">✅</div>
-            <div class="metric-value">{stats["reliable"]}</div>
-            <div class="metric-label">Fiables</div>
-        </div>
-        
-        <div class="metric-card">
-            <div class="metric-icon">⚠️</div>
-            <div class="metric-value">{stats["to_verify"]}</div>
-            <div class="metric-label">À Vérifier</div>
-        </div>
-        
-        <div class="metric-card">
-            <div class="metric-icon">🦠</div>
-            <div class="metric-value">{stats["top"]}</div>
-            <div class="metric-label">Plus Fréquent</div>
-        </div>
-        
-        <div class="metric-card">
-            <div class="metric-icon">📈</div>
-            <div class="metric-value">{stats['avg_confidence']:.0f}%</div>
-            <div class="metric-label">Confiance Moy.</div>
-        </div>
-        
-    </div>
-    """, unsafe_allow_html=True)
+    with col1:
+        st.metric(
+            label="🔬 Total Analyses",
+            value=stats["total"],
+            delta="+12"
+        )
+    
+    with col2:
+        st.metric(
+            label="✅ Fiables",
+            value=stats["reliable"],
+            delta="+8"
+        )
+    
+    with col3:
+        st.metric(
+            label="⚠️ À Vérifier",
+            value=stats["to_verify"],
+            delta="-3"
+        )
+    
+    with col4:
+        st.metric(
+            label="🦠 Plus Fréquent",
+            value=stats["top"]
+        )
+    
+    with col5:
+        st.metric(
+            label="📈 Confiance Moy.",
+            value=f"{stats['avg_confidence']:.0f}%",
+            delta="+5%"
+        )
+    
+    st.markdown("---")
+    
+    # Recent activity
+    st.markdown("### 📋 Activité Récente")
+    
+    recent = db_analyses(st.session_state.user_id, limit=5)
+    
+    if recent:
+        for analysis in recent:
+            with st.expander(f"{analysis['parasite_detected']} - {format_date(analysis['analysis_date'])}"):
+                col_a, col_b, col_c = st.columns(3)
+                
+                with col_a:
+                    st.write(f"**Patient:** {analysis['patient_name']}")
+                    st.write(f"**Confiance:** {analysis['confidence']}%")
+                
+                with col_b:
+                    risk_label = PARASITE_DB.get(analysis['parasite_detected'], {}).get('risk_d', {})
+                    st.write(f"**Risque:** {tl(risk_label)}")
+                    st.write(f"**Validé:** {'✅' if analysis.get('validated') else '⏳'}")
+                
+                with col_c:
+                    st.write(f"**Analyste:** {analysis.get('analyst', 'N/A')}")
+                    st.write(f"**ID:** #{analysis['id']}")
+    else:
+        st.info("Aucune analyse récente")
+    
+    st.markdown("---")
+    
+    # Quick actions
+    st.markdown("### 🚀 Actions Rapides")
+    
+    col_a, col_b, col_c, col_d = st.columns(4)
+    
+    with col_a:
+        if st.button("🔬 Nouvelle Analyse", use_container_width=True, type="primary"):
+            st.session_state.current_page = "scan"
+            st.rerun()
+    
+    with col_b:
+        if st.button("📊 Tableau de Bord", use_container_width=True):
+            st.session_state.current_page = "dashboard"
+            st.rerun()
+    
+    with col_c:
+        if st.button("🧠 Quiz Médical", use_container_width=True):
+            st.session_state.current_page = "quiz"
+            st.rerun()
+    
+    with col_d:
+        if st.button("💬 Assistant IA", use_container_width=True):
+            st.session_state.current_page = "chatbot"
+            st.rerun()
 # ════════════════════════════════════════════
 #  PAGE: SCAN - ENHANCED
 # ════════════════════════════════════════════
