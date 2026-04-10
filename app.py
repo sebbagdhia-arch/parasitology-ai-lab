@@ -2438,359 +2438,48 @@ elif pg == "enc":
 # ════════════════════════════════════════════
 #  PAGE: DASHBOARD
 # ════════════════════════════════════════════
-# ════════════════════════════════════════════════════════════════════════════════
-#  DASHBOARD HELPER FUNCTIONS - PROFESSIONAL COMPONENTS
-# ════════════════════════════════════════════════════════════════════════════════
-
-def create_circular_progress(percentage, size=120, label="", icon="", color=None):
-    """
-    إنشاء دائرة نسبة مئوية متحركة SVG
-    """
-    # تحديد اللون حسب النسبة
-    if color is None:
-        if percentage >= 80:
-            color = "#00ff88"
-        elif percentage >= 60:
-            color = "#00f5ff"
-        elif percentage >= 40:
-            color = "#ff9500"
-        else:
-            color = "#ff0040"
-    
-    radius = 45
-    circumference = 2 * 3.14159 * radius
-    offset = circumference - (percentage / 100) * circumference
-    
-    return f"""
-    <div style='
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 24px 16px;
-        background: linear-gradient(135deg, rgba(10,15,46,0.6), rgba(10,15,46,0.3));
-        border-radius: 20px;
-        border: 1px solid rgba(0,245,255,0.15);
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-        min-height: 240px;
-    ' onmouseover="this.style.transform='translateY(-8px)'; this.style.boxShadow='0 12px 40px {color}40';" 
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-        
-        <!-- Glow effect -->
-        <div style='
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at center, {color}15 0%, transparent 70%);
-            animation: pulse{abs(hash(label)) % 1000} 3s ease-in-out infinite;
-        '></div>
-        
-        <!-- Icon -->
-        {f"<div style='font-size:2.5rem;margin-bottom:12px;position:relative;z-index:2;animation:float{abs(hash(label)) % 1000} 3s ease-in-out infinite;'>{icon}</div>" if icon else ""}
-        
-        <!-- SVG Circle -->
-        <div style='position:relative;z-index:2;'>
-            <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
-                <!-- Background circle -->
-                <circle
-                    cx="{size/2}"
-                    cy="{size/2}"
-                    r="{radius}"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.08)"
-                    stroke-width="10"
-                />
-                
-                <!-- Progress circle -->
-                <circle
-                    cx="{size/2}"
-                    cy="{size/2}"
-                    r="{radius}"
-                    fill="none"
-                    stroke="{color}"
-                    stroke-width="10"
-                    stroke-linecap="round"
-                    stroke-dasharray="{circumference}"
-                    stroke-dashoffset="{circumference}"
-                    style="
-                        filter: drop-shadow(0 0 8px {color});
-                    "
-                >
-                    <animate
-                        attributeName="stroke-dashoffset"
-                        from="{circumference}"
-                        to="{offset}"
-                        dur="1.5s"
-                        fill="freeze"
-                    />
-                </circle>
-            </svg>
-            
-            <!-- Percentage text -->
-            <div style='
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 2rem;
-                font-weight: 900;
-                font-family: "JetBrains Mono", monospace;
-                color: {color};
-                text-shadow: 0 0 20px {color}80;
-            '>
-                {percentage}<span style='font-size:1.2rem;'>%</span>
-            </div>
-        </div>
-        
-        <!-- Label -->
-        <div style='
-            margin-top: 16px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: rgba(255,255,255,0.9);
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            position: relative;
-            z-index: 2;
-        '>
-            {label}
-        </div>
-    </div>
-    
-    <style>
-        @keyframes pulse{abs(hash(label)) % 1000} {{
-            0%, 100% {{ opacity: 0.3; }}
-            50% {{ opacity: 0.6; }}
-        }}
-        @keyframes float{abs(hash(label)) % 1000} {{
-            0%, 100% {{ transform: translateY(0px); }}
-            50% {{ transform: translateY(-8px); }}
-        }}
-    </style>
-    """
-
-
-def create_mini_ring(percentage, label="", color="#00f5ff", size=90, count=None):
-    """
-    دائرة صغيرة للمؤشرات السريعة
-    """
-    radius = 32
-    circumference = 2 * 3.14159 * radius
-    offset = circumference - (percentage / 100) * circumference
-    
-    return f"""
-    <div style='
-        text-align:center;
-        padding:16px 12px;
-        background: rgba(10,15,46,0.4);
-        border-radius: 16px;
-        border: 1px solid rgba(0,245,255,0.1);
-        transition: all 0.3s ease;
-    ' onmouseover="this.style.borderColor='{color}'; this.style.transform='scale(1.05)';" 
-       onmouseout="this.style.borderColor='rgba(0,245,255,0.1)'; this.style.transform='scale(1)';">
-        
-        <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
-            <circle cx="{size/2}" cy="{size/2}" r="{radius}" 
-                    fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
-            <circle cx="{size/2}" cy="{size/2}" r="{radius}" 
-                    fill="none" stroke="{color}" stroke-width="7"
-                    stroke-linecap="round"
-                    stroke-dasharray="{circumference}"
-                    stroke-dashoffset="{circumference}"
-                    style="filter: drop-shadow(0 0 6px {color});">
-                <animate
-                    attributeName="stroke-dashoffset"
-                    from="{circumference}"
-                    to="{offset}"
-                    dur="1.2s"
-                    fill="freeze"
-                />
-            </circle>
-        </svg>
-        
-        <div style='
-            margin-top:-{size-12}px;
-            font-size:1.4rem;
-            font-weight:900;
-            font-family:"JetBrains Mono",monospace;
-            color:{color};
-            text-shadow: 0 0 10px {color}60;
-        '>
-            {percentage}%
-        </div>
-        
-        <div style='
-            font-size:.75rem;
-            opacity:.7;
-            margin-top:10px;
-            font-weight:600;
-            color:rgba(255,255,255,0.8);
-        '>
-            {label[:15]}
-        </div>
-        
-        {f"<div style='font-size:.65rem;opacity:.5;margin-top:4px;'>{count} cas</div>" if count else ""}
-    </div>
-    """
-
-
-def create_kpi_card_advanced(icon, value, label, trend=0, color="#00f5ff", sparkline_data=None):
-    """
-    بطاقة KPI متقدمة مع Sparkline
-    """
-    # Trend arrow
-    if trend > 5:
-        trend_arrow = "↗️"
-        trend_color = "#00ff88"
-        trend_text = "hausse"
-    elif trend < -5:
-        trend_arrow = "↘️"
-        trend_color = "#ff0040"
-        trend_text = "baisse"
-    else:
-        trend_arrow = "→"
-        trend_color = "#6b7fa0"
-        trend_text = "stable"
-    
-    # Sparkline SVG
-    sparkline_svg = ""
-    if sparkline_data and len(sparkline_data) > 1:
-        width = 100
-        height = 30
-        max_val = max(sparkline_data) if max(sparkline_data) > 0 else 1
-        points = []
-        for i, val in enumerate(sparkline_data):
-            x = i * (width / (len(sparkline_data) - 1))
-            y = height - (val / max_val * height)
-            points.append(f"{x},{y}")
-        
-        sparkline_svg = f"""
-        <svg width="{width}" height="{height}" style="margin-top:12px;">
-            <polyline points="{' '.join(points)}" 
-                      fill="none" stroke="{color}" stroke-width="2.5"
-                      style="filter: drop-shadow(0 0 4px {color});"/>
-        </svg>
-        """
-    
-    return f"""
-    <div style='
-        background: linear-gradient(135deg, {color}15, {color}05);
-        border: 1px solid {color}30;
-        border-left: 4px solid {color};
-        border-radius: 18px;
-        padding: 20px 18px;
-        position: relative;
-        overflow: hidden;
-        transition: all 0.3s ease;
-    ' onmouseover="this.style.transform='translateY(-6px)'; this.style.boxShadow='0 12px 40px {color}30';" 
-       onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-        
-        <!-- Glow background -->
-        <div style='
-            position: absolute;
-            top: -50%;
-            right: -30%;
-            width: 120px;
-            height: 120px;
-            background: radial-gradient(circle, {color}20 0%, transparent 70%);
-            border-radius: 50%;
-            pointer-events: none;
-        '></div>
-        
-        <!-- Icon -->
-        <div style='
-            font-size: 2rem;
-            margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
-            animation: float{abs(hash(label)) % 1000} 3s ease-in-out infinite;
-        '>
-            {icon}
-        </div>
-        
-        <!-- Value -->
-        <div style='
-            font-size: 2.2rem;
-            font-weight: 900;
-            font-family: "JetBrains Mono", monospace;
-            color: {color};
-            text-shadow: 0 2px 10px {color}40;
-            margin: 8px 0;
-            position: relative;
-            z-index: 1;
-        '>
-            {value}
-        </div>
-        
-        <!-- Label -->
-        <div style='
-            font-size: .75rem;
-            font-weight: 600;
-            color: rgba(255,255,255,0.7);
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            position: relative;
-            z-index: 1;
-        '>
-            {label}
-        </div>
-        
-        <!-- Trend -->
-        <div style='
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-top: 12px;
-            font-size: .75rem;
-            color: {trend_color};
-            font-weight: 700;
-            position: relative;
-            z-index: 1;
-        '>
-            <span style='font-size:1.1rem;'>{trend_arrow}</span>
-            <span>{abs(trend):.1f}% {trend_text}</span>
-        </div>
-        
-        <!-- Sparkline -->
-        {sparkline_svg}
-    </div>
-    
-    <style>
-        @keyframes float{abs(hash(label)) % 1000} {{
-            0%, 100% {{ transform: translateY(0px); }}
-            50% {{ transform: translateY(-6px); }}
-        }}
-    </style>
-    """
-
-
-def create_stat_badge(label, value, color="#00f5ff"):
-    """شارة إحصائية صغيرة"""
-    return f"""
-    <div style='
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: {color}15;
-        border: 1px solid {color}30;
-        border-radius: 20px;
-        padding: 8px 16px;
-        margin: 4px;
-    '>
-        <span style='
-            width: 8px;
-            height: 8px;
-            background: {color};
-            border-radius: 50%;
-            box-shadow: 0 0 8px {color};
-        '></span>
-        <span style='font-size:.85rem;font-weight:600;color:{color};'>{label}</span>
-        <span style='font-size:1rem;font-weight:900;font-family:"JetBrains Mono",monospace;color:{color};'>{value}</span>
-    </div>
-    """
+elif pg == "dash":
+    st.title(f"📊 {t('dashboard')}")
+    s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
+    an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
+    for col, (ic, v, lb) in zip(st.columns(5), [("🔬", s["total"], t("total_analyses")), ("✅", s["reliable"], t("reliable")), ("⚠️", s["verify"], t("to_verify")), ("🦠", s["top"], t("most_frequent")), ("📈", f"{s['avg']}%", t("avg_confidence"))]):
+        with col: st.markdown(f"<div class='dm-m'><span class='dm-m-i'>{ic}</span><div class='dm-m-v'>{v}</div><div class='dm-m-l'>{lb}</div></div>", unsafe_allow_html=True)
+    if s["total"] > 0:
+        df = pd.DataFrame(an); st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f"#### {t('parasite_distribution')}")
+            if HAS_PLOTLY and "parasite_detected" in df.columns:
+                pc = df["parasite_detected"].value_counts()
+                fig = px.pie(values=pc.values, names=pc.index, hole=.4)
+                fig.update_layout(height=350, template=tmpl, margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+        with c2:
+            st.markdown(f"#### {t('confidence_levels')}")
+            if HAS_PLOTLY and "confidence" in df.columns:
+                fig = px.histogram(df, x="confidence", nbins=20, color_discrete_sequence=["#00f5ff"])
+                fig.update_layout(height=350, template=tmpl, margin=dict(l=20, r=20, t=20, b=20))
+                st.plotly_chart(fig, use_container_width=True)
+        tr = db_trends(30)
+        if tr and HAS_PLOTLY:
+            st.markdown(f"#### {t('trends')}")
+            fig = px.line(pd.DataFrame(tr), x="day", y="count", color="parasite_detected", markers=True)
+            fig.update_layout(height=300, template=tmpl, margin=dict(l=20, r=20, t=20, b=20))
+            st.plotly_chart(fig, use_container_width=True)
+        st.markdown(f"### 📋 {t('history')}")
+        dc = [c for c in ["id", "analysis_date", "patient_name", "parasite_detected", "confidence", "risk_level", "analyst", "validated"] if c in df.columns]
+        st.dataframe(df[dc] if dc else df, use_container_width=True)
+        if has_role(2) and "validated" in df.columns:
+            uv = df[df["validated"] == 0]
+            if not uv.empty:
+                vi = st.selectbox("ID:", uv["id"].tolist())
+                if st.button(f"✅ {t('validate')} #{vi}"):
+                    db_validate(vi, st.session_state.user_full_name); st.success(f"✅ #{vi}"); st.rerun()
+        st.markdown("---")
+        e1, e2 = st.columns(2)
+        with e1: st.download_button(t("export_csv"), df.to_csv(index=False).encode('utf-8-sig'), "data.csv", "text/csv", use_container_width=True)
+        with e2: st.download_button(t("export_json"), df.to_json(orient='records', force_ascii=False).encode(), "data.json", "application/json", use_container_width=True)
+# ════════════════════════════════════════════
 # ════════════════════════════════════════════
 #  PAGE: QUIZ (Fixed & Enhanced)
 # ════════════════════════════════════════════
