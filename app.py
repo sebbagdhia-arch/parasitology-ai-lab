@@ -2040,48 +2040,71 @@ def render_logo():
 with st.sidebar:
     render_logo()
 
-# ============================================
-#  LOGIN PAGE
-# ============================================
+# ════════════════════════════════════════════
+#  LOGIN PAGE - ENHANCED
+# ════════════════════════════════════════════
 if not st.session_state.logged_in:
     lc1, lc2, lc3 = st.columns([1, 2, 1])
     with lc2:
-        # Language selector
-        ll = st.selectbox("Language", ["FR Francais", "AR العربية", "EN English"], label_visibility="collapsed")
+        # Language selector with flags
+        ll = st.selectbox("🌍 Language", ["🇫🇷 FR Français", "🇩🇿 AR العربية", "🇬🇧 EN English"], label_visibility="collapsed")
         st.session_state.lang = "fr" if "FR" in ll else ("ar" if "AR" in ll else "en")
 
-        # Logo
         render_logo()
 
-        # Login card with animated border
-        st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-        <div style='font-size:3.5rem;margin-bottom:10px;'>
-            <span style='animation: pulse 2s ease-in-out infinite;display:inline-block;'>🔐</span>
+        # Animated login card
+        st.markdown(f"""
+        <div class='dm-card dm-card-cyan' style='text-align:center;position:relative;overflow:hidden;'>
+            <!-- Animated particles -->
+            <div style='position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;'>
+                <div style='position:absolute;width:4px;height:4px;background:#00f5ff;border-radius:50%;top:20%;left:10%;animation:particle1 3s infinite;'></div>
+                <div style='position:absolute;width:3px;height:3px;background:#ff00ff;border-radius:50%;top:40%;right:15%;animation:particle2 4s infinite;'></div>
+                <div style='position:absolute;width:5px;height:5px;background:#00ff88;border-radius:50%;bottom:30%;left:20%;animation:particle3 5s infinite;'></div>
+            </div>
+            
+            <div style='font-size:3.5rem;margin-bottom:10px;position:relative;z-index:1;'>
+                <span style='animation:pulse 2s ease-in-out infinite;display:inline-block;'>🔐</span>
+            </div>
+            <h2 class='dm-nt' style='position:relative;z-index:1;'>{t('login_title')}</h2>
+            <p style='opacity:.4;font-size:.85rem;position:relative;z-index:1;'>{t('login_subtitle')}</p>
         </div>
-        <h2 class='dm-nt'>{t('login_title')}</h2>
-        <p style='opacity:.4;font-size:.85rem;'>{t('login_subtitle')}</p>
-        </div>
+        
         <style>
-        @keyframes pulse {{
-            0%, 100% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.1); }}
-        }}
+            @keyframes pulse {{
+                0%, 100% {{ transform: scale(1) rotate(0deg); }}
+                50% {{ transform: scale(1.1) rotate(10deg); }}
+            }}
+            @keyframes particle1 {{
+                0%, 100% {{ transform: translate(0,0); opacity: 0; }}
+                50% {{ transform: translate(30px,-30px); opacity: 1; }}
+            }}
+            @keyframes particle2 {{
+                0%, 100% {{ transform: translate(0,0); opacity: 0; }}
+                50% {{ transform: translate(-25px,25px); opacity: 1; }}
+            }}
+            @keyframes particle3 {{
+                0%, 100% {{ transform: translate(0,0); opacity: 0; }}
+                50% {{ transform: translate(20px,20px); opacity: 1; }}
+            }}
         </style>
         """, unsafe_allow_html=True)
 
         with st.form("login"):
-            u = st.text_input(f"{t('username')}", placeholder="admin / dhia / demo")
-            p = st.text_input(f"{t('password')}", type="password")
-            if st.form_submit_button(f"{t('connect')}", use_container_width=True):
+            u = st.text_input(f"👤 {t('username')}", placeholder="admin / dhia / demo")
+            p = st.text_input(f"🔑 {t('password')}", type="password")
+            
+            if st.form_submit_button(f"🚀 {t('connect')}", use_container_width=True):
                 if u.strip():
-                    r = db_login(u.strip(), p)
+                    with st.spinner("🔄 Authentication..."):
+                        r = db_login(u.strip(), p)
+                    
                     if r is None:
-                        st.error("User not found")
+                        st.error("❌ User not found")
                     elif isinstance(r, dict) and "error" in r:
                         if r["error"] == "locked":
-                            st.error("Account locked. Try again later.")
+                            st.error("🔒 Account locked. Try again later.")
                         else:
-                            st.error(f"Wrong password. {r.get('left', 0)} attempts left")
+                            st.error(f"⚠️ Wrong password. {r.get('left', 0)} attempts left")
                     else:
                         st.session_state.logged_in = True
                         st.session_state.user_id = r["id"]
@@ -2089,27 +2112,86 @@ if not st.session_state.logged_in:
                         st.session_state.user_role = r["role"]
                         st.session_state.user_full_name = r["full_name"]
                         db_log(r["id"], r["username"], "Login")
+                        st.success(f"✅ Welcome {r['full_name']}!")
+                        time.sleep(0.5)
                         st.rerun()
 
-        st.markdown("""<div style='text-align:center;opacity:.3;font-size:.72rem;margin-top:16px;'>
-        admin/admin2026 | dhia/dhia2026 | demo/demo123
-        </div>""", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='text-align:center;opacity:.3;font-size:.7rem;margin-top:16px;'>
+            💡 Quick access:<br>
+            <code>admin/admin2026</code> | <code>dhia/dhia2026</code> | <code>demo/demo123</code>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.stop()
 
-# ============================================
-#  SIDEBAR NAVIGATION
-# ============================================
+
+# ════════════════════════════════════════════
+#  SIDEBAR - ENHANCED
+# ════════════════════════════════════════════
 with st.sidebar:
     ri = ROLES.get(st.session_state.user_role, ROLES["viewer"])
-    st.markdown(f"### {ri['icon']} {st.session_state.user_full_name}")
-    st.caption(f"@{st.session_state.user_name} | {tl(ri['label'])}")
+    
+    # User card with avatar
+    st.markdown(f"""
+    <div style='
+        background:linear-gradient(135deg,rgba(0,245,255,0.1),rgba(255,0,255,0.1));
+        border-radius:16px;
+        padding:16px;
+        text-align:center;
+        border:1px solid rgba(0,245,255,0.2);
+        margin-bottom:16px;
+    '>
+        <div style='font-size:3rem;margin-bottom:8px;'>{ri['icon']}</div>
+        <h3 style='margin:4px 0;font-size:1.1rem;'>{st.session_state.user_full_name}</h3>
+        <p style='opacity:.6;font-size:.75rem;margin:0;'>@{st.session_state.user_name}</p>
+        <div style='
+            display:inline-block;
+            background:{NEON.get("cyan","#00f5ff")}30;
+            border:1px solid {NEON.get("cyan","#00f5ff")};
+            border-radius:12px;
+            padding:4px 12px;
+            font-size:.7rem;
+            margin-top:8px;
+            font-weight:600;
+        '>
+            {tl(ri['label'])}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
+    # Daily tip with animation
     tips = TIPS.get(st.session_state.lang, TIPS["fr"])
-    st.info(f"**{t('daily_tip')}:**\n\n{tips[datetime.now().timetuple().tm_yday % len(tips)]}")
+    tip_of_day = tips[datetime.now().timetuple().tm_yday % len(tips)]
+    
+    st.markdown(f"""
+    <div style='
+        background:linear-gradient(135deg,rgba(0,255,136,0.1),rgba(0,100,255,0.1));
+        border-left:3px solid #00ff88;
+        border-radius:12px;
+        padding:12px;
+        margin-bottom:16px;
+        animation:tipGlow 3s ease-in-out infinite;
+    '>
+        <div style='font-weight:700;font-size:.85rem;margin-bottom:6px;'>💡 {t('daily_tip')}</div>
+        <p style='font-size:.75rem;opacity:.9;margin:0;line-height:1.5;'>{tip_of_day}</p>
+    </div>
+    
+    <style>
+        @keyframes tipGlow {{
+            0%, 100% {{ box-shadow: 0 0 10px rgba(0,255,136,0.2); }}
+            50% {{ box-shadow: 0 0 20px rgba(0,255,136,0.4); }}
+        }}
+    </style>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
-    st.markdown(f"#### {t('language')}")
-    lc = st.radio("lang_select", ["FR Francais", "AR العربية", "EN English"], label_visibility="collapsed",
+    
+    # Language selector
+    st.markdown(f"#### 🌍 {t('language')}")
+    lc = st.radio("lang_select", ["🇫🇷 FR", "🇩🇿 AR", "🇬🇧 EN"], 
+                  horizontal=True,
+                  label_visibility="collapsed",
                   index=["fr", "ar", "en"].index(st.session_state.lang))
     nl = "fr" if "FR" in lc else ("ar" if "AR" in lc else "en")
     if nl != st.session_state.lang:
@@ -2118,7 +2200,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Navigation
+    # Navigation with icons
     navs = [
         f"🏠 {t('home')}",
         f"🔬 {t('scan')}",
@@ -2129,73 +2211,327 @@ with st.sidebar:
         f"🔄 {t('compare')}",
     ]
     keys = ["home", "scan", "enc", "dash", "quiz", "chat", "cmp"]
+    
     if has_role(3):
         navs.append(f"⚙️ {t('admin')}")
         keys.append("admin")
+    
     navs.append(f"ℹ️ {t('about')}")
     keys.append("about")
 
     menu = st.radio("Navigation", navs, label_visibility="collapsed")
 
     st.markdown("---")
-    if st.button(f"🚪 {t('logout')}", use_container_width=True):
+    
+    # Logout button with confirmation
+    if st.button(f"🚪 {t('logout')}", use_container_width=True, type="primary"):
         db_log(st.session_state.user_id, st.session_state.user_name, "Logout")
         for k in DEFAULTS:
             st.session_state[k] = DEFAULTS[k]
+        st.success("👋 See you soon!")
+        time.sleep(0.5)
         st.rerun()
+    
+    # Footer
+    st.markdown(f"""
+    <div style='text-align:center;opacity:.3;font-size:.65rem;margin-top:20px;'>
+        DM Smart Lab AI v{APP_VERSION}<br>
+        © 2026 INFSPM Ouargla 🇩🇿
+    </div>
+    """, unsafe_allow_html=True)
 
 pg = dict(zip(navs, keys)).get(menu, "home")
-
-# Render voice player at top of page
 render_voice_player()
 
 
 # ════════════════════════════════════════════
-#  PAGE: HOME
+#  PAGE: HOME - ULTIMATE
 # ════════════════════════════════════════════
 if pg == "home":
-    st.markdown(f"""<h1 style='font-family:Orbitron,sans-serif;'>
-    <span class='dm-nt'>👋 {get_greeting()}, {st.session_state.user_full_name}!</span>
-    </h1>""", unsafe_allow_html=True)
+    # Animated header
+    hour = datetime.now().hour
+    greeting_emoji = "🌅" if hour < 12 else ("☀️" if hour < 18 else "🌙")
+    
+    st.markdown(f"""
+    <div style='text-align:center;margin-bottom:30px;'>
+        <div style='font-size:4rem;animation:float 3s ease-in-out infinite;'>{greeting_emoji}</div>
+        <h1 style='
+            font-family:Orbitron,sans-serif;
+            background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88,#ffaa00);
+            -webkit-background-clip:text;
+            -webkit-text-fill-color:transparent;
+            font-size:2.5rem;
+            margin:10px 0;
+            animation:gradient-shift 3s ease infinite;
+            background-size:200% auto;
+        '>
+            {greeting_emoji} {get_greeting()}, {st.session_state.user_full_name}!
+        </h1>
+        <p style='opacity:.5;font-size:1rem;'>
+            {datetime.now().strftime('%A %d %B %Y • %H:%M')}
+        </p>
+    </div>
+    
+    <style>
+        @keyframes float {{
+            0%, 100% {{ transform: translateY(0px); }}
+            50% {{ transform: translateY(-15px); }}
+        }}
+        @keyframes gradient-shift {{
+            0%, 100% {{ background-position: 0% center; }}
+            50% {{ background-position: 100% center; }}
+        }}
+    </style>
+    """, unsafe_allow_html=True)
 
-    st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <h2 class='dm-nt'>DM SMART LAB AI</h2>
-    <h4 style='opacity:.6;'>{t('where_science')}</h4>
-    <p style='opacity:.4;font-size:.85rem;'>{t('system_desc')}</p>
-    </div>""", unsafe_allow_html=True)
+    # Welcome card with 3D effect
+    st.markdown(f"""
+    <div class='dm-card dm-card-cyan' style='
+        text-align:center;
+        position:relative;
+        overflow:hidden;
+        transform-style:preserve-3d;
+        transition:all 0.3s ease;
+    '>
+        <!-- 3D Background layers -->
+        <div style='
+            position:absolute;
+            top:-50%;
+            left:-50%;
+            width:200%;
+            height:200%;
+            background:radial-gradient(circle,rgba(0,245,255,0.1) 0%,transparent 70%);
+            animation:rotate 20s linear infinite;
+        '></div>
+        
+        <div style='position:relative;z-index:1;'>
+            <div style='font-size:4rem;margin-bottom:16px;animation:bounce 2s ease-in-out infinite;'>🧬</div>
+            <h2 class='dm-nt' style='font-size:2.5rem;'>DM SMART LAB AI</h2>
+            <h4 style='opacity:.6;margin:12px 0;font-size:1.2rem;'>{t('where_science')}</h4>
+            <p style='opacity:.4;font-size:.9rem;max-width:600px;margin:16px auto;line-height:1.6;'>
+                {t('system_desc')}
+            </p>
+            
+            <!-- Features badges -->
+            <div style='margin-top:24px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;'>
+                <span style='
+                    background:rgba(0,245,255,0.2);
+                    border:1px solid rgba(0,245,255,0.5);
+                    border-radius:20px;
+                    padding:6px 14px;
+                    font-size:.75rem;
+                    font-weight:600;
+                '>🤖 AI Powered</span>
+                <span style='
+                    background:rgba(255,0,255,0.2);
+                    border:1px solid rgba(255,0,255,0.5);
+                    border-radius:20px;
+                    padding:6px 14px;
+                    font-size:.75rem;
+                    font-weight:600;
+                '>🌍 3 Languages</span>
+                <span style='
+                    background:rgba(0,255,136,0.2);
+                    border:1px solid rgba(0,255,136,0.5);
+                    border-radius:20px;
+                    padding:6px 14px;
+                    font-size:.75rem;
+                    font-weight:600;
+                '>🔬 7+ Parasites</span>
+                <span style='
+                    background:rgba(255,170,0,0.2);
+                    border:1px solid rgba(255,170,0,0.5);
+                    border-radius:20px;
+                    padding:6px 14px;
+                    font-size:.75rem;
+                    font-weight:600;
+                '>📊 Real-time Analytics</span>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        @keyframes rotate {{
+            from {{ transform: rotate(0deg); }}
+            to {{ transform: rotate(360deg); }}
+        }}
+        @keyframes bounce {{
+            0%, 100% {{ transform: translateY(0px) scale(1); }}
+            50% {{ transform: translateY(-10px) scale(1.05); }}
+        }}
+    </style>
+    """, unsafe_allow_html=True)
 
     st.markdown("---")
 
+    # Voice controls
     w1, w2, w3 = st.columns([2, 2, 1])
     with w1:
         if st.button(f"🎙️ {t('welcome_btn')}", use_container_width=True, type="primary"):
             speak(t("voice_welcome"))
+            st.balloons()
             st.rerun()
     with w2:
         if st.button(f"🤖 {t('intro_btn')}", use_container_width=True, type="primary"):
             speak(t("voice_intro"))
+            st.snow()
             st.rerun()
     with w3:
         if st.button(f"🔇 {t('stop_voice')}", use_container_width=True):
             stop_speech()
 
     st.markdown("---")
+    
+    # Quick stats with live data
     st.markdown(f"### 📊 {t('quick_overview')}")
+    
     s = db_stats(st.session_state.user_id)
-    metrics = [
-        ("🔬", s["total"], t("total_analyses")),
-        ("✅", s["reliable"], t("reliable")),
-        ("⚠️", s["verify"], t("to_verify")),
-        ("🦠", s["top"], t("most_frequent"))
+    
+    # Animated metrics
+    metrics_data = [
+        ("🔬", s["total"], t("total_analyses"), "#00f5ff"),
+        ("✅", s["reliable"], t("reliable"), "#00ff88"),
+        ("⚠️", s["verify"], t("to_verify"), "#ff9500"),
+        ("🦠", s["top"], t("most_frequent"), "#ff00ff")
     ]
+    
     cols = st.columns(4)
-    for col, (ic, v, lb) in zip(cols, metrics):
+    for col, (ic, v, lb, clr) in zip(cols, metrics_data):
         with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v'>{v}</div>
-            <div class='dm-m-l'>{lb}</div>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"""
+            <div class='dm-m' style='
+                border-top:3px solid {clr};
+                animation:slideUp 0.5s ease-out;
+                position:relative;
+            '>
+                <div style='
+                    position:absolute;
+                    top:0;
+                    left:0;
+                    width:100%;
+                    height:100%;
+                    background:radial-gradient(circle at top,{clr}20,transparent);
+                    pointer-events:none;
+                '></div>
+                
+                <span class='dm-m-i' style='
+                    font-size:2rem;
+                    animation:pulse 2s ease-in-out infinite;
+                '>{ic}</span>
+                
+                <div class='dm-m-v' style='
+                    color:{clr};
+                    text-shadow:0 0 20px {clr}60;
+                    font-size:2.5rem;
+                '>{v}</div>
+                
+                <div class='dm-m-l'>{lb}</div>
+                
+                <!-- Progress indicator -->
+                <div style='
+                    width:100%;
+                    height:3px;
+                    background:rgba(0,0,0,0.2);
+                    border-radius:10px;
+                    margin-top:12px;
+                    overflow:hidden;
+                '>
+                    <div style='
+                        width:100%;
+                        height:100%;
+                        background:{clr};
+                        animation:progress 2s ease-out;
+                        box-shadow:0 0 10px {clr};
+                    '></div>
+                </div>
+            </div>
+            
+            <style>
+                @keyframes slideUp {{
+                    from {{ opacity:0; transform:translateY(20px); }}
+                    to {{ opacity:1; transform:translateY(0); }}
+                }}
+                @keyframes progress {{
+                    from {{ width:0%; }}
+                    to {{ width:100%; }}
+                }}
+            </style>
+            """, unsafe_allow_html=True)
+    
+    # Quick actions
+    st.markdown("---")
+    st.markdown("### ⚡ Actions rapides")
+    
+    quick_actions = [
+        ("🔬 Nouvelle analyse", "scan", "primary"),
+        ("📊 Voir Dashboard", "dash", "secondary"),
+        ("🧠 Quiz médical", "quiz", "secondary"),
+        ("📘 Encyclopédie", "enc", "secondary"),
+    ]
+    
+    qa_cols = st.columns(4)
+    for col, (label, page_key, btn_type) in zip(qa_cols, quick_actions):
+        with col:
+            if st.button(label, use_container_width=True, type=btn_type):
+                # Navigate to page
+                target_nav = [n for n, k in zip(navs, keys) if k == page_key]
+                if target_nav:
+                    st.session_state['_nav_override'] = target_nav[0]
+                    st.rerun()
+
+    # Recent activity timeline
+    if s["total"] > 0:
+        st.markdown("---")
+        st.markdown("### 📜 Activité récente")
+        
+        recent_analyses = db_analyses(st.session_state.user_id, lim=5)
+        
+        if recent_analyses:
+            for i, analysis in enumerate(recent_analyses):
+                para = analysis.get('parasite_detected', 'N/A')
+                conf = analysis.get('confidence', 0)
+                date = analysis.get('analysis_date', '')
+                
+                color = PARASITE_DB.get(para, {}).get('color', '#888')
+                icon = PARASITE_DB.get(para, {}).get('icon', '🔬')
+                
+                st.markdown(f"""
+                <div style='
+                    display:flex;
+                    align-items:center;
+                    gap:16px;
+                    padding:12px;
+                    background:rgba(10,15,46,0.3);
+                    border-left:3px solid {color};
+                    border-radius:12px;
+                    margin-bottom:8px;
+                    animation:fadeIn 0.5s ease-out {i*0.1}s both;
+                '>
+                    <div style='font-size:2rem;'>{icon}</div>
+                    <div style='flex:1;'>
+                        <div style='font-weight:700;font-size:.9rem;'>{para}</div>
+                        <div style='font-size:.75rem;opacity:.6;'>{date}</div>
+                    </div>
+                    <div style='
+                        background:{color}30;
+                        border:1px solid {color};
+                        border-radius:8px;
+                        padding:4px 12px;
+                        font-weight:700;
+                        font-size:.85rem;
+                        color:{color};
+                    '>
+                        {conf}%
+                    </div>
+                </div>
+                
+                <style>
+                    @keyframes fadeIn {{
+                        from {{ opacity:0; transform:translateX(-20px); }}
+                        to {{ opacity:1; transform:translateX(0); }}
+                    }}
+                </style>
+                """, unsafe_allow_html=True)
 
 
 # ════════════════════════════════════════════
@@ -2436,163 +2772,152 @@ elif pg == "enc":
 
 
 # ════════════════════════════════════════════
-#  PAGE: DASHBOARD
+#  HELPER FUNCTIONS FOR DASHBOARD
 # ════════════════════════════════════════════
 def create_circular_progress(percentage, size=120, label="", icon="", color=None):
-    """دائرة نسبة مئوية متحركة SVG"""
     if color is None:
-        if percentage >= 80:
-            color = "#00ff88"
-        elif percentage >= 60:
-            color = "#00f5ff"
-        elif percentage >= 40:
-            color = "#ff9500"
-        else:
-            color = "#ff0040"
+        if percentage >= 80: color = "#00ff88"
+        elif percentage >= 60: color = "#00f5ff"
+        elif percentage >= 40: color = "#ff9500"
+        else: color = "#ff0040"
     
     radius = 45
     circumference = 2 * 3.14159 * radius
     offset = circumference - (percentage / 100) * circumference
     anim_id = abs(hash(label + str(percentage))) % 10000
     
-    html = f"""
-<div style='
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
-    background: linear-gradient(135deg, rgba(10,15,46,0.6), rgba(10,15,46,0.3));
-    border-radius: 20px;
-    border: 1px solid rgba(0,245,255,0.15);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-    min-height: 240px;
-'>
-    <div style='
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at center, {color}15 0%, transparent 70%);
-        animation: pulse{anim_id} 3s ease-in-out infinite;
-    '></div>
-    
+    return f"""
+<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;background:linear-gradient(135deg,rgba(10,15,46,0.6),rgba(10,15,46,0.3));border-radius:20px;border:1px solid rgba(0,245,255,0.15);position:relative;overflow:hidden;transition:all 0.3s ease;min-height:240px;'>
+    <div style='position:absolute;width:100%;height:100%;background:radial-gradient(circle at center,{color}15 0%,transparent 70%);animation:pulse{anim_id} 3s ease-in-out infinite;'></div>
     <div style='font-size:2.5rem;margin-bottom:12px;position:relative;z-index:2;animation:float{anim_id} 3s ease-in-out infinite;'>{icon}</div>
-    
     <div style='position:relative;z-index:2;'>
-        <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
+        <svg width="{size}" height="{size}" style="transform:rotate(-90deg);">
             <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="10"/>
-            <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="{color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="{circumference}" stroke-dashoffset="{circumference}" style="filter: drop-shadow(0 0 8px {color});">
+            <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="{color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="{circumference}" stroke-dashoffset="{circumference}" style="filter:drop-shadow(0 0 8px {color});">
                 <animate attributeName="stroke-dashoffset" from="{circumference}" to="{offset}" dur="1.5s" fill="freeze"/>
             </circle>
         </svg>
-        <div style='position: absolute;top: 50%;left: 50%;transform: translate(-50%, -50%);font-size: 2rem;font-weight: 900;font-family: "JetBrains Mono", monospace;color: {color};text-shadow: 0 0 20px {color}80;'>
-            {percentage}<span style='font-size:1.2rem;'>%</span>
-        </div>
+        <div style='position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:900;font-family:"JetBrains Mono",monospace;color:{color};text-shadow:0 0 20px {color}80;'>{percentage}<span style='font-size:1.2rem;'>%</span></div>
     </div>
-    
-    <div style='margin-top: 16px;font-size: 0.85rem;font-weight: 600;color: rgba(255,255,255,0.9);text-align: center;text-transform: uppercase;letter-spacing: 0.1em;position: relative;z-index: 2;'>
-        {label}
-    </div>
+    <div style='margin-top:16px;font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.9);text-align:center;text-transform:uppercase;letter-spacing:0.1em;position:relative;z-index:2;'>{label}</div>
 </div>
-
 <style>
-    @keyframes pulse{anim_id} {{
-        0%, 100% {{ opacity: 0.3; }}
-        50% {{ opacity: 0.6; }}
-    }}
-    @keyframes float{anim_id} {{
-        0%, 100% {{ transform: translateY(0px); }}
-        50% {{ transform: translateY(-8px); }}
-    }}
+@keyframes pulse{anim_id}{{0%,100%{{opacity:0.3;}}50%{{opacity:0.6;}}}}
+@keyframes float{anim_id}{{0%,100%{{transform:translateY(0px);}}50%{{transform:translateY(-8px);}}}}
 </style>
 """
-    return html
 
 
 def create_mini_ring(percentage, label="", color="#00f5ff", size=90, count=None):
-    """دائرة صغيرة للمؤشرات"""
     radius = 32
     circumference = 2 * 3.14159 * radius
     offset = circumference - (percentage / 100) * circumference
-    
     count_html = f"<div style='font-size:.65rem;opacity:.5;margin-top:4px;'>{count} cas</div>" if count else ""
     
-    html = f"""
-<div style='text-align:center;padding:16px 12px;background: rgba(10,15,46,0.4);border-radius: 16px;border: 1px solid rgba(0,245,255,0.1);transition: all 0.3s ease;'>
-    <svg width="{size}" height="{size}" style="transform: rotate(-90deg);">
+    return f"""
+<div style='text-align:center;padding:16px 12px;background:rgba(10,15,46,0.4);border-radius:16px;border:1px solid rgba(0,245,255,0.1);transition:all 0.3s ease;'>
+    <svg width="{size}" height="{size}" style="transform:rotate(-90deg);">
         <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7"/>
-        <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="{color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="{circumference}" stroke-dashoffset="{circumference}" style="filter: drop-shadow(0 0 6px {color});">
+        <circle cx="{size/2}" cy="{size/2}" r="{radius}" fill="none" stroke="{color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="{circumference}" stroke-dashoffset="{circumference}" style="filter:drop-shadow(0 0 6px {color});">
             <animate attributeName="stroke-dashoffset" from="{circumference}" to="{offset}" dur="1.2s" fill="freeze"/>
         </circle>
     </svg>
-    <div style='margin-top:-{size-12}px;font-size:1.4rem;font-weight:900;font-family:"JetBrains Mono",monospace;color:{color};text-shadow: 0 0 10px {color}60;'>
-        {percentage}%
-    </div>
-    <div style='font-size:.75rem;opacity:.7;margin-top:10px;font-weight:600;color:rgba(255,255,255,0.8);'>
-        {label[:15]}
-    </div>
+    <div style='margin-top:-{size-12}px;font-size:1.4rem;font-weight:900;font-family:"JetBrains Mono",monospace;color:{color};text-shadow:0 0 10px {color}60;'>{percentage}%</div>
+    <div style='font-size:.75rem;opacity:.7;margin-top:10px;font-weight:600;color:rgba(255,255,255,0.8);'>{label[:15]}</div>
     {count_html}
 </div>
 """
-    return html
 
 
 def create_kpi_card_advanced(icon, value, label, trend=0, color="#00f5ff", sparkline_data=None):
-    """بطاقة KPI متقدمة"""
     if trend > 5:
-        trend_arrow = "↗️"
-        trend_color = "#00ff88"
-        trend_text = "hausse"
+        trend_arrow, trend_color, trend_text = "↗️", "#00ff88", "hausse"
     elif trend < -5:
-        trend_arrow = "↘️"
-        trend_color = "#ff0040"
-        trend_text = "baisse"
+        trend_arrow, trend_color, trend_text = "↘️", "#ff0040", "baisse"
     else:
-        trend_arrow = "→"
-        trend_color = "#6b7fa0"
-        trend_text = "stable"
+        trend_arrow, trend_color, trend_text = "→", "#6b7fa0", "stable"
     
     sparkline_svg = ""
     if sparkline_data and len(sparkline_data) > 1:
-        width = 100
-        height = 30
+        width, height = 100, 30
         max_val = max(sparkline_data) if max(sparkline_data) > 0 else 1
-        points = []
-        for i, val in enumerate(sparkline_data):
-            x = i * (width / (len(sparkline_data) - 1))
-            y = height - (val / max_val * height)
-            points.append(f"{x},{y}")
-        
-        sparkline_svg = f"""
-<svg width="{width}" height="{height}" style="margin-top:12px;">
-    <polyline points="{' '.join(points)}" fill="none" stroke="{color}" stroke-width="2.5" style="filter: drop-shadow(0 0 4px {color});"/>
-</svg>
-"""
+        points = [f"{i*(width/(len(sparkline_data)-1))},{height-(val/max_val*height)}" for i, val in enumerate(sparkline_data)]
+        sparkline_svg = f'<svg width="{width}" height="{height}" style="margin-top:12px;"><polyline points="{" ".join(points)}" fill="none" stroke="{color}" stroke-width="2.5" style="filter:drop-shadow(0 0 4px {color});"/></svg>'
     
     anim_id = abs(hash(label)) % 10000
     
-    html = f"""
-<div style='background: linear-gradient(135deg, {color}15, {color}05);border: 1px solid {color}30;border-left: 4px solid {color};border-radius: 18px;padding: 20px 18px;position: relative;overflow: hidden;transition: all 0.3s ease;'>
-    <div style='position: absolute;top: -50%;right: -30%;width: 120px;height: 120px;background: radial-gradient(circle, {color}20 0%, transparent 70%);border-radius: 50%;pointer-events: none;'></div>
-    <div style='font-size: 2rem;margin-bottom: 10px;position: relative;z-index: 1;animation: float{anim_id} 3s ease-in-out infinite;'>{icon}</div>
-    <div style='font-size: 2.2rem;font-weight: 900;font-family: "JetBrains Mono", monospace;color: {color};text-shadow: 0 2px 10px {color}40;margin: 8px 0;position: relative;z-index: 1;'>{value}</div>
-    <div style='font-size: .75rem;font-weight: 600;color: rgba(255,255,255,0.7);text-transform: uppercase;letter-spacing: 0.08em;position: relative;z-index: 1;'>{label}</div>
-    <div style='display: flex;align-items: center;gap: 6px;margin-top: 12px;font-size: .75rem;color: {trend_color};font-weight: 700;position: relative;z-index: 1;'>
+    return f"""
+<div style='background:linear-gradient(135deg,{color}15,{color}05);border:1px solid {color}30;border-left:4px solid {color};border-radius:18px;padding:20px 18px;position:relative;overflow:hidden;transition:all 0.3s ease;'>
+    <div style='position:absolute;top:-50%;right:-30%;width:120px;height:120px;background:radial-gradient(circle,{color}20 0%,transparent 70%);border-radius:50%;pointer-events:none;'></div>
+    <div style='font-size:2rem;margin-bottom:10px;position:relative;z-index:1;animation:float{anim_id} 3s ease-in-out infinite;'>{icon}</div>
+    <div style='font-size:2.2rem;font-weight:900;font-family:"JetBrains Mono",monospace;color:{color};text-shadow:0 2px 10px {color}40;margin:8px 0;position:relative;z-index:1;'>{value}</div>
+    <div style='font-size:.75rem;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:0.08em;position:relative;z-index:1;'>{label}</div>
+    <div style='display:flex;align-items:center;gap:6px;margin-top:12px;font-size:.75rem;color:{trend_color};font-weight:700;position:relative;z-index:1;'>
         <span style='font-size:1.1rem;'>{trend_arrow}</span>
         <span>{abs(trend):.1f}% {trend_text}</span>
     </div>
     {sparkline_svg}
 </div>
-<style>
-    @keyframes float{anim_id} {{
-        0%, 100% {{ transform: translateY(0px); }}
-        50% {{ transform: translateY(-6px); }}
-    }}
-</style>
+<style>@keyframes float{anim_id}{{0%,100%{{transform:translateY(0px);}}50%{{transform:translateY(-6px);}}}}</style>
 """
-    return html
+
+
+# ════════════════════════════════════════════
+#  PAGE: DASHBOARD - COMPLETE
+# ════════════════════════════════════════════
+elif pg == "dash":
+    st.markdown("""
+    <div style='text-align:center;margin-bottom:20px;'>
+        <h1 style='font-family:Orbitron,sans-serif;background:linear-gradient(135deg,#00f5ff,#ff00ff,#00ff88);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:2.8rem;margin:0;'>📊 Analytics Hub</h1>
+        <p style='opacity:.5;font-size:.9rem;margin-top:8px;'>Tableau de bord analytique professionnel - Temps réel</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("🔍 Filtres avancés", expanded=False):
+        fcol1, fcol2, fcol3 = st.columns(3)
+        with fcol1:
+            date_range = st.selectbox("📅 Période", ["7 jours", "30 jours", "90 jours", "Tout"], index=1)
+        with fcol2:
+            parasite_filter = st.multiselect("🦠 Parasites", options=CLASS_NAMES, default=[])
+        with fcol3:
+            confidence_range = st.slider("🎯 Confiance (%)", 0, 100, (0, 100))
+    
+    days_map = {"7 jours": 7, "30 jours": 30, "90 jours": 90, "Tout": 9999}
+    days_back = days_map.get(date_range, 30)
+    
+    s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
+    an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
+    
+    df = pd.DataFrame(an) if an else pd.DataFrame()
+    
+    if not df.empty:
+        if "analysis_date" in df.columns:
+            df['analysis_date'] = pd.to_datetime(df['analysis_date'])
+            df = df[df['analysis_date'] >= (datetime.now() - timedelta(days=days_back))]
+        if parasite_filter:
+            df = df[df['parasite_detected'].isin(parasite_filter)]
+        if "confidence" in df.columns:
+            df = df[(df['confidence'] >= confidence_range[0]) & (df['confidence'] <= confidence_range[1])]
+    
+    st.markdown("### 🎯 Indicateurs clés")
+    
+    if not df.empty and s["total"] > 0:
+        reliable_pct = int((s["reliable"] / s["total"]) * 100)
+        avg_conf = int(s["avg"])
+        activity_pct = int((len(df[df['analysis_date'] >= (datetime.now() - timedelta(days=30))]) / len(df)) * 100) if 'analysis_date' in df.columns else 100
+        validation_pct = int((len(df[df.get('validated', 0) == 1]) / len(df)) * 100) if 'validated' in df.columns else 0
+        
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.markdown(create_circular_progress(reliable_pct, label="Fiabilité", icon="✅", color="#00ff88"), unsafe_allow_html=True)
+        with c2:
+            st.markdown(create_circular_progress(avg_conf, label="Confiance", icon="🎯", color="#00f5ff"), unsafe_allow_html=True)
+        with c3:
+            st.markdown(create_circular_progress(100 - int((s["verify"]/s["total"])*100) if s["total"]>0 else 0, label="Validation", icon="🔍", color="#ff00ff"), unsafe_allow_html=True)
+        with c4:
+            st.markdown(create_circular_progress(activity_pct, label="Activité 30j", icon="📈", color="#ffaa00"), unsafe_allow_html=True)
+    else:
+        st.info("📊 Aucune donnée disponible")
 # ════════════════════════════════════════════
 #  PAGE: QUIZ (Fixed & Enhanced)
 # ════════════════════════════════════════════
