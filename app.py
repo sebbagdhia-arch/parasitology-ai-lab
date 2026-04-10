@@ -2438,79 +2438,553 @@ elif pg == "enc":
 # ════════════════════════════════════════════
 #  PAGE: DASHBOARD
 # ════════════════════════════════════════════
+# ════════════════════════════════════════════
+#  PAGE: DASHBOARD - PROFESSIONAL EDITION v2.0
+# ════════════════════════════════════════════
 elif pg == "dash":
-    st.title(f"📊 {t('dashboard')}")
+    st.markdown(f"""<h1 style='font-family:Orbitron,sans-serif;'>
+    <span class='dm-nt'>📊 {t('dashboard')} — Analytics Hub</span>
+    </h1>""", unsafe_allow_html=True)
+    
+    # ════════════════════════════════════════════
+    # 1. FILTERS & DATE RANGE
+    # ════════════════════════════════════════════
+    with st.expander("🔍 Filtres avancés", expanded=False):
+        fcol1, fcol2, fcol3, fcol4 = st.columns(4)
+        
+        with fcol1:
+            date_range = st.selectbox(
+                "📅 Période",
+                ["7 jours", "30 jours", "90 jours", "1 an", "Tout", "Personnalisé"],
+                index=1
+            )
+        
+        with fcol2:
+            if date_range == "Personnalisé":
+                start_date = st.date_input("Date début", datetime.now() - timedelta(days=30))
+                end_date = st.date_input("Date fin", datetime.now())
+        
+        with fcol3:
+            parasite_filter = st.multiselect(
+                "🦠 Parasites",
+                options=CLASS_NAMES,
+                default=[]
+            )
+        
+        with fcol4:
+            confidence_range = st.slider(
+                "🎯 Confiance (%)",
+                0, 100, (0, 100)
+            )
+    
+    # Calculate date range
+    if date_range == "7 jours":
+        days_back = 7
+    elif date_range == "30 jours":
+        days_back = 30
+    elif date_range == "90 jours":
+        days_back = 90
+    elif date_range == "1 an":
+        days_back = 365
+    else:
+        days_back = 9999
+    
+    # ════════════════════════════════════════════
+    # 2. GET DATA
+    # ════════════════════════════════════════════
     s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
     an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
-
-    metrics = [
-        ("🔬", s["total"], t("total_analyses")),
-        ("✅", s["reliable"], t("reliable")),
-        ("⚠️", s["verify"], t("to_verify")),
-        ("🦠", s["top"], t("most_frequent")),
-        ("📈", f"{s['avg']}%", t("avg_confidence"))
-    ]
-    cols = st.columns(5)
-    for col, (ic, v, lb) in zip(cols, metrics):
-        with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v'>{v}</div>
-            <div class='dm-m-l'>{lb}</div>
-            </div>""", unsafe_allow_html=True)
-
-    if s["total"] > 0 and an:
+    
+    if an:
         df = pd.DataFrame(an)
+        
+        # Apply filters
+        if "analysis_date" in df.columns:
+            df['analysis_date'] = pd.to_datetime(df['analysis_date'])
+            cutoff_date = datetime.now() - timedelta(days=days_back)
+            df = df[df['analysis_date'] >= cutoff_date]
+        
+        if parasite_filter:
+            df = df[df['parasite_detected'].isin(parasite_filter)]
+        
+        if "confidence" in df.columns:
+            df = df[(df['confidence'] >= confidence_range[0]) & 
+                    (df['confidence'] <= confidence_range[1])]
+    else:
+        df = pd.DataFrame()
+    
+    # ════════════════════════════════════════════
+    # 3. KPI CARDS - ANIMATED
+    # ════════════════════════════════════════════
+    st.markdown("### 📊 KPI Dashboard")
+    
+    kpi_data = []
+    if not df.empty:
+        total = len(df)
+        reliable = len(df[df.get('is_reliable', 0) == 1]) if 'is_reliable' in df.columns else 0
+        avg_conf = df['confidence'].mean() if 'confidence' in df.columns else 0
+        
+        # Top parasite
+        if 'parasite_detected' in df.columns:
+            top_para = df['parasite_detected'].value_counts()
+            most_freq = top_para.index[0] if len(top_para) > 0 else "N/A"
+            most_freq_count = top_para.iloc[0] if len(top_para) > 0 else 0
+        else:
+            most_freq = "N/A"
+            most_freq_count = 0
+        
+        # Calculate trends (compare with previous period)
+        if 'analysis_date' in df.columns:
+            mid_date = datetime.now() - timedelta(days=days_back/2)
+            recent = df[df['analysis_date'] >= mid_date]
+            old = df[df['analysis_date'] < mid_date]
+            
+            trend_total = ((len(recent) - len(old)) / max(len(old), 1)) * 100
+            trend_conf = ((recent['confidence'].mean() - old['confidence'].mean()) 
+                         if 'confidence' in df.columns else 0)
+        else:
+            trend_total = 0
+            trend_conf = 0
+        
+        kpi_data = [
+            {
+                "icon": "🔬",
+                "value": total,
+                "label": t("total_analyses"),
+                "trend": trend_total,
+                "color": "#00f5ff"
+            },
+            {
+                "icon": "✅",
+                "value": reliable,
+                "label": t("reliable"),
+                "trend": 0,
+                "color": "#00ff88"
+            },
+            {
+                "icon": "⚠️",
+                "value": total - reliable,
+                "label": t("to_verify"),
+                "trend": 0,
+                "color": "#ff9500"
+            },
+            {
+                "icon": "🦠",
+                "value": f"{most_freq[:15]}",
+                "label": t("most_frequent"),
+                "sub": f"({most_freq_count}x)",
+                "trend": 0,
+                "color": "#ff00ff"
+            },
+            {
+                "icon": "📈",
+                "value": f"{avg_conf:.1f}%",
+                "label": t("avg_confidence"),
+                "trend": trend_conf,
+                "color": "#0066ff"
+            }
+        ]
+    else:
+        kpi_data = [
+            {"icon": "🔬", "value": 0, "label": t("total_analyses"), "trend": 0, "color": "#00f5ff"},
+            {"icon": "✅", "value": 0, "label": t("reliable"), "trend": 0, "color": "#00ff88"},
+            {"icon": "⚠️", "value": 0, "label": t("to_verify"), "trend": 0, "color": "#ff9500"},
+            {"icon": "🦠", "value": "N/A", "label": t("most_frequent"), "trend": 0, "color": "#ff00ff"},
+            {"icon": "📈", "value": "0%", "label": t("avg_confidence"), "trend": 0, "color": "#0066ff"}
+        ]
+    
+    kpi_cols = st.columns(5)
+    for col, kpi in zip(kpi_cols, kpi_data):
+        with col:
+            trend_arrow = ""
+            trend_color = "#6b7fa0"
+            if kpi.get("trend", 0) > 5:
+                trend_arrow = "↗️"
+                trend_color = "#00ff88"
+            elif kpi.get("trend", 0) < -5:
+                trend_arrow = "↘️"
+                trend_color = "#ff0040"
+            else:
+                trend_arrow = "→"
+            
+            sub_text = f"<div style='font-size:.65rem;opacity:.5;margin-top:2px;'>{kpi.get('sub', '')}</div>" if kpi.get('sub') else ""
+            
+            st.markdown(f"""<div class='dm-m' style='border-top:3px solid {kpi["color"]};'>
+            <span class='dm-m-i'>{kpi["icon"]}</span>
+            <div class='dm-m-v' style='color:{kpi["color"]};'>{kpi["value"]}</div>
+            {sub_text}
+            <div class='dm-m-l'>{kpi["label"]}</div>
+            <div style='font-size:.7rem;color:{trend_color};margin-top:4px;'>
+                {trend_arrow} {abs(kpi.get("trend", 0)):.1f}%
+            </div>
+            </div>""", unsafe_allow_html=True)
+    
+    # ════════════════════════════════════════════
+    # 4. CHARTS SECTION
+    # ════════════════════════════════════════════
+    if not df.empty and HAS_PLOTLY:
         st.markdown("---")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(f"#### {t('parasite_distribution')}")
-            if HAS_PLOTLY and "parasite_detected" in df.columns:
-                pc = df["parasite_detected"].value_counts()
-                fig = px.pie(values=pc.values, names=pc.index, hole=.4,
-                             color_discrete_sequence=px.colors.sequential.Plasma)
-                fig.update_layout(height=350, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-                st.plotly_chart(fig, use_container_width=True)
-        with c2:
-            st.markdown(f"#### {t('confidence_levels')}")
-            if HAS_PLOTLY and "confidence" in df.columns:
-                fig = px.histogram(df, x="confidence", nbins=20, color_discrete_sequence=["#00f5ff"])
-                fig.update_layout(height=350, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-                st.plotly_chart(fig, use_container_width=True)
-
-        tr = db_trends(30)
-        if tr and HAS_PLOTLY:
-            st.markdown(f"#### {t('trends')}")
-            fig = px.line(pd.DataFrame(tr), x="day", y="count", color="parasite_detected", markers=True)
-            fig.update_layout(height=300, template=plot_template, margin=dict(l=20, r=20, t=20, b=20))
-            st.plotly_chart(fig, use_container_width=True)
-
+        
+        # ════════════════════════════════════════════
+        # 4.1 ROW 1 - DISTRIBUTION & TRENDS
+        # ════════════════════════════════════════════
+        chart_row1_col1, chart_row1_col2 = st.columns([1, 1])
+        
+        with chart_row1_col1:
+            st.markdown(f"#### 🦠 {t('parasite_distribution')}")
+            
+            if 'parasite_detected' in df.columns:
+                pc = df['parasite_detected'].value_counts().head(10)
+                
+                # Donut chart with custom colors
+                colors_map = {name: PARASITE_DB.get(name, {}).get('color', '#888888') 
+                             for name in pc.index}
+                colors = [colors_map.get(name, '#888888') for name in pc.index]
+                
+                fig = go.Figure(data=[go.Pie(
+                    labels=pc.index,
+                    values=pc.values,
+                    hole=.5,
+                    marker=dict(colors=colors, line=dict(color='#030614', width=2)),
+                    textposition='inside',
+                    textinfo='label+percent',
+                    hovertemplate='<b>%{label}</b><br>Count: %{value}<br>Percent: %{percent}<extra></extra>'
+                )])
+                
+                fig.update_layout(
+                    height=380,
+                    template=plot_template,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    showlegend=True,
+                    legend=dict(
+                        orientation="v",
+                        yanchor="middle",
+                        y=0.5,
+                        xanchor="left",
+                        x=1.02,
+                        font=dict(size=10)
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="pie_parasites")
+        
+        with chart_row1_col2:
+            st.markdown(f"#### 📈 Tendances temporelles")
+            
+            if 'analysis_date' in df.columns:
+                # Group by date
+                df_daily = df.copy()
+                df_daily['date'] = df_daily['analysis_date'].dt.date
+                daily_counts = df_daily.groupby('date').size().reset_index(name='count')
+                
+                fig = go.Figure()
+                
+                fig.add_trace(go.Scatter(
+                    x=daily_counts['date'],
+                    y=daily_counts['count'],
+                    mode='lines+markers',
+                    name='Analyses',
+                    line=dict(color='#00f5ff', width=3),
+                    marker=dict(size=8, symbol='circle'),
+                    fill='tozeroy',
+                    fillcolor='rgba(0,245,255,0.1)',
+                    hovertemplate='<b>%{x}</b><br>Analyses: %{y}<extra></extra>'
+                ))
+                
+                # Add moving average (7 days)
+                if len(daily_counts) >= 7:
+                    daily_counts['ma7'] = daily_counts['count'].rolling(window=7, min_periods=1).mean()
+                    fig.add_trace(go.Scatter(
+                        x=daily_counts['date'],
+                        y=daily_counts['ma7'],
+                        mode='lines',
+                        name='Moyenne 7j',
+                        line=dict(color='#ff00ff', width=2, dash='dash'),
+                        hovertemplate='<b>%{x}</b><br>MA(7): %{y:.1f}<extra></extra>'
+                    ))
+                
+                fig.update_layout(
+                    height=380,
+                    template=plot_template,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    xaxis_title="Date",
+                    yaxis_title="Nombre d'analyses",
+                    hovermode='x unified'
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="line_trend")
+        
+        # ════════════════════════════════════════════
+        # 4.2 ROW 2 - CONFIDENCE & HEATMAP
+        # ════════════════════════════════════════════
+        st.markdown("---")
+        chart_row2_col1, chart_row2_col2 = st.columns([1, 1])
+        
+        with chart_row2_col1:
+            st.markdown(f"#### 🎯 {t('confidence_levels')}")
+            
+            if 'confidence' in df.columns and 'parasite_detected' in df.columns:
+                # Box plot by parasite
+                top_parasites = df['parasite_detected'].value_counts().head(7).index.tolist()
+                df_box = df[df['parasite_detected'].isin(top_parasites)]
+                
+                fig = go.Figure()
+                
+                for parasite in top_parasites:
+                    data = df_box[df_box['parasite_detected'] == parasite]['confidence']
+                    color = PARASITE_DB.get(parasite, {}).get('color', '#888888')
+                    
+                    fig.add_trace(go.Box(
+                        y=data,
+                        name=parasite[:20],
+                        marker_color=color,
+                        boxmean='sd',
+                        hovertemplate='<b>%{fullData.name}</b><br>Confiance: %{y}%<extra></extra>'
+                    ))
+                
+                fig.update_layout(
+                    height=380,
+                    template=plot_template,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    yaxis_title="Confiance (%)",
+                    showlegend=False,
+                    yaxis=dict(range=[0, 105])
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="box_confidence")
+        
+        with chart_row2_col2:
+            st.markdown(f"#### 🔥 Calendrier d'activité")
+            
+            if 'analysis_date' in df.columns:
+                # Heatmap calendar
+                df_cal = df.copy()
+                df_cal['date'] = df_cal['analysis_date'].dt.date
+                df_cal['weekday'] = df_cal['analysis_date'].dt.dayofweek
+                df_cal['week'] = df_cal['analysis_date'].dt.isocalendar().week
+                
+                heatmap_data = df_cal.groupby(['week', 'weekday']).size().reset_index(name='count')
+                
+                # Pivot for heatmap
+                pivot = heatmap_data.pivot(index='weekday', columns='week', values='count').fillna(0)
+                
+                # Weekday names
+                weekday_names = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+                
+                fig = go.Figure(data=go.Heatmap(
+                    z=pivot.values,
+                    x=pivot.columns,
+                    y=weekday_names,
+                    colorscale='Viridis',
+                    hovertemplate='Semaine %{x}<br>%{y}<br>Analyses: %{z}<extra></extra>',
+                    colorbar=dict(title="Analyses")
+                ))
+                
+                fig.update_layout(
+                    height=380,
+                    template=plot_template,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    xaxis_title="Semaine",
+                    yaxis_title="Jour"
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="heatmap_calendar")
+        
+        # ════════════════════════════════════════════
+        # 4.3 ROW 3 - RISK DISTRIBUTION & PERFORMANCE
+        # ════════════════════════════════════════════
+        st.markdown("---")
+        chart_row3_col1, chart_row3_col2 = st.columns([1, 1])
+        
+        with chart_row3_col1:
+            st.markdown(f"#### ⚠️ Distribution par niveau de risque")
+            
+            if 'risk_level' in df.columns:
+                risk_counts = df['risk_level'].value_counts()
+                
+                risk_colors = {
+                    'critical': '#ff0040',
+                    'high': '#ff3366',
+                    'medium': '#ff9500',
+                    'low': '#00e676',
+                    'none': '#00ff88'
+                }
+                
+                colors = [risk_colors.get(risk, '#888888') for risk in risk_counts.index]
+                
+                fig = go.Figure(data=[go.Bar(
+                    x=risk_counts.index,
+                    y=risk_counts.values,
+                    marker=dict(
+                        color=colors,
+                        line=dict(color='#030614', width=2)
+                    ),
+                    text=risk_counts.values,
+                    textposition='outside',
+                    hovertemplate='<b>%{x}</b><br>Count: %{y}<extra></extra>'
+                )])
+                
+                fig.update_layout(
+                    height=380,
+                    template=plot_template,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    xaxis_title="Niveau de risque",
+                    yaxis_title="Nombre de cas",
+                    showlegend=False
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="bar_risk")
+        
+        with chart_row3_col2:
+            st.markdown(f"#### 📊 Performance par technicien")
+            
+            if 'analyst' in df.columns:
+                analyst_data = df.groupby('analyst').agg({
+                    'id': 'count',
+                    'confidence': 'mean',
+                    'is_reliable': 'sum'
+                }).reset_index()
+                
+                analyst_data.columns = ['Analyste', 'Total', 'Conf_Moy', 'Fiables']
+                analyst_data = analyst_data.sort_values('Total', ascending=False).head(10)
+                
+                fig = go.Figure()
+                
+                fig.add_trace(go.Bar(
+                    name='Total',
+                    x=analyst_data['Analyste'],
+                    y=analyst_data['Total'],
+                    marker_color='#00f5ff',
+                    hovertemplate='<b>%{x}</b><br>Total: %{y}<extra></extra>'
+                ))
+                
+                fig.add_trace(go.Bar(
+                    name='Fiables',
+                    x=analyst_data['Analyste'],
+                    y=analyst_data['Fiables'],
+                    marker_color='#00ff88',
+                    hovertemplate='<b>%{x}</b><br>Fiables: %{y}<extra></extra>'
+                ))
+                
+                fig.update_layout(
+                    height=380,
+                    template=plot_template,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    xaxis_title="Technicien",
+                    yaxis_title="Nombre d'analyses",
+                    barmode='group',
+                    hovermode='x unified'
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="bar_analyst")
+    
+    # ════════════════════════════════════════════
+    # 5. DATA TABLE WITH ACTIONS
+    # ════════════════════════════════════════════
+    if not df.empty:
+        st.markdown("---")
         st.markdown(f"### 📋 {t('history')}")
-        display_cols = [c for c in ["id", "analysis_date", "patient_name", "parasite_detected", "confidence", "risk_level", "analyst", "validated"] if c in df.columns]
-        st.dataframe(df[display_cols] if display_cols else df, use_container_width=True)
-
-        if has_role(2) and "validated" in df.columns:
-            uv = df[df["validated"] == 0]
-            if not uv.empty:
-                vi = st.selectbox("Validate ID:", uv["id"].tolist())
-                if st.button(f"✅ {t('validate')} #{vi}"):
-                    db_validate(vi, st.session_state.user_full_name)
-                    st.success(f"Validated #{vi}")
-                    st.rerun()
-
+        
+        # Column selector
+        with st.expander("⚙️ Personnaliser les colonnes"):
+            all_cols = df.columns.tolist()
+            default_cols = [c for c in ["id", "analysis_date", "patient_name", "parasite_detected", 
+                                       "confidence", "risk_level", "analyst", "validated"] if c in all_cols]
+            selected_cols = st.multiselect(
+                "Colonnes à afficher",
+                options=all_cols,
+                default=default_cols
+            )
+        
+        if selected_cols:
+            display_df = df[selected_cols].copy()
+            
+            # Format columns
+            if 'analysis_date' in display_df.columns:
+                display_df['analysis_date'] = pd.to_datetime(display_df['analysis_date']).dt.strftime('%Y-%m-%d %H:%M')
+            
+            if 'confidence' in display_df.columns:
+                display_df['confidence'] = display_df['confidence'].apply(lambda x: f"{x:.1f}%")
+            
+            st.dataframe(
+                display_df,
+                use_container_width=True,
+                height=400
+            )
+        
+        # ════════════════════════════════════════════
+        # 6. VALIDATION & EXPORT
+        # ════════════════════════════════════════════
         st.markdown("---")
-        e1, e2 = st.columns(2)
-        with e1:
-            st.download_button(f"⬇️ {t('export_csv')}", df.to_csv(index=False).encode('utf-8-sig'),
-                               "analyses.csv", "text/csv", use_container_width=True)
-        with e2:
-            st.download_button(f"⬇️ {t('export_json')}",
-                               df.to_json(orient='records', force_ascii=False).encode(),
-                               "analyses.json", "application/json", use_container_width=True)
+        
+        action_col1, action_col2, action_col3, action_col4 = st.columns(4)
+        
+        # Validation
+        if has_role(2) and "validated" in df.columns:
+            with action_col1:
+                uv = df[df["validated"] == 0]
+                if not uv.empty:
+                    vi = st.selectbox("✅ Valider analyse:", ["--"] + uv["id"].tolist())
+                    if vi != "--" and st.button(f"Valider #{vi}", use_container_width=True):
+                        db_validate(vi, st.session_state.user_full_name)
+                        st.success(f"✅ Analyse #{vi} validée!")
+                        st.rerun()
+                else:
+                    st.info("✅ Tout validé!")
+        
+        # Export CSV
+        with action_col2:
+            csv = df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button(
+                f"⬇️ CSV",
+                csv,
+                f"analyses_{datetime.now().strftime('%Y%m%d')}.csv",
+                "text/csv",
+                use_container_width=True
+            )
+        
+        # Export JSON
+        with action_col3:
+            json_data = df.to_json(orient='records', force_ascii=False, indent=2).encode()
+            st.download_button(
+                f"⬇️ JSON",
+                json_data,
+                f"analyses_{datetime.now().strftime('%Y%m%d')}.json",
+                "application/json",
+                use_container_width=True
+            )
+        
+        # Export Excel (if available)
+        with action_col4:
+            try:
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    df.to_excel(writer, index=False, sheet_name='Analyses')
+                    
+                    # Auto-adjust columns width
+                    worksheet = writer.sheets['Analyses']
+                    for i, col in enumerate(df.columns):
+                        max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+                        worksheet.set_column(i, i, max_len)
+                
+                st.download_button(
+                    f"⬇️ Excel",
+                    output.getvalue(),
+                    f"analyses_{datetime.now().strftime('%Y%m%d')}.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+            except:
+                st.button("⬇️ Excel (unavailable)", disabled=True, use_container_width=True)
+    
     else:
         st.info(t("no_data"))
-
-
+        
+        # Show sample charts with empty state
+        st.markdown("---")
+        st.markdown("### 📊 Exemple de visualisations")
+        st.image("https://via.placeholder.com/1200x400/030614/00f5ff?text=Statistiques+vides+-+Commencez+vos+analyses!", 
+                use_container_width=True)
 # ════════════════════════════════════════════
 #  PAGE: QUIZ (Fixed & Enhanced)
 # ════════════════════════════════════════════
