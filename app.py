@@ -2116,7 +2116,8 @@ if not st.session_state.logged_in:
     with lc2:
         ll = st.selectbox("🌍", ["🇫🇷 Français", "🇩🇿 العربية", "🇬🇧 English"], label_visibility="collapsed")
         st.session_state.lang = "fr" if "Français" in ll else ("ar" if "العربية" in ll else "en")
-        logo()
+ # Logo
+        render_logo()
         st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
         <div style='font-size:3rem;'>🔐</div><h2 class='dm-nt'>{t('login_title')}</h2>
         <p style='opacity:.5;'>{t('login_subtitle')}</p></div>""", unsafe_allow_html=True)
