@@ -2174,35 +2174,54 @@ if not st.session_state.logged_in:
 # ============================================
 with st.sidebar:
     ri = ROLES.get(st.session_state.user_role, ROLES["viewer"])
-    st.markdown(f"{ri['icon']} **{st.session_state.user_full_name}**")
-    st.caption(f"@{st.session_state.user_name} - {tl(ri['label'])}")
+    st.markdown(f"### {ri['icon']} {st.session_state.user_full_name}")
+    st.caption(f"@{st.session_state.user_name} | {tl(ri['label'])}")
+
     tips = TIPS.get(st.session_state.lang, TIPS["fr"])
     st.info(f"**{t('daily_tip')}:**\n\n{tips[datetime.now().timetuple().tm_yday % len(tips)]}")
+
     st.markdown("---")
-    st.markdown(f"#### 🌍 {t('language')}")
-    lc = st.radio("", ["🇫🇷 Français", "🇩🇿 العربية", "🇬🇧 English"], label_visibility="collapsed",
+    st.markdown(f"#### {t('🌍language')}")
+    lc = st.radio("lang_select", ["FR 🌍Francais", "AR🌍 العربية", "EN 🌍English"], label_visibility="collapsed",
                   index=["fr", "ar", "en"].index(st.session_state.lang))
-    nl = "fr" if "Français" in lc else ("ar" if "العربية" in lc else "en")
-    if nl != st.session_state.lang: st.session_state.lang = nl; st.rerun()
+    nl = "fr" if "FR" in lc else ("ar" if "AR" in lc else "en")
+    if nl != st.session_state.lang:
+        st.session_state.lang = nl
+        st.rerun()
+
     st.markdown("---")
-    navs = [f"🏠 {t('home')}", f"🔬 {t('scan')}", f"📘 {t('encyclopedia')}", f"📊 {t('dashboard')}",
-            f"🧠 {t('quiz')}", f"💬 {t('chatbot')}", f"🔄 {t('compare')}"]
+
+    # Navigation
+    navs = [
+        f"🏠 {t('home')}",
+        f"🔬 {t('scan')}",
+        f"📘 {t('encyclopedia')}",
+        f"📊 {t('dashboard')}",
+        f"🧠 {t('quiz')}",
+        f"💬 {t('chatbot')}",
+        f"🔄 {t('compare')}",
+    ]
     keys = ["home", "scan", "enc", "dash", "quiz", "chat", "cmp"]
-    if has_role(3): navs.append(f"⚙️ {t('admin')}"); keys.append("admin")
-    navs.append(f"ℹ️ {t('about')}"); keys.append("about")
-    menu = st.radio("Nav", navs, label_visibility="collapsed")
-   
-    
-    if dk != st.session_state.dark_mode: st.session_state.dark_mode = dk; st.rerun()
+    if has_role(3):
+        navs.append(f"⚙️ {t('admin')}")
+        keys.append("admin")
+    navs.append(f"ℹ️ {t('about')}")
+    keys.append("about")
+
+    menu = st.radio("Navigation", navs, label_visibility="collapsed")
+
     st.markdown("---")
     if st.button(f"🚪 {t('logout')}", use_container_width=True):
         db_log(st.session_state.user_id, st.session_state.user_name, "Logout")
-        for k in DEFAULTS: st.session_state[k] = DEFAULTS[k]
+        for k in DEFAULTS:
+            st.session_state[k] = DEFAULTS[k]
         st.rerun()
 
 pg = dict(zip(navs, keys)).get(menu, "home")
+
 # Render voice player at top of page
 render_voice_player()
+
 
 
 # ════════════════════════════════════════════
