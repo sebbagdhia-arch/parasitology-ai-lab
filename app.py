@@ -916,7 +916,10 @@ def mq(fr, ar, en):
     return {"fr": fr, "ar": ar, "en": en}
 
 
-QUIZ_QUESTIONS = [
+QUIZ_QUESTIONS = [ 
+    {"q": mq("Quel parasite presente une bague a chaton dans les hematies?", "أي طفيلي يظهر شكل الخاتم في كريات الدم الحمراء؟", "Which parasite shows a signet ring in RBCs?"),
+     "opts": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "ans": 1, "cat": "Hematozoaires",
+     "expl": mq("Plasmodium: bague a chaton au stade trophozoite jeune.", "البلازموديوم: شكل الخاتم في مرحلة الطور النشط.", "Plasmodium: signet ring at young trophozoite stage.")},
     {"q": mq("Quel parasite présente une 'bague à chaton' dans les hématies?", "أي طفيلي يظهر شكل 'الخاتم' في كريات الدم الحمراء؟", "Which parasite shows a 'signet ring' in RBCs?"),
      "opts": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "ans": 1, "cat": "Hématozoaires",
      "expl": mq("Plasmodium: bague à chaton au stade trophozoïte jeune.", "البلازموديوم: شكل الخاتم في مرحلة الطور النشط.", "Plasmodium: signet ring at young trophozoite stage.")},
