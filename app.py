@@ -1713,20 +1713,23 @@ def make_pdf(pat, lab, result, lbl):
 #  CSS - SPACE DARK THEME (Only Night Mode)
 # ============================================
 def apply_css():
-    btn_bg = "#00ADB5" 
-    dm = st.session_state.get("dark_mode", True)
     rtl = st.session_state.get("lang") == "ar"
     d = "rtl" if rtl else "ltr"
-    if dm:
-        bg, cbg, tx, pr, mu = "#030614", "rgba(10,15,46,0.85)", "#e0e8ff", "#00f5ff", "#6b7fa0"
-        ac, ac2, sbg = "#ff00ff", "#00ff88", "#020410"
-        btn, brd, ibg = "linear-gradient(135deg,#00f5ff,#0066ff)", "rgba(0,245,255,0.15)", "rgba(10,15,46,0.6)"
-        tmpl = "plotly_dark"
-    else:
-        bg, cbg, tx, pr, mu = "#f0f4f8", "rgba(255,255,255,0.95)", "#1a202c", "#0066ff", "#64748b"
-        ac, ac2, sbg = "#9933ff", "#00cc66", "#f8fafc"
-        btn, brd, ibg = "linear-gradient(135deg,#0066ff,#0044cc)", "rgba(0,100,255,0.15)", "rgba(255,255,255,0.9)"
-        tmpl = "plotly_white"
+    
+    # Space dark theme - ONLY dark mode
+    bg = "#030614"
+    cbg = "rgba(10,15,46,0.85)"
+    tx = "#e0e8ff"
+    pr = "#00f5ff"
+    mu = "#6b7fa0"
+    ac = "#ff00ff"
+    ac2 = "#00ff88"
+    sbg = "#020410"
+    btn_bg = "linear-gradient(135deg,#00f5ff,#0066ff)"
+    brd = "rgba(0,245,255,0.15)"
+    ibg = "rgba(10,15,46,0.6)"
+    template = "plotly_dark"
+    
     st.markdown(f"""<style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&family=Tajawal:wght@400;500;700;800&display=swap');
     
@@ -2055,8 +2058,11 @@ def apply_css():
     }}
     
     </style>""", unsafe_allow_html=True)
-    st.markdown(template, unsafe_allow_html=True)
     return template
+
+
+plot_template = apply_css()
+
 
 # ============================================
 #  ANIMATED LOGO
@@ -2110,33 +2116,57 @@ with st.sidebar:
 # ============================================
 #  LOGIN PAGE
 # ============================================
-
 if not st.session_state.logged_in:
     lc1, lc2, lc3 = st.columns([1, 2, 1])
     with lc2:
-        ll = st.selectbox("🌍", ["🇫🇷 Français", "🇩🇿 العربية", "🇬🇧 English"], label_visibility="collapsed")
-        st.session_state.lang = "fr" if "Français" in ll else ("ar" if "العربية" in ll else "en")
- # Logo
+        # Language selector
+        ll = st.selectbox("Language", ["FR Francais", "AR العربية", "EN English"], label_visibility="collapsed")
+        st.session_state.lang = "fr" if "FR" in ll else ("ar" if "AR" in ll else "en")
+
+        # Logo
         render_logo()
+
+        # Login card with animated border
         st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-        <div style='font-size:3rem;'>🔐</div><h2 class='dm-nt'>{t('login_title')}</h2>
-        <p style='opacity:.5;'>{t('login_subtitle')}</p></div>""", unsafe_allow_html=True)
+        <div style='font-size:3.5rem;margin-bottom:10px;'>
+            <span style='animation: pulse 2s ease-in-out infinite;display:inline-block;'>🔐</span>
+        </div>
+        <h2 class='dm-nt'>{t('login_title')}</h2>
+        <p style='opacity:.4;font-size:.85rem;'>{t('login_subtitle')}</p>
+        </div>
+        <style>
+        @keyframes pulse {{
+            0%, 100% {{ transform: scale(1); }}
+            50% {{ transform: scale(1.1); }}
+        }}
+        </style>
+        """, unsafe_allow_html=True)
+
         with st.form("login"):
-            u = st.text_input(f"👤 {t('username')}", placeholder="admin / dhia / demo")
-            p = st.text_input(f"🔒 {t('password')}", type="password")
-            if st.form_submit_button(f"🚀 {t('connect')}", use_container_width=True):
+            u = st.text_input(f"{t('username')}", placeholder="admin / dhia / demo")
+            p = st.text_input(f"{t('password')}", type="password")
+            if st.form_submit_button(f"{t('connect')}", use_container_width=True):
                 if u.strip():
                     r = db_login(u.strip(), p)
-                    if r is None: st.error("❌ User not found")
+                    if r is None:
+                        st.error("User not found")
                     elif isinstance(r, dict) and "error" in r:
-                        if r["error"] == "locked": st.error("🔒 Locked")
-                        else: st.error(f"❌ Wrong password. {r.get('left',0)} left")
+                        if r["error"] == "locked":
+                            st.error("Account locked. Try again later.")
+                        else:
+                            st.error(f"Wrong password. {r.get('left', 0)} attempts left")
                     else:
-                        for k in ["logged_in", "user_id", "user_name", "user_role", "user_full_name"]:
-                            st.session_state[k] = {"logged_in": True, "user_id": r["id"], "user_name": r["username"],
-                                                    "user_role": r["role"], "user_full_name": r["full_name"]}[k]
-                        db_log(r["id"], r["username"], "Login"); st.rerun()
-        st.markdown("<div style='text-align:center;opacity:.4;font-size:.75rem;'>👑 admin/admin2026 | 🔬 dhia/dhia2026 | 👁️ demo/demo123</div>", unsafe_allow_html=True)
+                        st.session_state.logged_in = True
+                        st.session_state.user_id = r["id"]
+                        st.session_state.user_name = r["username"]
+                        st.session_state.user_role = r["role"]
+                        st.session_state.user_full_name = r["full_name"]
+                        db_log(r["id"], r["username"], "Login")
+                        st.rerun()
+
+        st.markdown("""<div style='text-align:center;opacity:.3;font-size:.72rem;margin-top:16px;'>
+        admin/admin2026 | dhia/dhia2026 | demo/demo123
+        </div>""", unsafe_allow_html=True)
     st.stop()
 
 # ============================================
