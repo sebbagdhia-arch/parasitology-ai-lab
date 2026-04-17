@@ -2161,8 +2161,8 @@ with st.sidebar:
     if has_role(3): navs.append(f"⚙️ {t('admin')}"); keys.append("admin")
     navs.append(f"ℹ️ {t('about')}"); keys.append("about")
     menu = st.radio("Nav", navs, label_visibility="collapsed")
-    st.markdown("---")
-    dk = st.toggle(f"🌙 {t('dark_mode')}", value=st.session_state.dark_mode)
+   
+    
     if dk != st.session_state.dark_mode: st.session_state.dark_mode = dk; st.rerun()
     st.markdown("---")
     if st.button(f"🚪 {t('logout')}", use_container_width=True):
