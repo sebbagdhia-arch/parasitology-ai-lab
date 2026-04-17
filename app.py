@@ -2954,21 +2954,21 @@ elif pg == "chat":
 elif pg == "cmp":
     st.title(f"🔄 {t('compare')}")
 
-    desc = {"fr":"Comparez deux images microscopiques avec analyse avancée",
-            "ar":"قارن بين صورتين مجهريتين بتحليل متقدم",
-            "en":"Compare two microscopic images with advanced analysis"}.get(st.session_state.lang,"")
+    desc = {"fr": "Comparez deux images microscopiques avec analyse avancee",
+            "ar": "قارن بين صورتين مجهريتين بتحليل متقدم",
+            "en": "Compare two microscopic images with advanced analysis"}.get(st.session_state.lang, "")
 
     st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <p>{desc}</p>
+    <p style='margin:0;'>{desc}</p>
     </div>""", unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"### 📷 {t('image1')}")
-        f1 = st.file_uploader(t("image1"), type=["jpg", "jpeg", "png", "bmp"], key="cmp1")
+        f1 = st.file_uploader("img1", type=["jpg", "jpeg", "png", "bmp"], key="cmp1", label_visibility="collapsed")
     with c2:
         st.markdown(f"### 📷 {t('image2')}")
-        f2 = st.file_uploader(t("image2"), type=["jpg", "jpeg", "png", "bmp"], key="cmp2")
+        f2 = st.file_uploader("img2", type=["jpg", "jpeg", "png", "bmp"], key="cmp2", label_visibility="collapsed")
 
     if f1 and f2:
         i1 = Image.open(f1).convert("RGB")
@@ -2981,51 +2981,68 @@ elif pg == "cmp":
             st.image(i2, caption=t("image2"), use_container_width=True)
 
         st.markdown("---")
-        if st.button(t("compare_btn"), use_container_width=True, type="primary"):
-            with st.spinner("🔄 ..."):
+        if st.button(f"🔍 {t('compare_btn')}", use_container_width=True, type="primary"):
+            with st.spinner("Analyzing..."):
                 metrics = compare_imgs(i1, i2)
 
-            # Metrics
-            st.markdown(f"### 📊 { {'fr':'Résultats de la comparaison','ar':'نتائج المقارنة','en':'Comparison Results'}.get(st.session_state.lang,'') }")
+            # Metrics display
+            compare_result_label = {"fr": "Resultats de la comparaison", "ar": "نتائج المقارنة", "en": "Comparison Results"}.get(st.session_state.lang, "Results")
+            st.markdown(f"### 📊 {compare_result_label}")
             mc = st.columns(4)
             with mc[0]:
-                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>📊</span><div class='dm-m-v'>{metrics['sim']}%</div><div class='dm-m-l'>{t('similarity')}</div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>📊</span>
+                <div class='dm-m-v'>{metrics['sim']}%</div>
+                <div class='dm-m-l'>{t('similarity')}</div></div>""", unsafe_allow_html=True)
             with mc[1]:
-                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>🎯</span><div class='dm-m-v'>{metrics['ssim']}</div><div class='dm-m-l'>SSIM</div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>🎯</span>
+                <div class='dm-m-v'>{metrics['ssim']}</div>
+                <div class='dm-m-l'>SSIM</div></div>""", unsafe_allow_html=True)
             with mc[2]:
-                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>📐</span><div class='dm-m-v'>{metrics['mse']}</div><div class='dm-m-l'>MSE</div></div>", unsafe_allow_html=True)
+                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>📐</span>
+                <div class='dm-m-v'>{metrics['mse']}</div>
+                <div class='dm-m-l'>MSE</div></div>""", unsafe_allow_html=True)
             with mc[3]:
-                # Similarity verdict
                 if metrics["sim"] > 90:
-                    verdict = {"fr": "Très similaires ✅", "ar": "متشابهتان جداً ✅", "en": "Very similar ✅"}
+                    verdict = {"fr": "Tres similaires", "ar": "متشابهتان جدا", "en": "Very similar"}
+                    v_icon = "✅"
                 elif metrics["sim"] > 70:
-                    verdict = {"fr": "Similaires 🟡", "ar": "متشابهتان 🟡", "en": "Similar 🟡"}
+                    verdict = {"fr": "Similaires", "ar": "متشابهتان", "en": "Similar"}
+                    v_icon = "🟡"
                 elif metrics["sim"] > 50:
-                    verdict = {"fr": "Peu similaires 🟠", "ar": "قليل التشابه 🟠", "en": "Somewhat similar 🟠"}
+                    verdict = {"fr": "Peu similaires", "ar": "قليل التشابه", "en": "Somewhat similar"}
+                    v_icon = "🟠"
                 else:
-                    verdict = {"fr": "Très différentes 🔴", "ar": "مختلفتان جداً 🔴", "en": "Very different 🔴"}
-                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>🔍</span><div class='dm-m-v' style='font-size:1rem;'>{tl(verdict)}</div><div class='dm-m-l'>Verdict</div></div>", unsafe_allow_html=True)
+                    verdict = {"fr": "Tres differentes", "ar": "مختلفتان جدا", "en": "Very different"}
+                    v_icon = "🔴"
+                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>🔍</span>
+                <div class='dm-m-v' style='font-size:1rem;'>{v_icon} {tl(verdict)}</div>
+                <div class='dm-m-l'>Verdict</div></div>""", unsafe_allow_html=True)
 
-            # SSIM gauge
+            # SSIM Gauge
             if HAS_PLOTLY:
                 st.markdown("---")
                 fig = go.Figure(go.Indicator(
                     mode="gauge+number",
                     value=metrics["sim"],
-                    title={"text": t("similarity")},
+                    title={"text": t("similarity"), "font": {"color": "#e0e8ff"}},
+                    number={"font": {"color": "#00f5ff"}},
                     gauge={
-                        "axis": {"range": [0, 100]},
+                        "axis": {"range": [0, 100], "tickcolor": "#6b7fa0"},
                         "bar": {"color": "#00f5ff"},
+                        "bgcolor": "rgba(10,15,46,0.5)",
                         "steps": [
-                            {"range": [0, 30], "color": "#ff0040"},
-                            {"range": [30, 60], "color": "#ff9500"},
-                            {"range": [60, 80], "color": "#ffff00"},
-                            {"range": [80, 100], "color": "#00ff88"}
+                            {"range": [0, 30], "color": "rgba(255,0,64,0.3)"},
+                            {"range": [30, 60], "color": "rgba(255,149,0,0.3)"},
+                            {"range": [60, 80], "color": "rgba(255,255,0,0.3)"},
+                            {"range": [80, 100], "color": "rgba(0,255,136,0.3)"}
                         ],
                         "threshold": {"line": {"color": "white", "width": 4}, "thickness": 0.75, "value": metrics["sim"]}
                     }
                 ))
-                fig.update_layout(height=250, template=tmpl, margin=dict(l=30, r=30, t=50, b=20))
+                fig.update_layout(height=280, template=plot_template,
+                                  margin=dict(l=30, r=30, t=60, b=20),
+                                  paper_bgcolor="rgba(0,0,0,0)",
+                                  font={"color": "#e0e8ff"})
                 st.plotly_chart(fig, use_container_width=True)
 
             # Pixel difference
@@ -3041,16 +3058,16 @@ elif pg == "cmp":
 
             # Filter comparison
             st.markdown(f"### 🔬 {t('filter_comparison')}")
-            filters = [
+            filter_list = [
                 ({"fr": "Thermique", "ar": "حراري", "en": "Thermal"}, thermal),
-                ({"fr": "Contours", "ar": "حواف", "en": "Edges"}, edges),
-                ({"fr": "Contraste+", "ar": "تباين+", "en": "Enhanced"}, enhanced),
-                ({"fr": "Négatif", "ar": "سلبي", "en": "Negative"}, negative),
-                ({"fr": "Relief", "ar": "نقش", "en": "Emboss"}, emboss),
+                ({"fr": "Contours", "ar": "حواف", "en": "Edges"}, edges_filter),
+                ({"fr": "Contraste+", "ar": "تباين+", "en": "Enhanced"}, enhanced_filter),
+                ({"fr": "Negatif", "ar": "سلبي", "en": "Negative"}, negative_filter),
+                ({"fr": "Relief", "ar": "نقش", "en": "Emboss"}, emboss_filter),
             ]
-            for fname, ffunc in filters:
-                fc1, fc2 = st.columns(2)
+            for fname, ffunc in filter_list:
                 fn = tl(fname)
+                fc1, fc2 = st.columns(2)
                 with fc1:
                     st.image(ffunc(i1), caption=f"{t('image1')} - {fn}", use_container_width=True)
                 with fc2:
@@ -3058,7 +3075,8 @@ elif pg == "cmp":
 
             # Histogram comparison
             if HAS_PLOTLY:
-                st.markdown(f"### 📊 { {'fr':'Comparaison des histogrammes','ar':'مقارنة المدرجات التكرارية','en':'Histogram Comparison'}.get(st.session_state.lang,'') }")
+                hist_label = {"fr": "Comparaison des histogrammes", "ar": "مقارنة المدرجات التكرارية", "en": "Histogram Comparison"}.get(st.session_state.lang, "Histogram")
+                st.markdown(f"### 📊 {hist_label}")
                 h1 = histogram(i1)
                 h2 = histogram(i2)
                 hc1, hc2 = st.columns(2)
@@ -3067,15 +3085,16 @@ elif pg == "cmp":
                     fig.add_trace(go.Scatter(y=h1["red"], name="R", line=dict(color="red", width=1)))
                     fig.add_trace(go.Scatter(y=h1["green"], name="G", line=dict(color="green", width=1)))
                     fig.add_trace(go.Scatter(y=h1["blue"], name="B", line=dict(color="blue", width=1)))
-                    fig.update_layout(title=t("image1"), height=250, template=tmpl, margin=dict(l=20, r=20, t=40, b=20))
+                    fig.update_layout(title=t("image1"), height=250, template=plot_template, margin=dict(l=20, r=20, t=40, b=20))
                     st.plotly_chart(fig, use_container_width=True)
                 with hc2:
                     fig = go.Figure()
                     fig.add_trace(go.Scatter(y=h2["red"], name="R", line=dict(color="red", width=1)))
                     fig.add_trace(go.Scatter(y=h2["green"], name="G", line=dict(color="green", width=1)))
                     fig.add_trace(go.Scatter(y=h2["blue"], name="B", line=dict(color="blue", width=1)))
-                    fig.update_layout(title=t("image2"), height=250, template=tmpl, margin=dict(l=20, r=20, t=40, b=20))
+                    fig.update_layout(title=t("image2"), height=250, template=plot_template, margin=dict(l=20, r=20, t=40, b=20))
                     st.plotly_chart(fig, use_container_width=True)
+
 
 
 # ════════════════════════════════════════════
