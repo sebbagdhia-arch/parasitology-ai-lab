@@ -739,170 +739,170 @@ init_database()
 PARASITE_DB = {
     "Amoeba (E. histolytica)": {
         "sci": "Entamoeba histolytica",
-        "morph": {"fr": "Kyste spherique (10-15um) a 4 noyaux, corps chromatoide en cigare. Trophozoite (20-40um) avec pseudopodes digitiformes et hematies phagocytees.",
+        "morph": {"fr": "Kyste sphérique (10-15μm) à 4 noyaux, corps chromatoïde en cigare. Trophozoïte (20-40μm) avec pseudopodes digitiformes et hématies phagocytées.",
                   "ar": "كيس كروي (10-15 ميكرومتر) بـ 4 أنوية، جسم كروماتيني على شكل سيجار. الطور النشط (20-40 ميكرومتر) مع أقدام كاذبة وكريات حمراء مبتلعة.",
-                  "en": "Spherical cyst (10-15um) with 4 nuclei, cigar-shaped chromatoid body. Trophozoite (20-40um) with pseudopods and phagocytosed RBCs."},
-        "desc": {"fr": "Protozoaire responsable de l'amibiase intestinale et extra-intestinale. Transmission feco-orale.",
+                  "en": "Spherical cyst (10-15μm) with 4 nuclei, cigar-shaped chromatoid body. Trophozoite (20-40μm) with pseudopods and phagocytosed RBCs."},
+        "desc": {"fr": "Protozoaire responsable de l'amibiase intestinale et extra-intestinale. Transmission féco-orale.",
                  "ar": "طفيلي أولي مسؤول عن الأميبيا المعوية والخارج معوية. الانتقال عبر الفم-البراز.",
                  "en": "Protozoan causing intestinal and extra-intestinal amebiasis. Fecal-oral transmission."},
-        "funny": {"fr": "Le ninja des intestins ! Il mange des globules rouges au petit-dejeuner !",
+        "funny": {"fr": "Le ninja des intestins ! Il mange des globules rouges au petit-déjeuner !",
                   "ar": "نينجا الأمعاء! يأكل كريات الدم الحمراء في الفطور!",
                   "en": "The intestinal ninja! Eats red blood cells for breakfast!"},
         "risk": "high",
-        "risk_d": {"fr": "Eleve", "ar": "مرتفع", "en": "High"},
-        "advice": {"fr": "Metronidazole 500mg x3/j (7-10j) + Amoebicide de contact (Intetrix). Controle EPS J15/J30.",
-                   "ar": "ميترونيدازول 500 ملغ 3 مرات يوميا (7-10 أيام) + أميبيسيد تلامسي. مراقبة بعد 15 و 30 يوم.",
+        "risk_d": {"fr": "Élevé 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
+        "advice": {"fr": "Métronidazole 500mg x3/j (7-10j) + Amoebicide de contact (Intetrix). Contrôle EPS J15/J30.",
+                   "ar": "ميترونيدازول 500 ملغ ×3/يوم (7-10 أيام) + أميبيسيد تلامسي. مراقبة EPS ي15/ي30.",
                    "en": "Metronidazole 500mg x3/d (7-10d) + Contact amoebicide (Intetrix). Follow-up D15/D30."},
-        "tests": ["Serologie amibienne", "Echographie hepatique", "NFS+CRP", "PCR Entamoeba", "Scanner abdominal"],
+        "tests": ["Sérologie amibienne", "Échographie hépatique", "NFS+CRP", "PCR Entamoeba", "Scanner abdominal"],
         "color": "#ff0040", "icon": "🔴",
-        "cycle": {"fr": "Kyste ingere -> Excystation -> Trophozoite -> Invasion tissulaire -> Enkystement -> Emission",
-                  "ar": "كيس مبتلع ثم انفكاس ثم طور نشط ثم غزو أنسجة ثم تكيس ثم إخراج",
-                  "en": "Ingested cyst -> Excystation -> Trophozoite -> Tissue invasion -> Encystation -> Emission"},
-        "keys": {"fr": "E. histolytica vs E. dispar: seule histolytica phagocyte les hematies\nKyste 4 noyaux (vs E. coli 8)\nCorps chromatoides en cigare\nMobilite directionnelle",
-                 "ar": "E. histolytica مقابل E. dispar: فقط histolytica تبتلع الكريات\nكيس 4 أنوية مقابل 8 لـ E. coli\nأجسام كروماتينية سيجارية\nحركة اتجاهية",
-                 "en": "E. histolytica vs E. dispar: only histolytica phagocytoses RBCs\n4 nuclei cyst (vs E. coli 8)\nCigar chromatoid bodies\nDirectional motility"}
+        "cycle": {"fr": "Kyste ingéré → Excystation → Trophozoïte → Invasion tissulaire → Enkystement → Émission",
+                  "ar": "كيس مبتلع → انفكاس → طور نشط → غزو أنسجة → تكيس → إخراج",
+                  "en": "Ingested cyst → Excystation → Trophozoite → Tissue invasion → Encystation → Emission"},
+        "keys": {"fr": "• E. histolytica vs E. dispar: seule histolytica phagocyte les hématies\n• Kyste 4 noyaux (vs E. coli 8)\n• Corps chromatoïdes en cigare\n• Mobilité directionnelle",
+                 "ar": "• E. histolytica مقابل E. dispar: فقط histolytica تبتلع الكريات\n• كيس 4 أنوية (مقابل 8 لـ E. coli)\n• أجسام كروماتينية سيجارية\n• حركة اتجاهية",
+                 "en": "• E. histolytica vs E. dispar: only histolytica phagocytoses RBCs\n• 4 nuclei cyst (vs E. coli 8)\n• Cigar chromatoid bodies\n• Directional motility"}
     },
     "Giardia": {
         "sci": "Giardia lamblia (intestinalis)",
-        "morph": {"fr": "Trophozoite piriforme en cerf-volant (12-15um), 2 noyaux (face de hibou), disque adhesif, 4 paires de flagelles. Kyste ovoide (8-12um) a 4 noyaux.",
-                  "ar": "الطور النشط كمثري شكل طائرة ورقية (12-15 ميكرومتر)، نواتان (وجه البومة)، قرص لاصق، 4 أزواج أسواط. كيس بيضاوي (8-12 ميكرومتر) بـ 4 أنوية.",
-                  "en": "Pear-shaped kite trophozoite (12-15um), 2 nuclei (owl face), adhesive disk, 4 flagella pairs. Ovoid cyst (8-12um) with 4 nuclei."},
-        "desc": {"fr": "Flagelle du duodenum. Diarrhee graisseuse chronique, malabsorption. Transmission hydrique.",
+        "morph": {"fr": "Trophozoïte piriforme en 'cerf-volant' (12-15μm), 2 noyaux (face de hibou), disque adhésif, 4 paires de flagelles. Kyste ovoïde (8-12μm) à 4 noyaux.",
+                  "ar": "الطور النشط كمثري 'طائرة ورقية' (12-15μm)، نواتان (وجه البومة)، قرص لاصق، 4 أزواج أسواط. كيس بيضاوي (8-12μm) بـ 4 أنوية.",
+                  "en": "Pear-shaped 'kite' trophozoite (12-15μm), 2 nuclei (owl face), adhesive disk, 4 flagella pairs. Ovoid cyst (8-12μm) with 4 nuclei."},
+        "desc": {"fr": "Flagellé du duodénum. Diarrhée graisseuse chronique, malabsorption. Transmission hydrique.",
                  "ar": "سوطي الاثني عشر. إسهال دهني مزمن، سوء امتصاص. انتقال عبر الماء.",
                  "en": "Duodenal flagellate. Chronic greasy diarrhea, malabsorption. Waterborne."},
         "funny": {"fr": "Il te fixe avec ses lunettes de soleil ! Un touriste qui refuse de partir !",
                   "ar": "ينظر إليك بنظارته الشمسية! سائح يرفض المغادرة!",
                   "en": "It stares at you with sunglasses! A tourist who refuses to leave!"},
-        "risk": "medium", "risk_d": {"fr": "Moyen", "ar": "متوسط", "en": "Medium"},
-        "advice": {"fr": "Metronidazole 250mg x3/j (5j) OU Tinidazole 2g dose unique.",
-                   "ar": "ميترونيدازول 250 ملغ 3 مرات يوميا (5 أيام) أو تينيدازول 2 غرام جرعة واحدة.",
+        "risk": "medium", "risk_d": {"fr": "Moyen 🟠", "ar": "متوسط 🟠", "en": "Medium 🟠"},
+        "advice": {"fr": "Métronidazole 250mg x3/j (5j) OU Tinidazole 2g dose unique.",
+                   "ar": "ميترونيدازول 250ملغ ×3/يوم (5 أيام) أو تينيدازول 2غ جرعة واحدة.",
                    "en": "Metronidazole 250mg x3/d (5d) OR Tinidazole 2g single dose."},
         "tests": ["Ag Giardia ELISA", "Test malabsorption", "EPS x3", "PCR Giardia"],
         "color": "#ff9500", "icon": "🟠",
-        "cycle": {"fr": "Kyste ingere -> Excystation duodenale -> Trophozoite -> Adhesion -> Multiplication -> Enkystement",
-                  "ar": "كيس مبتلع ثم انفكاس ثم طور نشط ثم التصاق ثم تكاثر ثم تكيس",
-                  "en": "Ingested cyst -> Duodenal excystation -> Trophozoite -> Adhesion -> Multiplication -> Encystation"},
-        "keys": {"fr": "Forme cerf-volant pathognomonique\n2 noyaux = face de hibou\nDisque adhesif au Lugol\nMobilite feuille morte",
-                 "ar": "شكل طائرة ورقية مميز\nنواتان = وجه البومة\nالقرص اللاصق باللوغول\nحركة ورقة ميتة",
-                 "en": "Pathognomonic kite shape\n2 nuclei = owl face\nAdhesive disk on Lugol\nFalling leaf motility"}
+        "cycle": {"fr": "Kyste ingéré → Excystation duodénale → Trophozoïte → Adhésion → Multiplication → Enkystement",
+                  "ar": "كيس مبتلع → انفكاس → طور نشط → التصاق → تكاثر → تكيس",
+                  "en": "Ingested cyst → Duodenal excystation → Trophozoite → Adhesion → Multiplication → Encystation"},
+        "keys": {"fr": "• Forme cerf-volant pathognomonique\n• 2 noyaux = face de hibou\n• Disque adhésif au Lugol\n• Mobilité 'feuille morte'",
+                 "ar": "• شكل طائرة ورقية مميز\n• نواتان = وجه البومة\n• القرص اللاصق باللوغول\n• حركة 'ورقة ميتة'",
+                 "en": "• Pathognomonic kite shape\n• 2 nuclei = owl face\n• Adhesive disk on Lugol\n• 'Falling leaf' motility"}
     },
     "Leishmania": {
         "sci": "Leishmania infantum / major / tropica",
-        "morph": {"fr": "Amastigotes ovoides (2-5um) intracellulaires dans macrophages. Noyau + kinetoplaste (MGG).",
-                  "ar": "أماستيغوت بيضاوية (2-5 ميكرومتر) داخل البلاعم. نواة + كينيتوبلاست.",
-                  "en": "Ovoid amastigotes (2-5um) intracellular in macrophages. Nucleus + kinetoplast (MGG)."},
-        "desc": {"fr": "Transmis par phlebotome. Cutanee ou viscerale. Algerie: L. infantum (nord), L. major (sud).",
+        "morph": {"fr": "Amastigotes ovoïdes (2-5μm) intracellulaires dans macrophages. Noyau + kinétoplaste (MGG).",
+                  "ar": "أماستيغوت بيضاوية (2-5μm) داخل البلاعم. نواة + كينيتوبلاست (MGG).",
+                  "en": "Ovoid amastigotes (2-5μm) intracellular in macrophages. Nucleus + kinetoplast (MGG)."},
+        "desc": {"fr": "Transmis par phlébotome. Cutanée ou viscérale. Algérie: L. infantum (nord), L. major (sud).",
                  "ar": "ينتقل عبر ذبابة الرمل. جلدية أو حشوية. الجزائر: L. infantum (شمال)، L. major (جنوب).",
                  "en": "Sandfly-transmitted. Cutaneous or visceral. Algeria: L. infantum (north), L. major (south)."},
         "funny": {"fr": "Petit mais costaud ! Il squatte les macrophages !",
                   "ar": "صغير لكن قوي! يحتل البلاعم!",
                   "en": "Small but tough! Squats in macrophages!"},
-        "risk": "high", "risk_d": {"fr": "Eleve", "ar": "مرتفع", "en": "High"},
-        "advice": {"fr": "Cutanee: Glucantime IM. Viscerale: Amphotericine B liposomale. MDO en Algerie.",
-                   "ar": "جلدية: غلوكانتيم عضليا. حشوية: أمفوتيريسين ب. تبليغ إجباري.",
+        "risk": "high", "risk_d": {"fr": "Élevé 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
+        "advice": {"fr": "Cutanée: Glucantime IM. Viscérale: Amphotéricine B liposomale. MDO en Algérie.",
+                   "ar": "جلدية: غلوكانتيم عضلياً. حشوية: أمفوتيريسين ب. تبليغ إجباري.",
                    "en": "Cutaneous: Glucantime IM. Visceral: Liposomal Amphotericin B. Notifiable."},
-        "tests": ["IDR Montenegro", "Serologie", "Ponction medullaire", "Biopsie+MGG", "PCR Leishmania", "NFS"],
+        "tests": ["IDR Monténégro", "Sérologie", "Ponction médullaire", "Biopsie+MGG", "PCR Leishmania", "NFS"],
         "color": "#ff0040", "icon": "🔴",
-        "cycle": {"fr": "Piqure phlebotome -> Promastigotes -> Phagocytose -> Amastigotes -> Multiplication -> Lyse",
-                  "ar": "لدغة ذبابة رمل ثم بروماستيغوت ثم بلعمة ثم أماستيغوت ثم تكاثر ثم تحلل",
-                  "en": "Sandfly bite -> Promastigotes -> Phagocytosis -> Amastigotes -> Multiplication -> Lysis"},
-        "keys": {"fr": "Amastigotes 2-5um intracellulaires\nNoyau + kinetoplaste MGG\nCulture NNN\nPCR = gold standard",
-                 "ar": "أماستيغوت 2-5 ميكرومتر داخل خلوية\nنواة + كينيتوبلاست\nزراعة NNN\nPCR المعيار الذهبي",
-                 "en": "2-5um intracellular amastigotes\nNucleus+kinetoplast MGG\nNNN culture\nPCR=gold standard"}
+        "cycle": {"fr": "Piqûre phlébotome → Promastigotes → Phagocytose → Amastigotes → Multiplication → Lyse",
+                  "ar": "لدغة ذبابة رمل → بروماستيغوت → بلعمة → أماستيغوت → تكاثر → تحلل",
+                  "en": "Sandfly bite → Promastigotes → Phagocytosis → Amastigotes → Multiplication → Lysis"},
+        "keys": {"fr": "• Amastigotes 2-5μm intracellulaires\n• Noyau + kinétoplaste MGG\n• Culture NNN\n• PCR = gold standard",
+                 "ar": "• أماستيغوت 2-5μm داخل خلوية\n• نواة + كينيتوبلاست MGG\n• زراعة NNN\n• PCR المعيار الذهبي",
+                 "en": "• 2-5μm intracellular amastigotes\n• Nucleus+kinetoplast MGG\n• NNN culture\n• PCR=gold standard"}
     },
     "Plasmodium": {
         "sci": "Plasmodium falciparum / vivax / ovale / malariae",
-        "morph": {"fr": "P. falciparum: anneau bague a chaton, gametocytes en banane. P. vivax: trophozoite amiboide, granulations Schuffner.",
-                  "ar": "P. falciparum: حلقة خاتم، خلايا جنسية موزية. P. vivax: طور نشط أميبي، حبيبات شوفنر.",
-                  "en": "P. falciparum: signet ring, banana gametocytes. P. vivax: amoeboid trophozoite, Schuffner dots."},
-        "desc": {"fr": "URGENCE MEDICALE ! Paludisme. P. falciparum = le plus mortel. Anophele femelle.",
-                 "ar": "حالة طوارئ طبية! ملاريا. P. falciparum = الأكثر فتكا. أنثى الأنوفيل.",
-                 "en": "MEDICAL EMERGENCY! Malaria. P. falciparum = most lethal. Female Anopheles."},
-        "funny": {"fr": "Il demande le mariage a tes globules ! Gametocytes en banane = le clown du microscope !",
+        "morph": {"fr": "P. falciparum: anneau 'bague à chaton', gamétocytes en banane. P. vivax: trophozoïte amiboïde, granulations Schüffner.",
+                  "ar": "P. falciparum: حلقة 'خاتم'، خلايا جنسية موزية. P. vivax: طور نشط أميبي، حبيبات شوفنر.",
+                  "en": "P. falciparum: signet ring, banana gametocytes. P. vivax: amoeboid trophozoite, Schüffner dots."},
+        "desc": {"fr": "🚨 URGENCE MÉDICALE ! Paludisme. P. falciparum = le plus mortel. Anophèle femelle.",
+                 "ar": "🚨 حالة طوارئ طبية! ملاريا. P. falciparum = الأكثر فتكاً. أنثى الأنوفيل.",
+                 "en": "🚨 MEDICAL EMERGENCY! Malaria. P. falciparum = most lethal. Female Anopheles."},
+        "funny": {"fr": "Il demande le mariage à tes globules ! Gamétocytes en banane = le clown du microscope !",
                   "ar": "يطلب الزواج من كرياتك! خلايا جنسية موزية = مهرج المجهر!",
                   "en": "Proposes to your blood cells! Banana gametocytes = microscope clown!"},
-        "risk": "critical", "risk_d": {"fr": "URGENCE", "ar": "طوارئ", "en": "EMERGENCY"},
-        "advice": {"fr": "HOSPITALISATION ! ACT. Quinine IV si grave. Parasitemie /4-6h.",
-                   "ar": "دخول المستشفى! ACT. كينين وريدي إذا خطير.",
+        "risk": "critical", "risk_d": {"fr": "🚨 URGENCE", "ar": "🚨 طوارئ", "en": "🚨 EMERGENCY"},
+        "advice": {"fr": "HOSPITALISATION ! ACT. Quinine IV si grave. Parasitémie /4-6h.",
+                   "ar": "دخول المستشفى! ACT. كينين وريدي إذا خطير. طفيليات الدم كل 4-6 ساعات.",
                    "en": "HOSPITALIZATION! ACT. IV Quinine if severe. Parasitemia /4-6h."},
-        "tests": ["TDR Paludisme", "Frottis+GE URGENCE", "Parasitemie quantitative", "NFS", "Bilan hepato-renal", "Glycemie"],
+        "tests": ["TDR Paludisme", "Frottis+GE URGENCE", "Parasitémie quantitative", "NFS", "Bilan hépato-rénal", "Glycémie"],
         "color": "#7f1d1d", "icon": "🚨",
-        "cycle": {"fr": "Piqure anophele -> Sporozoites -> Hepatocytes -> Merozoites -> Hematies -> Gametocytes",
-                  "ar": "لدغة الأنوفيل ثم سبوروزويت ثم خلايا كبدية ثم ميروزويت ثم كريات حمراء ثم خلايا جنسية",
-                  "en": "Anopheles bite -> Sporozoites -> Hepatocytes -> Merozoites -> RBCs -> Gametocytes"},
-        "keys": {"fr": "URGENCE moins de 2h\nFrottis: espece\nGE: 10x sensible\nPlus de 2 pourcent = grave\nBanane = P. falciparum",
-                 "ar": "طوارئ أقل من ساعتين\nلطاخة: النوع\nGE: أكثر حساسية 10 مرات\nأكثر من 2 بالمئة = خطير\nموز = P. falciparum",
-                 "en": "URGENT under 2h\nSmear: species\nThick drop: 10x sensitive\nOver 2 percent=severe\nBanana=P. falciparum"}
+        "cycle": {"fr": "Piqûre anophèle → Sporozoïtes → Hépatocytes → Mérozoïtes → Hématies → Gamétocytes",
+                  "ar": "لدغة الأنوفيل → سبوروزويت → خلايا كبدية → ميروزويت → كريات حمراء → خلايا جنسية",
+                  "en": "Anopheles bite → Sporozoites → Hepatocytes → Merozoites → RBCs → Gametocytes"},
+        "keys": {"fr": "• URGENCE <2h\n• Frottis: espèce\n• GE: 10x sensible\n• >2% = grave\n• Banane = P. falciparum",
+                 "ar": "• طوارئ <2 ساعة\n• لطاخة: النوع\n• GE: أكثر حساسية 10x\n• >2% = خطير\n• موز = P. falciparum",
+                 "en": "• URGENT <2h\n• Smear: species\n• TD: 10x sensitive\n• >2%=severe\n• Banana=P. falciparum"}
     },
     "Trypanosoma": {
         "sci": "Trypanosoma brucei gambiense / rhodesiense / cruzi",
-        "morph": {"fr": "Forme S/C (15-30um), flagelle libre, membrane ondulante, kinetoplaste posterieur.",
-                  "ar": "شكل S/C (15-30 ميكرومتر)، سوط حر، غشاء متموج، كينيتوبلاست خلفي.",
-                  "en": "S/C shape (15-30um), free flagellum, undulating membrane, posterior kinetoplast."},
-        "desc": {"fr": "Maladie du sommeil (tse-tse) ou Chagas (triatome). Phase hemolymphatique puis neurologique.",
+        "morph": {"fr": "Forme S/C (15-30μm), flagelle libre, membrane ondulante, kinétoplaste postérieur.",
+                  "ar": "شكل S/C (15-30μm)، سوط حر، غشاء متموج، كينيتوبلاست خلفي.",
+                  "en": "S/C shape (15-30μm), free flagellum, undulating membrane, posterior kinetoplast."},
+        "desc": {"fr": "Maladie du sommeil (tsé-tsé) ou Chagas (triatome). Phase hémolymphatique puis neurologique.",
                  "ar": "مرض النوم (تسي تسي) أو شاغاس (بق ثلاثي). مرحلة دموية ثم عصبية.",
                  "en": "Sleeping sickness (tsetse) or Chagas (triatomine). Hemolymphatic then neurological phase."},
-        "funny": {"fr": "Il court avec sa membrane ondulante ! La tse-tse = le pire taxi !",
+        "funny": {"fr": "Il court avec sa membrane ondulante ! La tsé-tsé = le pire taxi !",
                   "ar": "يركض بغشائه المتموج! ذبابة تسي تسي = أسوأ تاكسي!",
                   "en": "Runs with its undulating membrane! Tsetse = worst taxi!"},
-        "risk": "high", "risk_d": {"fr": "Eleve", "ar": "مرتفع", "en": "High"},
-        "advice": {"fr": "Phase 1: Pentamidine. Phase 2: NECT/Melarsoprol. PL obligatoire.",
+        "risk": "high", "risk_d": {"fr": "Élevé 🔴", "ar": "مرتفع 🔴", "en": "High 🔴"},
+        "advice": {"fr": "Phase 1: Pentamidine. Phase 2: NECT/Mélarsoprol. PL obligatoire.",
                    "ar": "المرحلة 1: بنتاميدين. المرحلة 2: NECT. بزل قطني إجباري.",
                    "en": "Phase 1: Pentamidine. Phase 2: NECT/Melarsoprol. LP mandatory."},
-        "tests": ["Ponction lombaire", "Serologie CATT", "IgM", "Suc ganglionnaire", "NFS"],
+        "tests": ["Ponction lombaire", "Sérologie CATT", "IgM", "Suc ganglionnaire", "NFS"],
         "color": "#ff0040", "icon": "🔴",
-        "cycle": {"fr": "Piqure tse-tse -> Trypomastigotes -> Sang -> Phase 1 -> BHE -> Phase 2 neurologique",
-                  "ar": "لدغة تسي تسي ثم تريبوماستيغوت ثم دم ثم مرحلة 1 ثم حاجز دماغي ثم مرحلة 2 عصبية",
-                  "en": "Tsetse bite -> Trypomastigotes -> Blood -> Phase 1 -> BBB -> Phase 2 neurological"},
-        "keys": {"fr": "Forme S/C + membrane ondulante\nKinetoplaste posterieur\nIgM tres elevee\nPL staging",
-                 "ar": "شكل S/C + غشاء متموج\nكينيتوبلاست خلفي\nIgM مرتفع جدا\nتصنيف بالبزل القطني",
-                 "en": "S/C+undulating membrane\nPosterior kinetoplast\nVery high IgM\nLP staging"}
+        "cycle": {"fr": "Piqûre tsé-tsé → Trypomastigotes → Sang → Phase 1 → BHE → Phase 2 neurologique",
+                  "ar": "لدغة تسي تسي → تريبوماستيغوت → دم → مرحلة 1 → حاجز دماغي → مرحلة 2 عصبية",
+                  "en": "Tsetse bite → Trypomastigotes → Blood → Phase 1 → BBB → Phase 2 neurological"},
+        "keys": {"fr": "• Forme S/C + membrane ondulante\n• Kinétoplaste postérieur\n• IgM très élevée\n• PL staging",
+                 "ar": "• شكل S/C + غشاء متموج\n• كينيتوبلاست خلفي\n• IgM مرتفع جداً\n• تصنيف بالبزل القطني",
+                 "en": "• S/C+undulating membrane\n• Posterior kinetoplast\n• Very high IgM\n• LP staging"}
     },
     "Schistosoma": {
         "sci": "Schistosoma haematobium / mansoni / japonicum",
-        "morph": {"fr": "Oeuf ovoide (115-170um): eperon terminal (S. haematobium) ou lateral (S. mansoni). Miracidium mobile.",
-                  "ar": "بيضة بيضاوية (115-170 ميكرومتر): شوكة طرفية (S. haematobium) أو جانبية (S. mansoni). ميراسيديوم متحرك.",
-                  "en": "Ovoid egg (115-170um): terminal spine (S. haematobium) or lateral (S. mansoni). Motile miracidium."},
-        "desc": {"fr": "Bilharziose. S. haematobium: uro-genitale. S. mansoni: hepato-intestinale.",
+        "morph": {"fr": "Œuf ovoïde (115-170μm): éperon terminal (S. haematobium) ou latéral (S. mansoni). Miracidium mobile.",
+                  "ar": "بيضة بيضاوية (115-170μm): شوكة طرفية (S. haematobium) أو جانبية (S. mansoni). ميراسيديوم متحرك.",
+                  "en": "Ovoid egg (115-170μm): terminal spine (S. haematobium) or lateral (S. mansoni). Motile miracidium."},
+        "desc": {"fr": "Bilharziose. S. haematobium: uro-génitale. S. mansoni: hépato-intestinale.",
                  "ar": "البلهارسيا. S. haematobium: بولي تناسلي. S. mansoni: كبدي معوي.",
                  "en": "Schistosomiasis. S. haematobium: urogenital. S. mansoni: hepato-intestinal."},
-        "funny": {"fr": "L'oeuf avec un dard ! Les cercaires = micro-torpilles !",
+        "funny": {"fr": "L'œuf avec un dard ! Les cercaires = micro-torpilles !",
                   "ar": "البيضة ذات الشوكة! السركاريا = طوربيدات صغيرة!",
                   "en": "Egg with a stinger! Cercariae = micro-torpedoes!"},
-        "risk": "medium", "risk_d": {"fr": "Moyen", "ar": "متوسط", "en": "Medium"},
+        "risk": "medium", "risk_d": {"fr": "Moyen 🟠", "ar": "متوسط 🟠", "en": "Medium 🟠"},
         "advice": {"fr": "Praziquantel 40mg/kg dose unique. S. haematobium: urines de midi.",
-                   "ar": "برازيكوانتيل 40 ملغ لكل كغ جرعة واحدة. S. haematobium: بول الظهيرة.",
+                   "ar": "برازيكوانتيل 40ملغ/كغ جرعة واحدة. S. haematobium: بول الظهيرة.",
                    "en": "Praziquantel 40mg/kg single dose. S. haematobium: midday urine."},
-        "tests": ["ECBU midi", "Serologie", "Echo vesicale/hepatique", "NFS+eosinophilie", "Biopsie rectale"],
+        "tests": ["ECBU midi", "Sérologie", "Écho vésicale/hépatique", "NFS+éosinophilie", "Biopsie rectale"],
         "color": "#ff9500", "icon": "🟠",
-        "cycle": {"fr": "Oeuf -> Miracidium -> Mollusque -> Cercaire -> Penetration cutanee -> Vers adultes -> Ponte",
-                  "ar": "بيضة ثم ميراسيديوم ثم رخويات ثم سركاريا ثم اختراق الجلد ثم ديدان بالغة ثم وضع البيض",
-                  "en": "Egg -> Miracidium -> Snail -> Cercaria -> Skin penetration -> Adult worms -> Egg laying"},
-        "keys": {"fr": "S.h: eperon TERMINAL, urines MIDI\nS.m: eperon LATERAL, selles\nMiracidium vivant\nEosinophilie elevee",
-                 "ar": "S.h: شوكة طرفية، بول الظهيرة\nS.m: شوكة جانبية، براز\nميراسيديوم حي\nفرط الحمضات",
-                 "en": "S.h: TERMINAL spine, MIDDAY urine\nS.m: LATERAL spine, stool\nLiving miracidium\nHigh eosinophilia"}
+        "cycle": {"fr": "Œuf → Miracidium → Mollusque → Cercaire → Pénétration cutanée → Vers adultes → Ponte",
+                  "ar": "بيضة → ميراسيديوم → رخويات → سركاريا → اختراق الجلد → ديدان بالغة → وضع البيض",
+                  "en": "Egg → Miracidium → Snail → Cercaria → Skin penetration → Adult worms → Egg laying"},
+        "keys": {"fr": "• S.h: éperon TERMINAL, urines MIDI\n• S.m: éperon LATÉRAL, selles\n• Miracidium vivant\n• Éosinophilie élevée",
+                 "ar": "• S.h: شوكة طرفية، بول الظهيرة\n• S.m: شوكة جانبية، براز\n• ميراسيديوم حي\n• فرط الحمضات",
+                 "en": "• S.h: TERMINAL spine, MIDDAY urine\n• S.m: LATERAL spine, stool\n• Living miracidium\n• High eosinophilia"}
     },
     "Negative": {
         "sci": "N/A",
-        "morph": {"fr": "Absence d'elements parasitaires. Flore bacterienne normale.",
+        "morph": {"fr": "Absence d'éléments parasitaires. Flore bactérienne normale.",
                   "ar": "غياب العناصر الطفيلية. فلورا بكتيرية طبيعية.",
                   "en": "No parasitic elements. Normal bacterial flora."},
-        "desc": {"fr": "Echantillon negatif. Un seul negatif n'exclut pas (sensibilite 50-60%). Repeter x3.",
-                 "ar": "عينة سلبية. فحص واحد سلبي لا يستبعد (حساسية 50-60%). كرر 3 مرات.",
-                 "en": "Negative sample. Single negative doesn't exclude (50-60% sensitivity). Repeat x3."},
-        "funny": {"fr": "Rien a signaler ! Mais les parasites sont des maitres du cache-cache !",
-                  "ar": "لا شيء يذكر! لكن الطفيليات أساتذة في الاختباء!",
+        "desc": {"fr": "Échantillon négatif. Un seul négatif n'exclut pas (sensibilité ~50-60%). Répéter x3.",
+                 "ar": "عينة سلبية. فحص واحد سلبي لا يستبعد (حساسية ~50-60%). كرر ×3.",
+                 "en": "Negative sample. Single negative doesn't exclude (~50-60% sensitivity). Repeat x3."},
+        "funny": {"fr": "Rien à signaler ! Mais les parasites sont des maîtres du cache-cache !",
+                  "ar": "لا شيء يُذكر! لكن الطفيليات أساتذة في الاختباء!",
                   "en": "Nothing to report! But parasites are hide-and-seek masters!"},
-        "risk": "none", "risk_d": {"fr": "Negatif", "ar": "سلبي", "en": "Negative"},
-        "advice": {"fr": "RAS. Repeter x3 si suspicion clinique.",
-                   "ar": "لا شيء. كرر 3 مرات إذا كان هناك اشتباه.",
+        "risk": "none", "risk_d": {"fr": "Négatif 🟢", "ar": "سلبي 🟢", "en": "Negative 🟢"},
+        "advice": {"fr": "RAS. Répéter x3 si suspicion clinique.",
+                   "ar": "لا شيء. كرر ×3 إذا كان هناك اشتباه.",
                    "en": "Clear. Repeat x3 if clinical suspicion."},
-        "tests": ["Repeter EPS x3", "Serologie ciblee", "NFS (eosinophilie?)"],
+        "tests": ["Répéter EPS x3", "Sérologie ciblée", "NFS (éosinophilie?)"],
         "color": "#00ff88", "icon": "🟢",
         "cycle": {"fr": "N/A", "ar": "غير متوفر", "en": "N/A"},
-        "keys": {"fr": "Direct+Lugol negatif\nConcentration negative\nRepeter x3",
-                 "ar": "مباشر+لوغول سلبي\nتركيز سلبي\nكرر 3 مرات",
-                 "en": "Direct+Lugol negative\nConcentration negative\nRepeat x3"}
+        "keys": {"fr": "• Direct+Lugol négatif\n• Concentration négative\n• Répéter x3",
+                 "ar": "• مباشر+لوغول سلبي\n• تركيز سلبي\n• كرر ×3",
+                 "en": "• Direct+Lugol negative\n• Concentration negative\n• Repeat x3"}
     }
 }
 
@@ -917,191 +917,244 @@ def mq(fr, ar, en):
 
 
 QUIZ_QUESTIONS = [
-    {"q": mq("Quel parasite presente une bague a chaton dans les hematies?", "أي طفيلي يظهر شكل الخاتم في كريات الدم الحمراء؟", "Which parasite shows a signet ring in RBCs?"),
-     "opts": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "ans": 1, "cat": "Hematozoaires",
-     "expl": mq("Plasmodium: bague a chaton au stade trophozoite jeune.", "البلازموديوم: شكل الخاتم في مرحلة الطور النشط.", "Plasmodium: signet ring at young trophozoite stage.")},
-    {"q": mq("Le kyste mature de Giardia possede combien de noyaux?", "كم عدد أنوية كيس الجيارديا الناضج؟", "How many nuclei does a mature Giardia cyst have?"),
+    {"q": mq("Quel parasite présente une 'bague à chaton' dans les hématies?", "أي طفيلي يظهر شكل 'الخاتم' في كريات الدم الحمراء؟", "Which parasite shows a 'signet ring' in RBCs?"),
+     "opts": ["Giardia", "Plasmodium", "Leishmania", "Amoeba"], "ans": 1, "cat": "Hématozoaires",
+     "expl": mq("Plasmodium: bague à chaton au stade trophozoïte jeune.", "البلازموديوم: شكل الخاتم في مرحلة الطور النشط.", "Plasmodium: signet ring at young trophozoite stage.")},
+    {"q": mq("Le kyste mature de Giardia possède combien de noyaux?", "كم عدد أنوية كيس الجيارديا الناضج؟", "How many nuclei does a mature Giardia cyst have?"),
      "opts": ["2", "4", "6", "8"], "ans": 1, "cat": "Protozoaires",
-     "expl": mq("4 noyaux. Le trophozoite en a 2.", "4 أنوية. الطور النشط له نواتان.", "4 nuclei. Trophozoite has 2.")},
-    {"q": mq("Quel parasite est transmis par le phlebotome?", "أي طفيلي ينتقل عبر ذبابة الرمل؟", "Which parasite is sandfly-transmitted?"),
+     "expl": mq("4 noyaux. Le trophozoïte en a 2.", "4 أنوية. الطور النشط له نواتان.", "4 nuclei. Trophozoite has 2.")},
+    {"q": mq("Quel parasite est transmis par le phlébotome?", "أي طفيلي ينتقل عبر ذبابة الرمل؟", "Which parasite is sandfly-transmitted?"),
      "opts": ["Plasmodium", "Trypanosoma", "Leishmania", "Schistosoma"], "ans": 2, "cat": "Vecteurs",
-     "expl": mq("Leishmania = phlebotome.", "ليشمانيا = ذبابة الرمل.", "Leishmania = sandfly.")},
-    {"q": mq("L'eperon terminal caracterise:", "الشوكة الطرفية تميز:", "Terminal spine characterizes:"),
+     "expl": mq("Leishmania = phlébotome.", "ليشمانيا = ذبابة الرمل.", "Leishmania = sandfly.")},
+    {"q": mq("L'éperon terminal caractérise:", "الشوكة الطرفية تميز:", "Terminal spine characterizes:"),
      "opts": ["Ascaris", "S. haematobium", "S. mansoni", "Taenia"], "ans": 1, "cat": "Helminthes",
-     "expl": mq("S. haematobium=terminal, S. mansoni=lateral.", "S. haematobium=طرفية, S. mansoni=جانبية.", "S. haematobium=terminal, S. mansoni=lateral.")},
+     "expl": mq("S. haematobium=terminal, S. mansoni=latéral.", "S. haematobium=طرفية, S. mansoni=جانبية.", "S. haematobium=terminal, S. mansoni=lateral.")},
     {"q": mq("Examen urgent suspicion paludisme?", "الفحص الطارئ عند الاشتباه بالملاريا؟", "Urgent exam for malaria?"),
-     "opts": ["Coproculture", "ECBU", "Goutte epaisse+Frottis", "Serologie"], "ans": 2, "cat": "Diagnostic",
-     "expl": mq("GE+Frottis = reference urgente.", "قطرة سميكة+لطاخة = المرجع.", "Thick drop+Smear = urgent reference.")},
+     "opts": ["Coproculture", "ECBU", "Goutte épaisse+Frottis", "Sérologie"], "ans": 2, "cat": "Diagnostic",
+     "expl": mq("GE+Frottis = référence urgente.", "قطرة سميكة+لطاخة = المرجع.", "TD+Smear = urgent reference.")},
     {"q": mq("E. histolytica se distingue par:", "يتميز E. histolytica بـ:", "E. histolytica distinguished by:"),
-     "opts": ["Flagelles", "Hematies phagocytees", "Membrane ondulante", "Kinetoplaste"], "ans": 1, "cat": "Morphologie",
-     "expl": mq("Hematies phagocytees = pathogenicite.", "الكريات المبتلعة = معيار المرضية.", "Phagocytosed RBCs = pathogenicity.")},
-    {"q": mq("Chagas est causee par:", "مرض شاغاس يسببه:", "Chagas is caused by:"),
+     "opts": ["Flagelles", "Hématies phagocytées", "Membrane ondulante", "Kinétoplaste"], "ans": 1, "cat": "Morphologie",
+     "expl": mq("Hématies phagocytées = pathogénicité.", "الكريات المبتلعة = معيار المرضية.", "Phagocytosed RBCs = pathogenicity.")},
+    {"q": mq("Chagas est causée par:", "مرض شاغاس يسببه:", "Chagas is caused by:"),
      "opts": ["T. b. gambiense", "T. cruzi", "L. donovani", "P. vivax"], "ans": 1, "cat": "Protozoaires",
      "expl": mq("T. cruzi transmis par triatomes.", "T. cruzi عبر البق الثلاثي.", "T. cruzi by triatomines.")},
     {"q": mq("Colorant pour amastigotes Leishmania?", "ملون أماستيغوت الليشمانيا؟", "Stain for Leishmania amastigotes?"),
      "opts": ["Ziehl-Neelsen", "Gram", "MGG/Giemsa", "Lugol"], "ans": 2, "cat": "Techniques",
-     "expl": mq("MGG = noyau + kinetoplaste.", "MGG = نواة + كينيتوبلاست.", "MGG = nucleus + kinetoplast.")},
-    {"q": mq("Traitement reference bilharziose?", "العلاج المرجعي للبلهارسيا؟", "Reference treatment schistosomiasis?"),
-     "opts": ["Chloroquine", "Metronidazole", "Praziquantel", "Albendazole"], "ans": 2, "cat": "Therapeutique",
-     "expl": mq("Praziquantel = choix numero 1.", "برازيكوانتيل = الخيار الأول.", "Praziquantel = 1st choice.")},
-    {"q": mq("Face de hibou observee chez:", "وجه البومة عند:", "Owl face observed in:"),
+     "expl": mq("MGG = noyau + kinétoplaste.", "MGG = نواة + كينيتوبلاست.", "MGG = nucleus + kinetoplast.")},
+    {"q": mq("Traitement référence bilharziose?", "العلاج المرجعي للبلهارسيا؟", "Reference treatment schistosomiasis?"),
+     "opts": ["Chloroquine", "Métronidazole", "Praziquantel", "Albendazole"], "ans": 2, "cat": "Thérapeutique",
+     "expl": mq("Praziquantel = choix n°1.", "برازيكوانتيل = الخيار الأول.", "Praziquantel = 1st choice.")},
+    {"q": mq("'Face de hibou' observée chez:", "'وجه البومة' عند:", "'Owl face' observed in:"),
      "opts": ["Plasmodium", "Giardia", "Amoeba", "Trypanosoma"], "ans": 1, "cat": "Morphologie",
-     "expl": mq("2 noyaux symetriques Giardia.", "نواتان متماثلتان للجيارديا.", "2 symmetrical Giardia nuclei.")},
+     "expl": mq("2 noyaux symétriques Giardia.", "نواتان متماثلتان للجيارديا.", "2 symmetrical Giardia nuclei.")},
     {"q": mq("Technique de Ritchie:", "تقنية ريتشي:", "Ritchie technique:"),
-     "opts": ["Coloration", "Concentration diphasique", "Culture", "Serologie"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Formol-ether = concentration.", "فورمول-إيثر = تركيز.", "Formalin-ether = concentration.")},
-    {"q": mq("Le Lugol met en evidence:", "اللوغول يظهر:", "Lugol highlights:"),
-     "opts": ["Flagelles", "Noyaux des kystes", "Hematies", "Bacteries"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Iode colore glycogene et noyaux.", "اليود يلون الغليكوجين والأنوية.", "Iodine stains glycogen+nuclei.")},
-    {"q": mq("x100 necessite:", "العدسة x100 تحتاج:", "x100 requires:"),
-     "opts": ["Eau", "Huile d'immersion", "Alcool", "Serum"], "ans": 1, "cat": "Microscopie",
-     "expl": mq("Huile augmente indice refraction.", "الزيت يزيد معامل الانكسار.", "Oil increases refractive index.")},
+     "opts": ["Coloration", "Concentration diphasique", "Culture", "Sérologie"], "ans": 1, "cat": "Techniques",
+     "expl": mq("Formol-éther = concentration.", "فورمول-إيثر = تركيز.", "Formalin-ether = concentration.")},
+    {"q": mq("Le Lugol met en évidence:", "اللوغول يُظهر:", "Lugol highlights:"),
+     "opts": ["Flagelles", "Noyaux des kystes", "Hématies", "Bactéries"], "ans": 1, "cat": "Techniques",
+     "expl": mq("Iode colore glycogène et noyaux.", "اليود يلون الغليكوجين والأنوية.", "Iodine stains glycogen+nuclei.")},
+    {"q": mq("x100 nécessite:", "العدسة x100 تحتاج:", "x100 requires:"),
+     "opts": ["Eau", "Huile d'immersion", "Alcool", "Sérum"], "ans": 1, "cat": "Microscopie",
+     "expl": mq("Huile augmente indice réfraction.", "الزيت يزيد معامل الانكسار.", "Oil increases refractive index.")},
     {"q": mq("Scotch-test Graham recherche:", "اختبار غراهام يبحث عن:", "Graham test looks for:"),
      "opts": ["Giardia", "Enterobius", "Ascaris", "Taenia"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Oeufs d'oxyure peri-anaux.", "بيض الأكسيور حول الشرج.", "Pinworm eggs perianal.")},
+     "expl": mq("Œufs d'oxyure péri-anaux.", "بيض الأكسيور حول الشرج.", "Pinworm eggs perianal.")},
     {"q": mq("Coloration Cryptosporidium?", "تلوين الكريبتوسبوريديوم؟", "Cryptosporidium staining?"),
-     "opts": ["Lugol", "Ziehl-Neelsen modifie", "MGG", "Gram"], "ans": 1, "cat": "Techniques",
-     "expl": mq("ZN modifie = oocystes roses.", "ZN معدل = أكياس بيضية وردية.", "Modified ZN = pink oocysts.")},
-    {"q": mq("Oeuf d'Ascaris:", "بيضة الأسكاريس:", "Ascaris egg:"),
-     "opts": ["Avec eperon", "Mamelonne", "Opercule", "En citron"], "ans": 1, "cat": "Helminthes",
-     "expl": mq("Ovoide, mamelonne, coque epaisse.", "بيضاوي، حليمي، قشرة سميكة.", "Ovoid, mammillated, thick shell.")},
-    {"q": mq("Scolex T. solium possede:", "رأس T. solium يحتوي:", "T. solium scolex has:"),
+     "opts": ["Lugol", "Ziehl-Neelsen modifié", "MGG", "Gram"], "ans": 1, "cat": "Techniques",
+     "expl": mq("ZN modifié = oocystes roses.", "ZN معدل = أكياس بيضية وردية.", "Modified ZN = pink oocysts.")},
+    {"q": mq("Œuf d'Ascaris:", "بيضة الأسكاريس:", "Ascaris egg:"),
+     "opts": ["Avec éperon", "Mamelonné", "Operculé", "En citron"], "ans": 1, "cat": "Helminthes",
+     "expl": mq("Ovoïde, mamelonné, coque épaisse.", "بيضاوي، حُلَيمي، قشرة سميكة.", "Ovoid, mammillated, thick shell.")},
+    {"q": mq("Scolex T. solium possède:", "رأس T. solium يحتوي:", "T. solium scolex has:"),
      "opts": ["Ventouses seules", "Crochets seuls", "Ventouses+crochets", "Bothridies"], "ans": 2, "cat": "Helminthes",
-     "expl": mq("Arme = ventouses + crochets.", "مسلحة = ممصات + خطاطيف.", "Armed = suckers + hooks.")},
-    {"q": mq("Eosinophilie sanguine oriente vers:", "فرط الحمضات يوجه نحو:", "Eosinophilia points to:"),
-     "opts": ["Bacteries", "Helminthiase", "Virose", "Paludisme"], "ans": 1, "cat": "Diagnostic",
-     "expl": mq("Eosinophilie = helminthiase.", "فرط الحمضات = ديدان.", "Eosinophilia = helminthiasis.")},
+     "expl": mq("Armé = ventouses + crochets.", "مسلحة = ممصات + خطاطيف.", "Armed = suckers + hooks.")},
+    {"q": mq("Éosinophilie sanguine oriente vers:", "فرط الحمضات يوجه نحو:", "Eosinophilia points to:"),
+     "opts": ["Bactéries", "Helminthiase", "Virose", "Paludisme"], "ans": 1, "cat": "Diagnostic",
+     "expl": mq("Éosinophilie = helminthiase.", "فرط الحمضات = ديدان.", "Eosinophilia = helminthiasis.")},
+    {"q": mq("Cysticercose causée par:", "الكيسات المذنبة يسببها:", "Cysticercosis caused by:"),
+     "opts": ["T. saginata adulte", "Larve T. solium", "Echinococcus", "Ascaris"], "ans": 1, "cat": "Helminthes",
+     "expl": mq("Cysticerque T. solium.", "كيسة مذنبة T. solium.", "T. solium cysticercus.")},
+    {"q": mq("Leishmaniose cutanée sud Algérie:", "ليشمانيا جلدية جنوب الجزائر:", "Southern Algeria cutaneous leish:"),
+     "opts": ["L. infantum", "L. major", "L. tropica", "L. braziliensis"], "ans": 1, "cat": "Épidémiologie",
+     "expl": mq("L. major = sud, zoonotique.", "L. major = جنوب، حيوانية.", "L. major = south, zoonotic.")},
     {"q": mq("Vecteur du paludisme?", "ناقل الملاريا؟", "Malaria vector?"),
-     "opts": ["Aedes", "Culex", "Anopheles", "Simulium"], "ans": 2, "cat": "Epidemiologie",
-     "expl": mq("Anophele femelle.", "أنثى الأنوفيل.", "Female Anopheles.")},
-    {"q": mq("Kyste hydatique du a:", "الكيس العداري يسببه:", "Hydatid cyst caused by:"),
+     "opts": ["Aedes", "Culex", "Anopheles", "Simulium"], "ans": 2, "cat": "Épidémiologie",
+     "expl": mq("Anophèle femelle.", "أنثى الأنوفيل.", "Female Anopheles.")},
+    {"q": mq("Kyste hydatique dû à:", "الكيس العداري يسببه:", "Hydatid cyst caused by:"),
      "opts": ["T. saginata", "E. granulosus", "Fasciola", "Toxocara"], "ans": 1, "cat": "Helminthes",
      "expl": mq("Echinococcus granulosus (chien).", "Echinococcus granulosus (كلب).", "Echinococcus granulosus (dog).")},
+    {"q": mq("Corps chromatoïde 'cigare':", "جسم كروماتيني 'سيجار':", "'Cigar' chromatoid body:"),
+     "opts": ["E. histolytica", "E. coli", "Giardia", "Balantidium"], "ans": 0, "cat": "Morphologie",
+     "expl": mq("E. histolytica=cigare, E. coli=pointu.", "E. histolytica=سيجار, E. coli=مدبب.", "E. histolytica=cigar, E. coli=pointed.")},
+    {"q": mq("Protozoaire macro+micronoyau?", "طفيلي بنواة كبيرة وصغيرة؟", "Protozoan macro+micronucleus?"),
+     "opts": ["Giardia", "Balantidium coli", "Trichomonas", "Entamoeba"], "ans": 1, "cat": "Morphologie",
+     "expl": mq("Seul cilié pathogène humain.", "الهدبي الممرض الوحيد.", "Only pathogenic human ciliate.")},
     {"q": mq("Membrane ondulante:", "الغشاء المتموج:", "Undulating membrane:"),
      "opts": ["Giardia", "Trypanosoma", "Leishmania", "Plasmodium"], "ans": 1, "cat": "Morphologie",
      "expl": mq("Trypanosoma = membrane ondulante.", "تريبانوسوما = غشاء متموج.", "Trypanosoma = undulating membrane.")},
-    {"q": mq("Gametocyte banane:", "خلية جنسية موز:", "Banana gametocyte:"),
-     "opts": ["P. vivax", "P. falciparum", "P. malariae", "P. ovale"], "ans": 1, "cat": "Hematozoaires",
+    {"q": mq("Gamétocyte 'banane':", "خلية جنسية 'موز':", "'Banana' gametocyte:"),
+     "opts": ["P. vivax", "P. falciparum", "P. malariae", "P. ovale"], "ans": 1, "cat": "Hématozoaires",
      "expl": mq("Pathognomonique P. falciparum.", "مميز لـ P. falciparum.", "Pathognomonic P. falciparum.")},
     {"q": mq("Kyste E. coli: noyaux?", "كيس E. coli: أنوية؟", "E. coli cyst: nuclei?"),
      "opts": ["4", "6", "8", "12"], "ans": 2, "cat": "Morphologie",
      "expl": mq("E. coli=8, E. histolytica=4.", "E. coli=8, E. histolytica=4.", "E. coli=8, E. histolytica=4.")},
-    {"q": mq("Metronidazole inefficace contre:", "ميترونيدازول غير فعال ضد:", "Metronidazole ineffective against:"),
-     "opts": ["E. histolytica", "Giardia", "Helminthes", "Trichomonas"], "ans": 2, "cat": "Therapeutique",
+    {"q": mq("Métronidazole inefficace contre:", "ميترونيدازول غير فعال ضد:", "Metronidazole ineffective against:"),
+     "opts": ["E. histolytica", "Giardia", "Helminthes", "Trichomonas"], "ans": 2, "cat": "Thérapeutique",
      "expl": mq("Anti-protozoaire, pas anti-helminthique.", "مضاد أوليات، ليس مضاد ديدان.", "Anti-protozoal, not anti-helminthic.")},
     {"q": mq("Albendazole est:", "الألبندازول:", "Albendazole is:"),
-     "opts": ["Anti-protozoaire", "Anti-helminthique", "Antibiotique", "Antifongique"], "ans": 1, "cat": "Therapeutique",
+     "opts": ["Anti-protozoaire", "Anti-helminthique", "Antibiotique", "Antifongique"], "ans": 1, "cat": "Thérapeutique",
      "expl": mq("Large spectre helminthes.", "واسع الطيف ضد الديدان.", "Broad spectrum anti-helminthic.")},
     {"q": mq("Paludisme grave:", "ملاريا خطيرة:", "Severe malaria:"),
-     "opts": ["Chloroquine", "Artesunate IV", "Metronidazole", "Praziquantel"], "ans": 1, "cat": "Therapeutique",
-     "expl": mq("Artesunate IV = 1ere ligne OMS.", "أرتيسونات وريدي = الخط الأول.", "IV Artesunate = WHO 1st line.")},
-    {"q": mq("Fievre+frissons retour Afrique?", "حمى+قشعريرة بعد العودة من إفريقيا؟", "Fever+chills returning from Africa?"),
+     "opts": ["Chloroquine", "Artésunate IV", "Métronidazole", "Praziquantel"], "ans": 1, "cat": "Thérapeutique",
+     "expl": mq("Artésunate IV = 1ère ligne OMS.", "أرتيسونات وريدي = الخط الأول.", "IV Artesunate = WHO 1st line.")},
+    {"q": mq("Fièvre+frissons retour Afrique?", "حمى+قشعريرة بعد العودة من إفريقيا؟", "Fever+chills returning from Africa?"),
      "opts": ["Amibiase", "Paludisme", "Bilharziose", "Giardiose"], "ans": 1, "cat": "Cas clinique",
-     "expl": mq("Paludisme jusqu'a preuve du contraire.", "ملاريا حتى يثبت العكس.", "Malaria until proven otherwise.")},
-    {"q": mq("Hematurie+baignade eau douce:", "بيلة دموية+سباحة ماء عذب:", "Hematuria+freshwater swimming:"),
+     "expl": mq("Paludisme jusqu'à preuve du contraire.", "ملاريا حتى يثبت العكس.", "Malaria until proven otherwise.")},
+    {"q": mq("Hématurie+baignade eau douce:", "بيلة دموية+سباحة ماء عذب:", "Hematuria+freshwater swimming:"),
      "opts": ["Giardiose", "Paludisme", "Bilharziose urinaire", "Amibiase"], "ans": 2, "cat": "Cas clinique",
      "expl": mq("S. haematobium.", "S. haematobium.", "S. haematobium.")},
-    {"q": mq("Diarrhee graisseuse enfant:", "إسهال دهني عند طفل:", "Greasy diarrhea child:"),
+    {"q": mq("Diarrhée graisseuse enfant:", "إسهال دهني عند طفل:", "Greasy diarrhea child:"),
      "opts": ["Amibiase", "Giardiose", "Cryptosporidiose", "Salmonellose"], "ans": 1, "cat": "Cas clinique",
-     "expl": mq("Giardia = malabsorption frequente.", "الجيارديا = سوء امتصاص شائع.", "Giardia = common malabsorption.")},
-    {"q": mq("Toxoplasma: hote definitif?", "التوكسوبلازما: المضيف النهائي؟", "Toxoplasma: definitive host?"),
-     "opts": ["Homme", "Chat", "Chien", "Moustique"], "ans": 1, "cat": "Epidemiologie",
-     "expl": mq("Chat = cycle sexue.", "القط = الدورة الجنسية.", "Cat = sexual cycle.")},
+     "expl": mq("Giardia = malabsorption fréquente.", "الجيارديا = سوء امتصاص شائع.", "Giardia = common malabsorption.")},
+    {"q": mq("Ulcère indolore retour Sahara:", "قرحة غير مؤلمة بعد الصحراء:", "Painless ulcer from Sahara:"),
+     "opts": ["Leishmaniose cutanée", "Furoncle", "Anthrax", "Mycose"], "ans": 0, "cat": "Cas clinique",
+     "expl": mq("Clou de Biskra = L. major.", "حبة بسكرة = L. major.", "Biskra button = L. major.")},
+    {"q": mq("Bilharziose: contamination par:", "البلهارسيا: العدوى عبر:", "Schistosomiasis: contamination by:"),
+     "opts": ["Ingestion eau", "Contact cutané eau douce", "Piqûre insecte", "Voie aérienne"], "ans": 1, "cat": "Épidémiologie",
+     "expl": mq("Cercaires pénètrent la peau.", "السركاريا تخترق الجلد.", "Cercariae penetrate skin.")},
+    {"q": mq("GE vs Frottis mince:", "القطرة السميكة مقابل اللطاخة:", "Thick drop vs Thin smear:"),
+     "opts": ["Même sensibilité", "GE 10x plus sensible", "FM plus sensible", "Incomparable"], "ans": 1, "cat": "Techniques",
+     "expl": mq("GE = 10x plus sensible.", "GE = أكثر حساسية 10x.", "TD = 10x more sensitive.")},
+    {"q": mq("S. haematobium: échantillon?", "S. haematobium: العينة؟", "S. haematobium: sample?"),
+     "opts": ["Selles matin", "Urines midi", "Sang nocturne", "LCR"], "ans": 1, "cat": "Techniques",
+     "expl": mq("Pic excrétion = midi.", "ذروة الإخراج = الظهيرة.", "Peak excretion = midday.")},
+    {"q": mq("Toxoplasma: hôte définitif?", "التوكسوبلازما: المضيف النهائي؟", "Toxoplasma: definitive host?"),
+     "opts": ["Homme", "Chat", "Chien", "Moustique"], "ans": 1, "cat": "Épidémiologie",
+     "expl": mq("Chat = cycle sexué.", "القط = الدورة الجنسية.", "Cat = sexual cycle.")},
     {"q": mq("Willis utilise:", "تقنية ويليس تستخدم:", "Willis uses:"),
-     "opts": ["Formol-ether", "NaCl sature (flottation)", "Acide-alcool", "Lugol"], "ans": 1, "cat": "Techniques",
-     "expl": mq("Flottation NaCl sature.", "تعويم في NaCl مشبع.", "Saturated NaCl flotation.")},
-]
-
+     "opts": ["Formol-éther", "NaCl saturé (flottation)", "Acide-alcool", "Lugol"], "ans": 1, "cat": "Techniques",
+     "expl": mq("Flottation NaCl saturé.", "تعويم في NaCl مشبع.", "Saturated NaCl flotation.")},
+    {"q": mq("Hypnozoïtes chez:", "هيبنوزويت عند:", "Hypnozoites in:"),
+     "opts": ["P. falciparum", "P. vivax", "P. malariae", "Aucun"], "ans": 1, "cat": "Hématozoaires",
+     "expl": mq("P. vivax et P. ovale → rechutes.", "P. vivax و P. ovale → انتكاسات.", "P. vivax & P. ovale → relapses.")},
+    {"q": mq("Niclosamide agit sur:", "نيكلوساميد يعمل على:", "Niclosamide acts on:"),
+     "opts": ["Nématodes", "Cestodes", "Trématodes", "Protozoaires"], "ans": 1, "cat": "Thérapeutique",
+     "expl": mq("Spécifique cestodes.", "خاص بالشريطيات.", "Specific for cestodes.")},
+    {"q": mq("Ivermectine: indication?", "إيفرمكتين: الاستعمال؟", "Ivermectin: indication?"),
+     "opts": ["Filarioses/strongyloïdose", "Paludisme", "Amibiase", "Giardiose"], "ans": 0, "cat": "Thérapeutique",
+     "expl": mq("Référence filarioses.", "المرجع للفيلاريا.", "Reference for filariasis.")},
+    {"q": mq("Test CATT diagnostique:", "اختبار CATT يشخص:", "CATT test diagnoses:"),
+     "opts": ["Paludisme", "Leishmaniose", "Trypanosomiase", "Toxoplasmose"], "ans": 2, "cat": "Diagnostic",
+     "expl": mq("Card Agglutination Test Trypanosomiasis.", "اختبار التراص البطاقي.", "Card Agglutination Test.")},
+    {"q": mq("Plus grand protozoaire humain:", "أكبر طفيلي أولي بشري:", "Largest human protozoan:"),
+     "opts": ["Giardia", "Balantidium coli", "Entamoeba", "Trichomonas"], "ans": 1, "cat": "Morphologie",
+     "expl": mq("Balantidium ≤200μm.", "Balantidium حتى 200μm.", "Balantidium up to 200μm.")},
+    {"q": mq("Fasciola hepatica: localisation?", "Fasciola hepatica: الموضع؟", "Fasciola hepatica: location?"),
+     "opts": ["Intestin", "Côlon", "Voies biliaires", "Poumons"], "ans": 2, "cat": "Helminthes",
+     "expl": mq("Grande douve = voies biliaires.", "المتورقة = القنوات الصفراوية.", "Liver fluke = bile ducts.")},
+    {"q": mq("Strongyloides: particularité?", "Strongyloides: خاصية؟", "Strongyloides: peculiarity?"),
+     "opts": ["Pas de cycle externe", "Auto-infestation", "2 hôtes nécessaires", "Aérienne"], "ans": 1, "cat": "Helminthes",
+     "expl": mq("Auto-infestation endogène.", "عدوى ذاتية داخلية.", "Endogenous auto-infection.")},
+    {"q": mq("Somnolence+adénopathies cervicales:", "نعاس+تضخم عقد عنقية:", "Drowsiness+cervical lymphadenopathy:"),
+     "opts": ["Paludisme", "Leishmaniose", "Trypanosomiase", "Toxoplasmose"], "ans": 2, "cat": "Cas clinique",
+     "expl": mq("Maladie du sommeil = THA.", "مرض النوم = THA.", "Sleeping sickness = HAT.")},
 
 # ============================================
 #  CHATBOT KNOWLEDGE BASE
 # ============================================
 CHAT_KB = {}
+# Build from parasite DB
 for pname, pdata in PARASITE_DB.items():
     if pname == "Negative":
         continue
     key = pname.lower().split("(")[0].strip().split(" ")[0].lower()
     CHAT_KB[key] = {
-        "fr": f"**{pname}** ({pdata['sci']})\n\n**Morphologie:** {pdata['morph'].get('fr','')}\n\n**Description:** {pdata['desc'].get('fr','')}\n\n**Traitement:** {pdata['advice'].get('fr','')}\n\n**Examens:** {', '.join(pdata.get('tests',[]))}\n\n{pdata['funny'].get('fr','')}",
-        "ar": f"**{pname}** ({pdata['sci']})\n\n**المورفولوجيا:** {pdata['morph'].get('ar','')}\n\n**الوصف:** {pdata['desc'].get('ar','')}\n\n**العلاج:** {pdata['advice'].get('ar','')}\n\n{pdata['funny'].get('ar','')}",
-        "en": f"**{pname}** ({pdata['sci']})\n\n**Morphology:** {pdata['morph'].get('en','')}\n\n**Description:** {pdata['desc'].get('en','')}\n\n**Treatment:** {pdata['advice'].get('en','')}\n\n{pdata['funny'].get('en','')}"
+        "fr": f"🔬 **{pname}** ({pdata['sci']})\n\n**Morphologie:** {tl(pdata['morph']) if isinstance(pdata['morph'], str) else pdata['morph'].get('fr','')}\n\n**Description:** {pdata['desc'].get('fr','')}\n\n**Traitement:** {pdata['advice'].get('fr','')}\n\n**Examens:** {', '.join(pdata.get('tests',[]))}\n\n🤖 {pdata['funny'].get('fr','')}",
+        "ar": f"🔬 **{pname}** ({pdata['sci']})\n\n**المورفولوجيا:** {pdata['morph'].get('ar','')}\n\n**الوصف:** {pdata['desc'].get('ar','')}\n\n**العلاج:** {pdata['advice'].get('ar','')}\n\n🤖 {pdata['funny'].get('ar','')}",
+        "en": f"🔬 **{pname}** ({pdata['sci']})\n\n**Morphology:** {pdata['morph'].get('en','')}\n\n**Description:** {pdata['desc'].get('en','')}\n\n**Treatment:** {pdata['advice'].get('en','')}\n\n🤖 {pdata['funny'].get('en','')}"
     }
+    # Add scientific name as alias
     sci_key = pdata["sci"].lower().split("/")[0].strip().split(" ")[-1]
     if sci_key not in CHAT_KB:
         CHAT_KB[sci_key] = CHAT_KB[key]
 
+# Add extra knowledge
 CHAT_KB.update({
     "amibe": CHAT_KB.get("amoeba", {}),
     "malaria": CHAT_KB.get("plasmodium", {}),
     "paludisme": CHAT_KB.get("plasmodium", {}),
+    "ملاريا": CHAT_KB.get("plasmodium", {}),
     "bilharziose": CHAT_KB.get("schistosoma", {}),
+    "بلهارسيا": CHAT_KB.get("schistosoma", {}),
     "microscope": {
-        "fr": "**Microscopie:**\n\n- **x10:** Reperage\n- **x40:** Oeufs/kystes\n- **x100 (immersion):** Plasmodium, Leishmania\n\nNettoyer l'objectif x100 apres l'huile!\n\n**Types:** Optique, Fluorescence, Contraste de phase, Fond noir, Confocal",
-        "ar": "**المجهرية:**\n\n- **x10:** استطلاع\n- **x40:** بيض/أكياس\n- **x100 (غمر):** بلازموديوم، ليشمانيا\n\nنظف العدسة x100 بعد الزيت!",
-        "en": "**Microscopy:**\n\n- **x10:** Survey\n- **x40:** Eggs/cysts\n- **x100 (immersion):** Plasmodium, Leishmania\n\nClean x100 after oil!"
+        "fr": "🔬 **Microscopie:**\n\n• **x10:** Repérage\n• **x40:** Œufs/kystes\n• **x100 (immersion):** Plasmodium, Leishmania\n\n💡 Nettoyer l'objectif x100 après l'huile!\n\n**Types:** Optique, Fluorescence, Contraste de phase, Fond noir, Confocal",
+        "ar": "🔬 **المجهرية:**\n\n• **x10:** استطلاع\n• **x40:** بيض/أكياس\n• **x100 (غمر):** بلازموديوم، ليشمانيا\n\n💡 نظف العدسة x100 بعد الزيت!",
+        "en": "🔬 **Microscopy:**\n\n• **x10:** Survey\n• **x40:** Eggs/cysts\n• **x100 (immersion):** Plasmodium, Leishmania\n\n💡 Clean x100 after oil!"
     },
     "coloration": {
-        "fr": "**Colorations:**\n\n- **Lugol:** Noyaux kystes, glycogene\n- **MGG/Giemsa:** Parasites sanguins\n- **Ziehl-Neelsen modifie:** Cryptosporidium\n- **Trichrome:** Parasites intestinaux\n- **Hematoxyline ferrique:** Amibes\n\nLugol frais chaque semaine!",
-        "ar": "**التلوينات:**\n\n- **لوغول:** أنوية الأكياس\n- **MGG/جيمزا:** طفيليات الدم\n- **ZN معدل:** كريبتوسبوريديوم",
-        "en": "**Staining:**\n\n- **Lugol:** Cyst nuclei\n- **MGG/Giemsa:** Blood parasites\n- **Modified ZN:** Cryptosporidium"
+        "fr": "🎨 **Colorations:**\n\n• **Lugol:** Noyaux kystes, glycogène\n• **MGG/Giemsa:** Parasites sanguins\n• **Ziehl-Neelsen modifié:** Cryptosporidium\n• **Trichrome:** Parasites intestinaux\n• **Hématoxyline ferrique:** Amibes\n\n💡 Lugol frais chaque semaine!",
+        "ar": "🎨 **التلوينات:**\n\n• **لوغول:** أنوية الأكياس\n• **MGG/جيمزا:** طفيليات الدم\n• **ZN معدل:** كريبتوسبوريديوم\n• **تريكروم:** طفيليات معوية",
+        "en": "🎨 **Staining:**\n\n• **Lugol:** Cyst nuclei\n• **MGG/Giemsa:** Blood parasites\n• **Modified ZN:** Cryptosporidium\n• **Trichrome:** Intestinal parasites"
     },
     "concentration": {
-        "fr": "**Techniques concentration:**\n\n- **Ritchie (Formol-ether):** REFERENCE\n- **Willis (NaCl sature):** Flottation\n- **Kato-Katz:** Semi-quantitatif\n- **Baermann:** Larves Strongyloides\n- **MIF:** Fixation+coloration",
-        "ar": "**تقنيات التركيز:**\n\n- **ريتشي:** المرجع\n- **ويليس:** تعويم\n- **كاتو-كاتز:** شبه كمي",
-        "en": "**Concentration:**\n\n- **Ritchie:** REFERENCE\n- **Willis:** Flotation\n- **Kato-Katz:** Semi-quantitative"
+        "fr": "🧪 **Techniques concentration:**\n\n• **Ritchie (Formol-éther):** RÉFÉRENCE\n• **Willis (NaCl saturé):** Flottation\n• **Kato-Katz:** Semi-quantitatif\n• **Baermann:** Larves Strongyloides\n• **MIF:** Fixation+coloration",
+        "ar": "🧪 **تقنيات التركيز:**\n\n• **ريتشي:** المرجع\n• **ويليس:** تعويم\n• **كاتو-كاتز:** شبه كمي\n• **بيرمان:** يرقات",
+        "en": "🧪 **Concentration:**\n\n• **Ritchie:** REFERENCE\n• **Willis:** Flotation\n• **Kato-Katz:** Semi-quantitative\n• **Baermann:** Strongyloides larvae"
     },
     "selle": {
-        "fr": "**EPS Complet:**\n\n1. **Macroscopique:** Consistance, couleur, sang, mucus\n2. **Direct:** NaCl 0.9% + Lugol\n3. **Concentration:** Ritchie/Willis\n\nExaminer dans 30 min!\nRepeter x3!\n\nSelles liquides = trophozoites, Formees = kystes",
-        "ar": "**فحص البراز:**\n\n1. عياني\n2. مباشر: NaCl + لوغول\n3. تركيز: ريتشي/ويليس\n\nفحص خلال 30 دقيقة!\nكرر 3 مرات!",
-        "en": "**Complete Stool Exam:**\n\n1. Macroscopic\n2. Direct: NaCl + Lugol\n3. Concentration: Ritchie/Willis\n\nExamine within 30 min!\nRepeat x3!"
+        "fr": "💩 **EPS Complet:**\n\n1. **Macroscopique:** Consistance, couleur, sang, mucus\n2. **Direct:** NaCl 0.9% + Lugol\n3. **Concentration:** Ritchie/Willis\n\n⚠️ Examiner dans 30 min!\n⚠️ Répéter x3!\n\n💡 Selles liquides→trophozoïtes, Formées→kystes",
+        "ar": "💩 **فحص البراز:**\n\n1. عياني\n2. مباشر: NaCl + لوغول\n3. تركيز: ريتشي/ويليس\n\n⚠️ فحص خلال 30 دقيقة!\n⚠️ كرر ×3!",
+        "en": "💩 **Complete Stool Exam:**\n\n1. Macroscopic\n2. Direct: NaCl + Lugol\n3. Concentration: Ritchie/Willis\n\n⚠️ Examine within 30 min!\n⚠️ Repeat x3!"
     },
     "hygiene": {
-        "fr": "**Prevention:**\n\n- Lavage mains 30s\n- Eau potable\n- Cuisson viande plus de 65C\n- Moustiquaires\n- Eviter eaux stagnantes\n- Lavage fruits/legumes\n\n80% des parasitoses sont evitables!",
-        "ar": "**الوقاية:**\n\n- غسل اليدين 30 ثانية\n- ماء صالح للشرب\n- طهي اللحم أكثر من 65 درجة\n- ناموسيات\n\n80% من الطفيليات يمكن الوقاية منها!",
-        "en": "**Prevention:**\n\n- Handwashing 30s\n- Safe water\n- Cook meat over 65C\n- Mosquito nets\n\n80% of parasitoses are preventable!"
+        "fr": "🧼 **Prévention:**\n\n✅ Lavage mains 30s\n✅ Eau potable\n✅ Cuisson viande >65°C\n✅ Moustiquaires\n✅ Éviter eaux stagnantes\n✅ Lavage fruits/légumes\n\n💡 80% des parasitoses sont évitables!",
+        "ar": "🧼 **الوقاية:**\n\n✅ غسل اليدين 30 ثانية\n✅ ماء صالح للشرب\n✅ طهي اللحم >65°C\n✅ ناموسيات\n✅ تجنب المياه الراكدة\n\n💡 80% من الطفيليات يمكن الوقاية منها!",
+        "en": "🧼 **Prevention:**\n\n✅ Handwashing 30s\n✅ Safe water\n✅ Cook meat >65°C\n✅ Mosquito nets\n✅ Avoid stagnant water\n\n💡 80% of parasitoses are preventable!"
     },
     "traitement": {
-        "fr": "**Traitements:**\n\n- **Metronidazole:** Amoeba+Giardia+Trichomonas\n- **Albendazole:** Helminthes large spectre\n- **Praziquantel:** Schistosoma+Cestodes\n- **Artesunate/ACT:** Paludisme\n- **Glucantime:** Leishmaniose cutanee\n- **Ivermectine:** Filarioses\n- **Niclosamide:** Tenias",
-        "ar": "**العلاجات:**\n\n- **ميترونيدازول:** أميبا+جيارديا\n- **ألبندازول:** ديدان\n- **برازيكوانتيل:** بلهارسيا+شريطيات\n- **أرتيسونات:** ملاريا",
-        "en": "**Treatments:**\n\n- **Metronidazole:** Amoeba+Giardia+Trichomonas\n- **Albendazole:** Broad spectrum helminths\n- **Praziquantel:** Schistosoma+Cestodes\n- **Artesunate/ACT:** Malaria"
+        "fr": "💊 **Traitements:**\n\n• **Métronidazole:** Amoeba+Giardia+Trichomonas\n• **Albendazole:** Helminthes large spectre\n• **Praziquantel:** Schistosoma+Cestodes\n• **Artésunate/ACT:** Paludisme\n• **Glucantime:** Leishmaniose cutanée\n• **Ivermectine:** Filarioses\n• **Niclosamide:** Ténias",
+        "ar": "💊 **العلاجات:**\n\n• **ميترونيدازول:** أميبا+جيارديا\n• **ألبندازول:** ديدان\n• **برازيكوانتيل:** بلهارسيا+شريطيات\n• **أرتيسونات:** ملاريا\n• **غلوكانتيم:** ليشمانيا جلدية",
+        "en": "💊 **Treatments:**\n\n• **Metronidazole:** Amoeba+Giardia+Trichomonas\n• **Albendazole:** Broad spectrum helminths\n• **Praziquantel:** Schistosoma+Cestodes\n• **Artesunate/ACT:** Malaria\n• **Glucantime:** Cutaneous Leishmania"
     },
     "toxoplasma": {
-        "fr": "**Toxoplasma gondii**\n\n- Tachyzoite en arc (4-8um)\n- Hote definitif: **Chat**\n- DANGER femme enceinte seronegative!\n- Diagnostic: Serologie IgG/IgM, avidite\n- Prevention: Cuisson viande, lavage crudites, eviter litiere",
-        "ar": "**توكسوبلازما**\n\nالمضيف النهائي: القط\nخطر على الحامل!\nالتشخيص: مصلية IgG/IgM",
-        "en": "**Toxoplasma gondii**\n\n- Definitive host: **Cat**\n- DANGER seronegative pregnant!\n- Diagnosis: IgG/IgM serology"
+        "fr": "🔬 **Toxoplasma gondii**\n\n• Tachyzoïte en arc (4-8μm)\n• Hôte définitif: **Chat**\n• ⚠️ DANGER femme enceinte séronégative!\n• Diagnostic: Sérologie IgG/IgM, avidité\n• Prévention: Cuisson viande, lavage crudités, éviter litière",
+        "ar": "🔬 **توكسوبلازما**\n\nالمضيف النهائي: القط\n⚠️ خطر على الحامل!\nالتشخيص: مصلية IgG/IgM",
+        "en": "🔬 **Toxoplasma gondii**\n\n• Definitive host: **Cat**\n• ⚠️ DANGER seronegative pregnant!\n• Diagnosis: IgG/IgM serology"
     },
     "ascaris": {
-        "fr": "**Ascaris lumbricoides**\n\n- Ver rond 15-35cm!\n- Oeuf mamelonne 60-70um\n- Cycle: Migration hepato-pulmonaire\n- Syndrome Loffler: Toux+eosinophilie\n- Traitement: Albendazole 400mg",
-        "ar": "**الأسكاريس**\n\nدودة 15-35 سم!\nبيضة حليمية\nالعلاج: ألبندازول 400 ملغ",
-        "en": "**Ascaris lumbricoides**\n\n- Round worm 15-35cm!\n- Mammillated egg 60-70um\n- Treatment: Albendazole 400mg"
+        "fr": "🔬 **Ascaris lumbricoides**\n\n• Ver rond 15-35cm!\n• Œuf mamelonné 60-70μm\n• Cycle: Migration hépato-pulmonaire\n• Syndrome Löffler: Toux+éosinophilie\n• Traitement: Albendazole 400mg",
+        "ar": "🔬 **الأسكاريس**\n\nدودة 15-35 سم!\nبيضة حُلَيمية\nالعلاج: ألبندازول 400 ملغ",
+        "en": "🔬 **Ascaris lumbricoides**\n\n• Round worm 15-35cm!\n• Mammillated egg 60-70μm\n• Treatment: Albendazole 400mg"
     },
     "taenia": {
-        "fr": "**Taenia**\n\n- **T. saginata:** Boeuf, inerme\n- **T. solium:** Porc, arme -> cysticercose!\n- Diagnostic: Anneaux dans selles\n- Traitement: Praziquantel/Niclosamide",
-        "ar": "**الشريطية**\n\nT. saginata: بقر\nT. solium: خنزير -> كيسات مذنبة!\nالعلاج: برازيكوانتيل",
-        "en": "**Taenia**\n\n- T. saginata: Beef\n- T. solium: Pork -> cysticercosis!\n- Treatment: Praziquantel"
+        "fr": "🔬 **Taenia**\n\n• **T. saginata:** Bœuf, inerme\n• **T. solium:** Porc, armé → cysticercose!\n• Diagnostic: Anneaux dans selles\n• Traitement: Praziquantel/Niclosamide",
+        "ar": "🔬 **الشريطية**\n\nT. saginata: بقر\nT. solium: خنزير → كيسات مذنبة!\nالعلاج: برازيكوانتيل",
+        "en": "🔬 **Taenia**\n\n• T. saginata: Beef\n• T. solium: Pork → cysticercosis!\n• Treatment: Praziquantel"
     },
     "oxyure": {
-        "fr": "**Oxyure (Enterobius)**\n\n- Ver blanc environ 1cm\n- Prurit anal nocturne enfant\n- Scotch-test MATIN avant toilette!\n- Traitement: Flubendazole + traiter TOUTE la famille!",
-        "ar": "**الأكسيور**\n\nدودة بيضاء حوالي 1 سم\nحكة شرجية ليلية\nاختبار غراهام صباحا!\nعلاج كل العائلة!",
-        "en": "**Pinworm (Enterobius)**\n\n- White worm about 1cm\n- Nocturnal anal pruritus in children\n- Graham test MORNING!\n- Treat WHOLE family!"
+        "fr": "🔬 **Oxyure (Enterobius)**\n\n• Ver blanc ~1cm\n• Prurit anal nocturne enfant\n• Scotch-test MATIN avant toilette!\n• Traitement: Flubendazole + traiter TOUTE la famille!",
+        "ar": "🔬 **الأكسيور**\n\nدودة بيضاء ~1سم\nحكة شرجية ليلية\nاختبار غراهام صباحاً!\nعلاج كل العائلة!",
+        "en": "🔬 **Pinworm (Enterobius)**\n\n• White worm ~1cm\n• Nocturnal anal pruritus in children\n• Graham test MORNING!\n• Treat WHOLE family!"
     },
     "cryptosporidium": {
-        "fr": "**Cryptosporidium**\n\n- Oocyste 4-6um (tres petit!)\n- ZN modifie = rose sur vert\n- Diarrhee immunodeprime (VIH)\n- Traitement: Nitazoxanide",
-        "ar": "**كريبتوسبوريديوم**\n\nكيس 4-6 ميكرومتر\nZN معدل\nإسهال عند ناقصي المناعة",
-        "en": "**Cryptosporidium**\n\n- Oocyst 4-6um\n- Modified ZN\n- Diarrhea in immunocompromised\n- Nitazoxanide"
+        "fr": "🔬 **Cryptosporidium**\n\n• Oocyste 4-6μm (très petit!)\n• ZN modifié = rose sur vert\n• Diarrhée immunodéprimé (VIH)\n• Traitement: Nitazoxanide",
+        "ar": "🔬 **كريبتوسبوريديوم**\n\nكيس 4-6μm\nZN معدل\nإسهال عند ناقصي المناعة\nنيتازوكسانيد",
+        "en": "🔬 **Cryptosporidium**\n\n• Oocyst 4-6μm\n• Modified ZN\n• Diarrhea in immunocompromised\n• Nitazoxanide"
     },
-    "bonjour": {"fr": "Bonjour! Comment puis-je vous aider?", "ar": "مرحبا! كيف أقدر أساعدك؟", "en": "Hello! How can I help?"},
-    "salut": {"fr": "Salut! Posez votre question!", "ar": "مرحبا!", "en": "Hi!"},
-    "hello": {"fr": "Hello!", "ar": "مرحبا!", "en": "Hello! Type any parasite name!"},
-    "merci": {"fr": "De rien!", "ar": "عفوا!", "en": "You're welcome!"},
+    "bonjour": {"fr": "👋 Bonjour! Comment puis-je vous aider?", "ar": "👋 مرحباً! كيف أقدر أساعدك؟", "en": "👋 Hello! How can I help?"},
+    "salut": {"fr": "Salut! 😊 Posez votre question!", "ar": "مرحباً! 😊", "en": "Hi! 😊"},
+    "مرحبا": {"fr": "مرحباً!", "ar": "مرحباً! 😊 اكتب اسم أي طفيلي!", "en": "Hello!"},
+    "hello": {"fr": "Hello!", "ar": "مرحباً!", "en": "Hello! 😊 Type any parasite name!"},
+    "merci": {"fr": "De rien! 😊", "ar": "عفواً! 😊", "en": "You're welcome! 😊"},
+    "شكرا": {"fr": "عفواً!", "ar": "عفواً! 😊", "en": "Welcome!"},
     "aide": {
-        "fr": "**Je connais:**\n\nParasites: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, Toxoplasma, Ascaris, Taenia, Oxyure, Cryptosporidium...\n\nTechniques: microscope, coloration, concentration, selle\n\nTraitements: traitement\n\nPrevention: hygiene\n\nTapez un mot-cle!",
-        "ar": "**أعرف:**\n\nالطفيليات: الأميبا، الجيارديا، البلازموديوم، الليشمانيا...\n\nالتقنيات: microscope, coloration, concentration\n\nاكتب كلمة مفتاحية!",
-        "en": "**I know:**\n\nParasites: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, Toxoplasma, Ascaris...\n\nTechniques: microscope, staining, concentration\n\nType a keyword!"
+        "fr": "📚 **Je connais:**\n\n🦠 Parasites: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, Toxoplasma, Ascaris, Taenia, Oxyure, Cryptosporidium, Balantidium, Fasciola, Strongyloides, Trichomonas...\n\n🔬 Techniques: microscope, coloration, concentration, selle\n\n💊 Traitements: traitement\n\n🧼 Prévention: hygiene\n\n💡 Tapez un mot-clé!",
+        "ar": "📚 **أعرف:**\n\n🦠 الطفيليات: الأميبا، الجيارديا، البلازموديوم، الليشمانيا، التريبانوسوما، البلهارسيا، التوكسوبلازما، الأسكاريس...\n\n🔬 التقنيات: microscope, coloration, concentration\n\n💊 العلاجات: traitement\n\n💡 اكتب كلمة مفتاحية!",
+        "en": "📚 **I know:**\n\n🦠 Parasites: Amoeba, Giardia, Leishmania, Plasmodium, Trypanosoma, Schistosoma, Toxoplasma, Ascaris, Taenia, Pinworm, Cryptosporidium...\n\n🔬 Techniques: microscope, staining, concentration\n\n💊 Treatments: treatment\n\n💡 Type a keyword!"
     },
-    "help": {"fr": "Tapez aide!", "ar": "اكتب مساعدة!", "en": "Type any parasite name or technique!"},
+    "help": {"fr": "Tapez 'aide'!", "ar": "اكتب 'مساعدة'!", "en": "📚 Type any parasite name or technique!"},
+    "مساعدة": {"fr": "اكتب كلمة!", "ar": "📚 اكتب اسم أي طفيلي أو تقنية!", "en": "Type a keyword!"},
 })
-
 
 def chatbot_reply(msg):
     lang = st.session_state.get("lang", "fr")
@@ -1129,32 +1182,42 @@ def chatbot_reply(msg):
 # ============================================
 TIPS = {
     "fr": [
-        "Examiner les selles dans les 30 min pour voir les trophozoites mobiles.",
-        "Le Lugol met en evidence les noyaux des kystes. Fraichement prepare!",
-        "Frottis mince: angle 45 degres pour monocouche parfaite.",
-        "Goutte epaisse = 10x plus sensible que frottis mince.",
-        "Urines de midi pour S. haematobium (pic d'excretion).",
-        "Repeter EPS x3 a quelques jours d'intervalle.",
-        "Metronidazole = Amoeba + Giardia + Trichomonas !",
-        "ZN modifie indispensable pour Cryptosporidium.",
-        "1ere GE negative ne suffit pas. Repeter a 6-12h.",
-        "Eosinophilie = helminthiase. Toujours verifier!",
+        "💡 Examiner les selles dans les 30 min pour voir les trophozoïtes mobiles.",
+        "💡 Le Lugol met en évidence les noyaux des kystes. Fraîchement préparé!",
+        "💡 Frottis mince: angle 45° pour monocouche parfaite.",
+        "💡 Goutte épaisse = 10x plus sensible que frottis mince.",
+        "💡 Urines de midi pour S. haematobium (pic d'excrétion).",
+        "💡 Répéter EPS x3 à quelques jours d'intervalle.",
+        "💡 Métronidazole = Amoeba + Giardia + Trichomonas !",
+        "💡 ZN modifié indispensable pour Cryptosporidium.",
+        "💡 1ère GE négative ne suffit pas. Répéter à 6-12h.",
+        "💡 Éosinophilie = helminthiase. Toujours vérifier!",
+        "💡 E. coli 8 noyaux vs E. histolytica 4 noyaux.",
+        "💡 Selles liquides → trophozoïtes. Formées → kystes.",
+        "💡 PCR = gold standard identification espèce Leishmania.",
+        "💡 Scotch-test Graham: le MATIN avant la toilette!",
     ],
     "ar": [
-        "افحص البراز خلال 30 دقيقة لرؤية الأطوار النشطة المتحركة.",
-        "اللوغول يظهر أنوية الأكياس. تحضير طازج!",
-        "القطرة السميكة أكثر حساسية 10 مرات من اللطاخة.",
-        "بول الظهيرة لـ S. haematobium.",
-        "كرر EPS 3 مرات بفاصل عدة أيام.",
-        "ميترونيدازول = أميبا + جيارديا + تريكوموناس!",
+        "💡 افحص البراز خلال 30 دقيقة لرؤية الأطوار النشطة المتحركة.",
+        "💡 اللوغول يُظهر أنوية الأكياس. تحضير طازج!",
+        "💡 القطرة السميكة أكثر حساسية 10 مرات من اللطاخة.",
+        "💡 بول الظهيرة لـ S. haematobium.",
+        "💡 كرر EPS ×3 بفاصل عدة أيام.",
+        "💡 ميترونيدازول = أميبا + جيارديا + تريكوموناس!",
+        "💡 فرط الحمضات = ديدان طفيلية محتملة.",
+        "💡 E. coli = 8 أنوية مقابل E. histolytica = 4.",
+        "💡 براز سائل → أطوار نشطة. متماسك → أكياس.",
     ],
     "en": [
-        "Examine stool within 30 min to see motile trophozoites.",
-        "Lugol highlights cyst nuclei. Freshly prepared!",
-        "Thick drop = 10x more sensitive than thin smear.",
-        "Midday urine for S. haematobium.",
-        "Repeat stool exam x3 at intervals.",
-        "Metronidazole = Amoeba + Giardia + Trichomonas!",
+        "💡 Examine stool within 30 min to see motile trophozoites.",
+        "💡 Lugol highlights cyst nuclei. Freshly prepared!",
+        "💡 Thick drop = 10x more sensitive than thin smear.",
+        "💡 Midday urine for S. haematobium.",
+        "💡 Repeat stool exam x3 at intervals.",
+        "💡 Metronidazole = Amoeba + Giardia + Trichomonas!",
+        "💡 Eosinophilia = probable helminthiasis.",
+        "💡 E. coli = 8 nuclei vs E. histolytica = 4.",
+        "💡 Liquid stool → trophozoites. Formed → cysts.",
     ]
 }
 
@@ -1188,6 +1251,17 @@ def risk_color(lv):
 def risk_pct(lv):
     return {"critical": 100, "high": 80, "medium": 50, "low": 25, "none": 0}.get(lv, 0)
 
+
+def speak_js(text, lc=None):
+    if lc is None:
+        lc = st.session_state.get("lang", "fr")
+    safe = text.replace("'", "\\'").replace('"', '\\"').replace('\n', ' ')
+    jl = {"fr": "fr-FR", "ar": "ar-SA", "en": "en-US"}.get(lc, "fr-FR")
+    st.markdown(f"""<script>try{{window.speechSynthesis.cancel();var m=new SpeechSynthesisUtterance('{safe}');m.lang='{jl}';m.rate=0.9;window.speechSynthesis.speak(m);}}catch(e){{}}</script>""", unsafe_allow_html=True)
+
+
+def stop_js():
+    st.markdown("""<script>try{window.speechSynthesis.cancel();}catch(e){}</script>""", unsafe_allow_html=True)
 
 # ============================================
 #  VOICE SYSTEM (Web Speech API - Fixed)
@@ -1423,44 +1497,14 @@ def histogram(img):
 #  PDF - Enhanced Professional
 # ============================================
 def _sp(text):
-    if not text:
-        return ""
-    reps = {'e': 'e', 'e': 'e', 'e': 'e', 'e': 'e', 'a': 'a', 'a': 'a', 'u': 'u', 'u': 'u', 'u': 'u',
-            'o': 'o', 'o': 'o', 'i': 'i', 'i': 'i', 'c': 'c'}
-    # Simple ASCII safe conversion
-    result = ""
-    for c in str(text):
-        if ord(c) < 128:
-            result += c
-        elif c in 'éèêë':
-            result += 'e'
-        elif c in 'àâä':
-            result += 'a'
-        elif c in 'ùûü':
-            result += 'u'
-        elif c in 'ôö':
-            result += 'o'
-        elif c in 'îï':
-            result += 'i'
-        elif c == 'ç':
-            result += 'c'
-        elif c in 'ÉÈÊË':
-            result += 'E'
-        elif c in 'ÀÂÄ':
-            result += 'A'
-        elif c == 'Ç':
-            result += 'C'
-        elif c == '→':
-            result += '->'
-        elif c == '°':
-            result += 'o'
-        elif c == 'µ':
-            result += 'u'
-        elif c == '×':
-            result += 'x'
-        else:
-            result += '?'
-    return result
+    if not text: return ""
+    reps = {'é':'e','è':'e','ê':'e','ë':'e','à':'a','â':'a','ù':'u','û':'u','ü':'u',
+            'ô':'o','ö':'o','î':'i','ï':'i','ç':'c','É':'E','È':'E','Ê':'E','À':'A',
+            'Ù':'U','Ô':'O','Î':'I','Ç':'C','→':'->','°':'o','µ':'u','×':'x',
+            '🔴':'[!]','🟠':'[!]','🟢':'[OK]','🚨':'[!!!]'}
+    for o, r in reps.items(): text = text.replace(o, r)
+    return ''.join(c if ord(c) < 256 else '?' for c in text)
+
 
 
 class PDF(FPDF):
@@ -1666,23 +1710,19 @@ def make_pdf(pat, lab, result, lbl):
 #  CSS - SPACE DARK THEME (Only Night Mode)
 # ============================================
 def apply_css():
+    dm = st.session_state.get("dark_mode", True)
     rtl = st.session_state.get("lang") == "ar"
     d = "rtl" if rtl else "ltr"
-    
-    # Space dark theme - ONLY dark mode
-    bg = "#030614"
-    cbg = "rgba(10,15,46,0.85)"
-    tx = "#e0e8ff"
-    pr = "#00f5ff"
-    mu = "#6b7fa0"
-    ac = "#ff00ff"
-    ac2 = "#00ff88"
-    sbg = "#020410"
-    btn_bg = "linear-gradient(135deg,#00f5ff,#0066ff)"
-    brd = "rgba(0,245,255,0.15)"
-    ibg = "rgba(10,15,46,0.6)"
-    template = "plotly_dark"
-    
+    if dm:
+        bg, cbg, tx, pr, mu = "#030614", "rgba(10,15,46,0.85)", "#e0e8ff", "#00f5ff", "#6b7fa0"
+        ac, ac2, sbg = "#ff00ff", "#00ff88", "#020410"
+        btn, brd, ibg = "linear-gradient(135deg,#00f5ff,#0066ff)", "rgba(0,245,255,0.15)", "rgba(10,15,46,0.6)"
+        tmpl = "plotly_dark"
+    else:
+        bg, cbg, tx, pr, mu = "#f0f4f8", "rgba(255,255,255,0.95)", "#1a202c", "#0066ff", "#64748b"
+        ac, ac2, sbg = "#9933ff", "#00cc66", "#f8fafc"
+        btn, brd, ibg = "linear-gradient(135deg,#0066ff,#0044cc)", "rgba(0,100,255,0.15)", "rgba(255,255,255,0.9)"
+        tmpl = "plotly_white"
     st.markdown(f"""<style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&family=Tajawal:wght@400;500;700;800&display=swap');
     
@@ -2073,76 +2113,28 @@ with st.sidebar:
 if not st.session_state.logged_in:
     lc1, lc2, lc3 = st.columns([1, 2, 1])
     with lc2:
-        # Language selector
-        ll = st.selectbox(
-            t("language"),
-            ["FR 🇫🇷 Français", "AR 🇸🇦 العربية", "EN 🇬🇧 English"],
-            label_visibility="collapsed",
-            key="login_lang"
-        )
-        st.session_state.lang = "fr" if "FR" in ll else ("ar" if "AR" in ll else "en")
-
-        render_logo()
-
+        ll = st.selectbox("🌍", ["🇫🇷 Français", "🇩🇿 العربية", "🇬🇧 English"], label_visibility="collapsed")
+        st.session_state.lang = "fr" if "Français" in ll else ("ar" if "العربية" in ll else "en")
+        logo()
         st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
-        <div style='font-size:3.5rem;margin-bottom:10px;animation: pulse 2s ease-in-out infinite;'>
-            🔐
-        </div>
-        <h2 class='dm-nt'>{t('login_title')}</h2>
-        <p style='opacity:.4;font-size:.85rem;'>{t('login_subtitle')}</p>
-        </div>
-        <style>
-        @keyframes pulse {{
-            0%, 100% {{ transform: scale(1); }}
-            50% {{ transform: scale(1.1); }}
-        }}
-        </style>
-        """, unsafe_allow_html=True)
-
-        with st.form("login_form"):
-            u = st.text_input(
-                f"{t('username')} *",
-                placeholder="admin / dhia / demo / tech1 / tech2",
-                key="login_username"
-            )
-            p = st.text_input(f"{t('password')} *", type="password", key="login_password")
-            
-            login_btn = st.form_submit_button(
-                f"🔐 {t('connect')}",
-                use_container_width=True,
-                type="primary"
-            )
-            
-            if login_btn:
-                if not u.strip():
-                    st.error(f"❌ {t('username')} {t('name_required')}")
-                else:
-                    with st.spinner(f"🔄 {t('connect')}..."):
-                        result = db_login(u.strip(), p)
-                        
-                        if result is None:
-                            st.error("❌ User not found")
-                        elif isinstance(result, dict) and "error" in result:
-                            if result["error"] == "locked":
-                                st.error("🔒 Account locked. Try again later.")
-                            else:
-                                left = result.get("left", 0)
-                                st.error(f"❌ Wrong password. {left} attempts left")
-                        else:
-                            st.session_state.logged_in = True
-                            st.session_state.user_id = result["id"]
-                            st.session_state.user_name = result["username"]
-                            st.session_state.user_role = result["role"]
-                            st.session_state.user_full_name = result["full_name"]
-                            db_log(result["id"], result["username"], "Login")
-                            st.success("✅ Login successful!")
-                            st.balloons()
-                            st.rerun()
-
-        st.markdown(f"""<div style='text-align:center;opacity:.2;font-size:.65rem;margin-top:20px;font-family:monospace;'>
-        admin/admin2026 | dhia/dhia2026 | tech1/tech2026 | demo/demo123
-        </div>""", unsafe_allow_html=True)
-    
+        <div style='font-size:3rem;'>🔐</div><h2 class='dm-nt'>{t('login_title')}</h2>
+        <p style='opacity:.5;'>{t('login_subtitle')}</p></div>""", unsafe_allow_html=True)
+        with st.form("login"):
+            u = st.text_input(f"👤 {t('username')}", placeholder="admin / dhia / demo")
+            p = st.text_input(f"🔒 {t('password')}", type="password")
+            if st.form_submit_button(f"🚀 {t('connect')}", use_container_width=True):
+                if u.strip():
+                    r = db_login(u.strip(), p)
+                    if r is None: st.error("❌ User not found")
+                    elif isinstance(r, dict) and "error" in r:
+                        if r["error"] == "locked": st.error("🔒 Locked")
+                        else: st.error(f"❌ Wrong password. {r.get('left',0)} left")
+                    else:
+                        for k in ["logged_in", "user_id", "user_name", "user_role", "user_full_name"]:
+                            st.session_state[k] = {"logged_in": True, "user_id": r["id"], "user_name": r["username"],
+                                                    "user_role": r["role"], "user_full_name": r["full_name"]}[k]
+                        db_log(r["id"], r["username"], "Login"); st.rerun()
+        st.markdown("<div style='text-align:center;opacity:.4;font-size:.75rem;'>👑 admin/admin2026 | 🔬 dhia/dhia2026 | 👁️ demo/demo123</div>", unsafe_allow_html=True)
     st.stop()
 
 # ============================================
@@ -2150,51 +2142,33 @@ if not st.session_state.logged_in:
 # ============================================
 with st.sidebar:
     ri = ROLES.get(st.session_state.user_role, ROLES["viewer"])
-    st.markdown(f"### {ri['icon']} {st.session_state.user_full_name}")
-    st.caption(f"@{st.session_state.user_name} | {tl(ri['label'])}")
-
+    st.markdown(f"{ri['icon']} **{st.session_state.user_full_name}**")
+    st.caption(f"@{st.session_state.user_name} - {tl(ri['label'])}")
     tips = TIPS.get(st.session_state.lang, TIPS["fr"])
     st.info(f"**{t('daily_tip')}:**\n\n{tips[datetime.now().timetuple().tm_yday % len(tips)]}")
-
     st.markdown("---")
-    st.markdown(f"#### {t('language')}")
-    lc = st.radio("lang_select", ["FR Francais", "AR العربية", "EN English"], label_visibility="collapsed",
+    st.markdown(f"#### 🌍 {t('language')}")
+    lc = st.radio("", ["🇫🇷 Français", "🇩🇿 العربية", "🇬🇧 English"], label_visibility="collapsed",
                   index=["fr", "ar", "en"].index(st.session_state.lang))
-    nl = "fr" if "FR" in lc else ("ar" if "AR" in lc else "en")
-    if nl != st.session_state.lang:
-        st.session_state.lang = nl
-        st.rerun()
-
+    nl = "fr" if "Français" in lc else ("ar" if "العربية" in lc else "en")
+    if nl != st.session_state.lang: st.session_state.lang = nl; st.rerun()
     st.markdown("---")
-
-    # Navigation
-    navs = [
-        f"🏠 {t('home')}",
-        f"🔬 {t('scan')}",
-        f"📘 {t('encyclopedia')}",
-        f"📊 {t('dashboard')}",
-        f"🧠 {t('quiz')}",
-        f"💬 {t('chatbot')}",
-        f"🔄 {t('compare')}",
-    ]
+    navs = [f"🏠 {t('home')}", f"🔬 {t('scan')}", f"📘 {t('encyclopedia')}", f"📊 {t('dashboard')}",
+            f"🧠 {t('quiz')}", f"💬 {t('chatbot')}", f"🔄 {t('compare')}"]
     keys = ["home", "scan", "enc", "dash", "quiz", "chat", "cmp"]
-    if has_role(3):
-        navs.append(f"⚙️ {t('admin')}")
-        keys.append("admin")
-    navs.append(f"ℹ️ {t('about')}")
-    keys.append("about")
-
-    menu = st.radio("Navigation", navs, label_visibility="collapsed")
-
+    if has_role(3): navs.append(f"⚙️ {t('admin')}"); keys.append("admin")
+    navs.append(f"ℹ️ {t('about')}"); keys.append("about")
+    menu = st.radio("Nav", navs, label_visibility="collapsed")
+    st.markdown("---")
+    dk = st.toggle(f"🌙 {t('dark_mode')}", value=st.session_state.dark_mode)
+    if dk != st.session_state.dark_mode: st.session_state.dark_mode = dk; st.rerun()
     st.markdown("---")
     if st.button(f"🚪 {t('logout')}", use_container_width=True):
         db_log(st.session_state.user_id, st.session_state.user_name, "Logout")
-        for k in DEFAULTS:
-            st.session_state[k] = DEFAULTS[k]
+        for k in DEFAULTS: st.session_state[k] = DEFAULTS[k]
         st.rerun()
 
 pg = dict(zip(navs, keys)).get(menu, "home")
-
 # Render voice player at top of page
 render_voice_player()
 
@@ -2523,122 +2497,45 @@ elif pg == "enc":
 # ════════════════════════════════════════════
 elif pg == "dash":
     st.title(f"📊 {t('dashboard')}")
-    
-    # Get data
     s = db_stats() if has_role(3) else db_stats(st.session_state.user_id)
     an = db_analyses() if has_role(3) else db_analyses(st.session_state.user_id)
-
-    # Metrics
-    metric_cols = st.columns(5)
-    metrics_data = [
-        ("🔬", s["total"], t("total_analyses")),
-        ("✅", s["reliable"], t("reliable")),
-        ("⚠️", s["verify"], t("to_verify")),
-        ("🦠", s["top"], t("most_frequent")),
-        ("📈", f"{s['avg']}%", t("avg_confidence"))
-    ]
-    
-    for col, (ic, v, lb) in zip(metric_cols, metrics_data):
-        with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v'>{v}</div>
-            <div class='dm-m-l'>{lb}</div>
-            </div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    if s["total"] > 0 and an:
-        df = pd.DataFrame(an)
-        
-        chart_cols = st.columns(2)
-        
-        with chart_cols[0]:
+    for col, (ic, v, lb) in zip(st.columns(5), [("🔬", s["total"], t("total_analyses")), ("✅", s["reliable"], t("reliable")), ("⚠️", s["verify"], t("to_verify")), ("🦠", s["top"], t("most_frequent")), ("📈", f"{s['avg']}%", t("avg_confidence"))]):
+        with col: st.markdown(f"<div class='dm-m'><span class='dm-m-i'>{ic}</span><div class='dm-m-v'>{v}</div><div class='dm-m-l'>{lb}</div></div>", unsafe_allow_html=True)
+    if s["total"] > 0:
+        df = pd.DataFrame(an); st.markdown("---")
+        c1, c2 = st.columns(2)
+        with c1:
             st.markdown(f"#### {t('parasite_distribution')}")
-            if "parasite_detected" in df.columns:
-                pc = df["parasite_detected"].value_counts().head(10)
-                fig = px.pie(
-                    values=pc.values,
-                    names=pc.index,
-                    hole=0.4,
-                    color_discrete_sequence=px.colors.sequential.Plasma
-                )
-                fig.update_layout(height=350, template='plotly_dark', 
-                                 margin=dict(l=20, r=20, t=20, b=20))
+            if HAS_PLOTLY and "parasite_detected" in df.columns:
+                pc = df["parasite_detected"].value_counts()
+                fig = px.pie(values=pc.values, names=pc.index, hole=.4)
+                fig.update_layout(height=350, template=tmpl, margin=dict(l=20, r=20, t=20, b=20))
                 st.plotly_chart(fig, use_container_width=True)
-
-        with chart_cols[1]:
+        with c2:
             st.markdown(f"#### {t('confidence_levels')}")
-            if "confidence" in df.columns:
-                fig = px.histogram(df, x="confidence", nbins=20,
-                                  color_discrete_sequence=["#00f5ff"])
-                fig.update_layout(height=350, template='plotly_dark',
-                                 margin=dict(l=20, r=20, t=20, b=20))
+            if HAS_PLOTLY and "confidence" in df.columns:
+                fig = px.histogram(df, x="confidence", nbins=20, color_discrete_sequence=["#00f5ff"])
+                fig.update_layout(height=350, template=tmpl, margin=dict(l=20, r=20, t=20, b=20))
                 st.plotly_chart(fig, use_container_width=True)
-
-        # Trends
         tr = db_trends(30)
-        if tr:
+        if tr and HAS_PLOTLY:
             st.markdown(f"#### {t('trends')}")
-            tr_df = pd.DataFrame(tr)
-            fig = px.line(tr_df, x="day", y="count", color="parasite_detected",
-                         markers=True, title="30-Day Trend")
-            fig.update_layout(height=300, template='plotly_dark',
-                             margin=dict(l=20, r=20, t=40, b=20))
+            fig = px.line(pd.DataFrame(tr), x="day", y="count", color="parasite_detected", markers=True)
+            fig.update_layout(height=300, template=tmpl, margin=dict(l=20, r=20, t=20, b=20))
             st.plotly_chart(fig, use_container_width=True)
-
-        # History table
         st.markdown(f"### 📋 {t('history')}")
-        display_cols = [c for c in ["id", "analysis_date", "patient_name", 
-                                   "parasite_detected", "confidence", "risk_level", 
-                                   "analyst", "validated"] if c in df.columns]
-        st.dataframe(df[display_cols] if display_cols else df, use_container_width=True, 
-                    height=400)
-
-        # Validation
+        dc = [c for c in ["id", "analysis_date", "patient_name", "parasite_detected", "confidence", "risk_level", "analyst", "validated"] if c in df.columns]
+        st.dataframe(df[dc] if dc else df, use_container_width=True)
         if has_role(2) and "validated" in df.columns:
             uv = df[df["validated"] == 0]
             if not uv.empty:
-                st.markdown("---")
-                st.markdown("### ✔️ Pending Validations")
-                vi = st.selectbox("Select Analysis ID:", uv["id"].tolist(), 
-                                 key="dash_validate_id")
-                if st.button(f"✅ Validate #{vi}", key="dash_validate_btn"):
-                    db_validate(vi, st.session_state.user_full_name)
-                    st.success(f"✅ Validated #{vi}")
-                    st.rerun()
-
-        # Export
+                vi = st.selectbox("ID:", uv["id"].tolist())
+                if st.button(f"✅ {t('validate')} #{vi}"):
+                    db_validate(vi, st.session_state.user_full_name); st.success(f"✅ #{vi}"); st.rerun()
         st.markdown("---")
-        export_cols = st.columns(3)
-        with export_cols[0]:
-            st.download_button(f"⬇️ {t('export_csv')}", 
-                              df.to_csv(index=False).encode('utf-8-sig'),
-                              f"analyses_{datetime.now().strftime('%Y%m%d')}.csv",
-                              "text/csv", use_container_width=True, 
-                              key="dash_csv")
-        with export_cols[1]:
-            st.download_button(f"⬇️ {t('export_json')}",
-                              df.to_json(orient='records', force_ascii=False).encode(),
-                              f"analyses_{datetime.now().strftime('%Y%m%d')}.json",
-                              "application/json", use_container_width=True,
-                              key="dash_json")
-        with export_cols[2]:
-            try:
-                from openpyxl import Workbook
-                xlsx_buffer = io.BytesIO()
-                df.to_excel(xlsx_buffer, index=False, engine='openpyxl')
-                xlsx_buffer.seek(0)
-                st.download_button(f"⬇️ Excel",
-                                  xlsx_buffer.getvalue(),
-                                  f"analyses_{datetime.now().strftime('%Y%m%d')}.xlsx",
-                                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                  use_container_width=True, key="dash_xlsx")
-            except:
-                st.info("Excel export requires openpyxl")
-    else:
-        st.info(f"ℹ️ {t('no_data')}")
-
+        e1, e2 = st.columns(2)
+        with e1: st.download_button(t("export_csv"), df.to_csv(index=False).encode('utf-8-sig'), "data.csv", "text/csv", use_container_width=True)
+        with e2: st.download_button(t("export_json"), df.to_json(orient='records', force_ascii=False).encode(), "data.json", "application/json", use_container_width=True)
 # ════════════════════════════════════════════
 #  PAGE: QUIZ (Fixed & Enhanced)
 # ════════════════════════════════════════════
@@ -2954,45 +2851,50 @@ elif pg == "chat":
         st.session_state.chat_history = []
         st.rerun()
 
-    # Quick questions
+# Quick questions
+    st.markdown("---")
     st.markdown(f"**{t('quick_questions')}**")
 
     # Row 1 - Parasites
-    qr1_items = ["Amoeba", "Giardia", "Plasmodium", "Leishmania", "Trypanosoma", "Schistosoma", "Toxoplasma"]
-    qr1_cols = st.columns(len(qr1_items))
-    for col, q_item in zip(qr1_cols, qr1_items):
+    qr1 = st.columns(7)
+    quick1 = ["Amoeba", "Giardia", "Plasmodium", "Leishmania", "Trypanosoma", "Schistosoma", "Toxoplasma"]
+    for col, q in zip(qr1, quick1):
         with col:
-            if st.button(q_item, key=f"cq1_{q_item}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "msg": q_item})
-                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(q_item)})
+            if st.button(q, key=f"cq1_{q}", use_container_width=True):
+                st.session_state.chat_history.append({"role": "user", "msg": q})
+                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(q)})
                 st.rerun()
 
-    # Row 2 - More
-    qr2_items = ["Ascaris", "Taenia", "Oxyure", "Cryptosporidium", "Microscope", "Coloration", "Concentration"]
-    qr2_cols = st.columns(len(qr2_items))
-    for col, q_item in zip(qr2_cols, qr2_items):
+    # Row 2 - More parasites + Techniques
+    qr2 = st.columns(7)
+    quick2 = ["Ascaris", "Taenia", "Oxyure", "Cryptosporidium", "Microscope", "Coloration", "Concentration"]
+    for col, q in zip(qr2, quick2):
         with col:
-            if st.button(q_item, key=f"cq2_{q_item}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "msg": q_item})
-                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(q_item)})
+            if st.button(q, key=f"cq2_{q}", use_container_width=True):
+                st.session_state.chat_history.append({"role": "user", "msg": q})
+                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(q)})
                 st.rerun()
 
     # Row 3 - Topics
-    q3_labels_map = {
-        "fr": ["Traitement", "Hygiene", "Selle (EPS)", "Aide"],
-        "ar": ["علاج", "نظافة", "فحص البراز", "مساعدة"],
-        "en": ["Treatment", "Hygiene", "Stool Exam", "Help"]
+    qr3 = st.columns(5)
+    quick3_labels = {
+        "fr": ["Traitement", "Hygiène", "Selle (EPS)", "Aide", "🗑️ Effacer"],
+        "ar": ["علاج", "نظافة", "فحص البراز", "مساعدة", "🗑️ مسح"],
+        "en": ["Treatment", "Hygiene", "Stool Exam", "Help", "🗑️ Clear"]
     }
-    q3_keys_map = ["traitement", "hygiene", "selle", "aide"]
-    q3_labels = q3_labels_map.get(st.session_state.lang, q3_labels_map["fr"])
+    quick3_keys = ["traitement", "hygiene", "selle", "aide", "_clear"]
+    q3_labels = quick3_labels.get(st.session_state.lang, quick3_labels["fr"])
 
-    qr3_cols = st.columns(len(q3_labels))
-    for col, (label, key) in zip(qr3_cols, zip(q3_labels, q3_keys_map)):
+    for col, (label, key) in zip(qr3, zip(q3_labels, quick3_keys)):
         with col:
             if st.button(label, key=f"cq3_{key}", use_container_width=True):
-                st.session_state.chat_history.append({"role": "user", "msg": label})
-                st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(key)})
-                st.rerun()
+                if key == "_clear":
+                    st.session_state.chat_history = []
+                    st.rerun()
+                else:
+                    st.session_state.chat_history.append({"role": "user", "msg": label})
+                    st.session_state.chat_history.append({"role": "bot", "msg": chatbot_reply(key)})
+                    st.rerun()
 
 
 # ════════════════════════════════════════════
@@ -3001,21 +2903,21 @@ elif pg == "chat":
 elif pg == "cmp":
     st.title(f"🔄 {t('compare')}")
 
-    desc = {"fr": "Comparez deux images microscopiques avec analyse avancee",
-            "ar": "قارن بين صورتين مجهريتين بتحليل متقدم",
-            "en": "Compare two microscopic images with advanced analysis"}.get(st.session_state.lang, "")
+    desc = {"fr":"Comparez deux images microscopiques avec analyse avancée",
+            "ar":"قارن بين صورتين مجهريتين بتحليل متقدم",
+            "en":"Compare two microscopic images with advanced analysis"}.get(st.session_state.lang,"")
 
     st.markdown(f"""<div class='dm-card dm-card-cyan'>
-    <p style='margin:0;'>{desc}</p>
+    <p>{desc}</p>
     </div>""", unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"### 📷 {t('image1')}")
-        f1 = st.file_uploader("img1", type=["jpg", "jpeg", "png", "bmp"], key="cmp1", label_visibility="collapsed")
+        f1 = st.file_uploader(t("image1"), type=["jpg", "jpeg", "png", "bmp"], key="cmp1")
     with c2:
         st.markdown(f"### 📷 {t('image2')}")
-        f2 = st.file_uploader("img2", type=["jpg", "jpeg", "png", "bmp"], key="cmp2", label_visibility="collapsed")
+        f2 = st.file_uploader(t("image2"), type=["jpg", "jpeg", "png", "bmp"], key="cmp2")
 
     if f1 and f2:
         i1 = Image.open(f1).convert("RGB")
@@ -3028,68 +2930,51 @@ elif pg == "cmp":
             st.image(i2, caption=t("image2"), use_container_width=True)
 
         st.markdown("---")
-        if st.button(f"🔍 {t('compare_btn')}", use_container_width=True, type="primary"):
-            with st.spinner("Analyzing..."):
+        if st.button(t("compare_btn"), use_container_width=True, type="primary"):
+            with st.spinner("🔄 ..."):
                 metrics = compare_imgs(i1, i2)
 
-            # Metrics display
-            compare_result_label = {"fr": "Resultats de la comparaison", "ar": "نتائج المقارنة", "en": "Comparison Results"}.get(st.session_state.lang, "Results")
-            st.markdown(f"### 📊 {compare_result_label}")
+            # Metrics
+            st.markdown(f"### 📊 { {'fr':'Résultats de la comparaison','ar':'نتائج المقارنة','en':'Comparison Results'}.get(st.session_state.lang,'') }")
             mc = st.columns(4)
             with mc[0]:
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>📊</span>
-                <div class='dm-m-v'>{metrics['sim']}%</div>
-                <div class='dm-m-l'>{t('similarity')}</div></div>""", unsafe_allow_html=True)
+                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>📊</span><div class='dm-m-v'>{metrics['sim']}%</div><div class='dm-m-l'>{t('similarity')}</div></div>", unsafe_allow_html=True)
             with mc[1]:
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>🎯</span>
-                <div class='dm-m-v'>{metrics['ssim']}</div>
-                <div class='dm-m-l'>SSIM</div></div>""", unsafe_allow_html=True)
+                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>🎯</span><div class='dm-m-v'>{metrics['ssim']}</div><div class='dm-m-l'>SSIM</div></div>", unsafe_allow_html=True)
             with mc[2]:
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>📐</span>
-                <div class='dm-m-v'>{metrics['mse']}</div>
-                <div class='dm-m-l'>MSE</div></div>""", unsafe_allow_html=True)
+                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>📐</span><div class='dm-m-v'>{metrics['mse']}</div><div class='dm-m-l'>MSE</div></div>", unsafe_allow_html=True)
             with mc[3]:
+                # Similarity verdict
                 if metrics["sim"] > 90:
-                    verdict = {"fr": "Tres similaires", "ar": "متشابهتان جدا", "en": "Very similar"}
-                    v_icon = "✅"
+                    verdict = {"fr": "Très similaires ✅", "ar": "متشابهتان جداً ✅", "en": "Very similar ✅"}
                 elif metrics["sim"] > 70:
-                    verdict = {"fr": "Similaires", "ar": "متشابهتان", "en": "Similar"}
-                    v_icon = "🟡"
+                    verdict = {"fr": "Similaires 🟡", "ar": "متشابهتان 🟡", "en": "Similar 🟡"}
                 elif metrics["sim"] > 50:
-                    verdict = {"fr": "Peu similaires", "ar": "قليل التشابه", "en": "Somewhat similar"}
-                    v_icon = "🟠"
+                    verdict = {"fr": "Peu similaires 🟠", "ar": "قليل التشابه 🟠", "en": "Somewhat similar 🟠"}
                 else:
-                    verdict = {"fr": "Tres differentes", "ar": "مختلفتان جدا", "en": "Very different"}
-                    v_icon = "🔴"
-                st.markdown(f"""<div class='dm-m'><span class='dm-m-i'>🔍</span>
-                <div class='dm-m-v' style='font-size:1rem;'>{v_icon} {tl(verdict)}</div>
-                <div class='dm-m-l'>Verdict</div></div>""", unsafe_allow_html=True)
+                    verdict = {"fr": "Très différentes 🔴", "ar": "مختلفتان جداً 🔴", "en": "Very different 🔴"}
+                st.markdown(f"<div class='dm-m'><span class='dm-m-i'>🔍</span><div class='dm-m-v' style='font-size:1rem;'>{tl(verdict)}</div><div class='dm-m-l'>Verdict</div></div>", unsafe_allow_html=True)
 
-            # SSIM Gauge
+            # SSIM gauge
             if HAS_PLOTLY:
                 st.markdown("---")
                 fig = go.Figure(go.Indicator(
                     mode="gauge+number",
                     value=metrics["sim"],
-                    title={"text": t("similarity"), "font": {"color": "#e0e8ff"}},
-                    number={"font": {"color": "#00f5ff"}},
+                    title={"text": t("similarity")},
                     gauge={
-                        "axis": {"range": [0, 100], "tickcolor": "#6b7fa0"},
+                        "axis": {"range": [0, 100]},
                         "bar": {"color": "#00f5ff"},
-                        "bgcolor": "rgba(10,15,46,0.5)",
                         "steps": [
-                            {"range": [0, 30], "color": "rgba(255,0,64,0.3)"},
-                            {"range": [30, 60], "color": "rgba(255,149,0,0.3)"},
-                            {"range": [60, 80], "color": "rgba(255,255,0,0.3)"},
-                            {"range": [80, 100], "color": "rgba(0,255,136,0.3)"}
+                            {"range": [0, 30], "color": "#ff0040"},
+                            {"range": [30, 60], "color": "#ff9500"},
+                            {"range": [60, 80], "color": "#ffff00"},
+                            {"range": [80, 100], "color": "#00ff88"}
                         ],
                         "threshold": {"line": {"color": "white", "width": 4}, "thickness": 0.75, "value": metrics["sim"]}
                     }
                 ))
-                fig.update_layout(height=280, template=plot_template,
-                                  margin=dict(l=30, r=30, t=60, b=20),
-                                  paper_bgcolor="rgba(0,0,0,0)",
-                                  font={"color": "#e0e8ff"})
+                fig.update_layout(height=250, template=tmpl, margin=dict(l=30, r=30, t=50, b=20))
                 st.plotly_chart(fig, use_container_width=True)
 
             # Pixel difference
@@ -3105,16 +2990,16 @@ elif pg == "cmp":
 
             # Filter comparison
             st.markdown(f"### 🔬 {t('filter_comparison')}")
-            filter_list = [
+            filters = [
                 ({"fr": "Thermique", "ar": "حراري", "en": "Thermal"}, thermal),
-                ({"fr": "Contours", "ar": "حواف", "en": "Edges"}, edges_filter),
-                ({"fr": "Contraste+", "ar": "تباين+", "en": "Enhanced"}, enhanced_filter),
-                ({"fr": "Negatif", "ar": "سلبي", "en": "Negative"}, negative_filter),
-                ({"fr": "Relief", "ar": "نقش", "en": "Emboss"}, emboss_filter),
+                ({"fr": "Contours", "ar": "حواف", "en": "Edges"}, edges),
+                ({"fr": "Contraste+", "ar": "تباين+", "en": "Enhanced"}, enhanced),
+                ({"fr": "Négatif", "ar": "سلبي", "en": "Negative"}, negative),
+                ({"fr": "Relief", "ar": "نقش", "en": "Emboss"}, emboss),
             ]
-            for fname, ffunc in filter_list:
-                fn = tl(fname)
+            for fname, ffunc in filters:
                 fc1, fc2 = st.columns(2)
+                fn = tl(fname)
                 with fc1:
                     st.image(ffunc(i1), caption=f"{t('image1')} - {fn}", use_container_width=True)
                 with fc2:
@@ -3122,8 +3007,7 @@ elif pg == "cmp":
 
             # Histogram comparison
             if HAS_PLOTLY:
-                hist_label = {"fr": "Comparaison des histogrammes", "ar": "مقارنة المدرجات التكرارية", "en": "Histogram Comparison"}.get(st.session_state.lang, "Histogram")
-                st.markdown(f"### 📊 {hist_label}")
+                st.markdown(f"### 📊 { {'fr':'Comparaison des histogrammes','ar':'مقارنة المدرجات التكرارية','en':'Histogram Comparison'}.get(st.session_state.lang,'') }")
                 h1 = histogram(i1)
                 h2 = histogram(i2)
                 hc1, hc2 = st.columns(2)
@@ -3132,14 +3016,14 @@ elif pg == "cmp":
                     fig.add_trace(go.Scatter(y=h1["red"], name="R", line=dict(color="red", width=1)))
                     fig.add_trace(go.Scatter(y=h1["green"], name="G", line=dict(color="green", width=1)))
                     fig.add_trace(go.Scatter(y=h1["blue"], name="B", line=dict(color="blue", width=1)))
-                    fig.update_layout(title=t("image1"), height=250, template=plot_template, margin=dict(l=20, r=20, t=40, b=20))
+                    fig.update_layout(title=t("image1"), height=250, template=tmpl, margin=dict(l=20, r=20, t=40, b=20))
                     st.plotly_chart(fig, use_container_width=True)
                 with hc2:
                     fig = go.Figure()
                     fig.add_trace(go.Scatter(y=h2["red"], name="R", line=dict(color="red", width=1)))
                     fig.add_trace(go.Scatter(y=h2["green"], name="G", line=dict(color="green", width=1)))
                     fig.add_trace(go.Scatter(y=h2["blue"], name="B", line=dict(color="blue", width=1)))
-                    fig.update_layout(title=t("image2"), height=250, template=plot_template, margin=dict(l=20, r=20, t=40, b=20))
+                    fig.update_layout(title=t("image2"), height=250, template=tmpl, margin=dict(l=20, r=20, t=40, b=20))
                     st.plotly_chart(fig, use_container_width=True)
 
 
@@ -3239,6 +3123,7 @@ elif pg == "admin":
             st.markdown(f"""<div class='dm-card'>
             <h4>💾 Storage</h4>
             <p><b>DB Size:</b> {dbsz:.1f} KB</p>
+            <p><b>Location:</b> {os.path.abspath(DB_PATH)}</p>
             <p><b>Parasites:</b> {len(CLASS_NAMES)} classes</p>
             <p><b>Quiz:</b> {len(QUIZ_QUESTIONS)} questions</p>
             <p><b>Chat KB:</b> {len(CHAT_KB)} entries</p>
@@ -3254,12 +3139,12 @@ elif pg == "about":
 
     st.markdown(f"""<div class='dm-card dm-card-cyan' style='text-align:center;'>
     <h1 class='dm-nt'>🧬 DM SMART LAB AI</h1>
-    <p style='font-size:1.1rem;font-family:Orbitron,sans-serif;'><b>v{APP_VERSION} — Space Edition</b></p>
-    <p style='opacity:.4;'>{t('system_desc')}</p>
+    <p style='font-size:1.1rem;font-family:Orbitron,sans-serif;'><b>v{APP_VERSION} — Professional Edition</b></p>
+    <p style='opacity:.5;'>{t('system_desc')}</p>
     </div>""", unsafe_allow_html=True)
 
     desc_about = {
-        "fr": "Ce projet innovant utilise les technologies de Deep Learning et de Vision par Ordinateur pour assister les techniciens de laboratoire dans l'identification rapide et precise des parasites.",
+        "fr": "Ce projet innovant utilise les technologies de Deep Learning et de Vision par Ordinateur pour assister les techniciens de laboratoire dans l'identification rapide et précise des parasites.",
         "ar": "يستخدم هذا المشروع المبتكر تقنيات التعلم العميق والرؤية الحاسوبية لمساعدة تقنيي المخبر في التعرف السريع والدقيق على الطفيليات.",
         "en": "This innovative project uses Deep Learning and Computer Vision technologies to assist laboratory technicians in the rapid and accurate identification of parasites."
     }.get(lang, "")
@@ -3274,35 +3159,24 @@ elif pg == "about":
     with c1:
         d1r = tl(AUTHORS['dev1']['role'])
         d2r = tl(AUTHORS['dev2']['role'])
-        level_label = {"fr": "Niveau", "ar": "المستوى", "en": "Level"}.get(lang, "Level")
-        year_label = {"fr": "3eme Annee", "ar": "السنة الثالثة", "en": "3rd Year"}.get(lang, "3rd Year")
-        spec_label = {"fr": "Specialite", "ar": "التخصص", "en": "Speciality"}.get(lang, "Speciality")
-        spec_val = {"fr": "Laboratoire de Sante Publique", "ar": "مخبر الصحة العمومية", "en": "Public Health Laboratory"}.get(lang, "Public Health Lab")
-
         st.markdown(f"""<div class='dm-card dm-card-cyan'>
         <h3>👨‍🔬 {t('dev_team')}</h3><br>
         <p><b>🧑‍💻 {AUTHORS['dev1']['name']}</b><br><span style='opacity:.5;'>{d1r}</span></p><br>
         <p><b>🔬 {AUTHORS['dev2']['name']}</b><br><span style='opacity:.5;'>{d2r}</span></p><br>
-        <p><b>{level_label}:</b> {year_label}</p>
-        <p><b>{spec_label}:</b> {spec_val}</p>
+        <p><b>{ {'fr':'Niveau','ar':'المستوى','en':'Level'}.get(lang,'') }:</b> { {'fr':'3ème Année','ar':'السنة الثالثة','en':'3rd Year'}.get(lang,'') }</p>
+        <p><b>{ {'fr':'Spécialité','ar':'التخصص','en':'Speciality'}.get(lang,'') }:</b> { {'fr':'Laboratoire de Santé Publique','ar':'مخبر الصحة العمومية','en':'Public Health Laboratory'}.get(lang,'') }</p>
         </div>""", unsafe_allow_html=True)
     with c2:
-        obj_label = {"fr": "Objectifs", "ar": "الأهداف", "en": "Objectives"}.get(lang, "Objectives")
-        obj1 = {"fr": "Automatiser la lecture microscopique", "ar": "أتمتة القراءة المجهرية", "en": "Automate microscopic reading"}.get(lang, "")
-        obj2 = {"fr": "Reduire les erreurs diagnostiques", "ar": "تقليل الأخطاء التشخيصية", "en": "Reduce diagnostic errors"}.get(lang, "")
-        obj3 = {"fr": "Accelerer le processus d'analyse", "ar": "تسريع عملية التحليل", "en": "Speed up analysis process"}.get(lang, "")
-        obj4 = {"fr": "Assister les professionnels de sante", "ar": "مساعدة المهنيين الصحيين", "en": "Assist healthcare professionals"}.get(lang, "")
-
         st.markdown(f"""<div class='dm-card'>
         <h3>🏫 {t('institution')}</h3><br>
         <p><b>{tl(INSTITUTION['name'])}</b></p>
         <p>📍 {INSTITUTION['city']}, {tl(INSTITUTION['country'])} 🇩🇿</p><br>
-        <h4>🎯 {obj_label}</h4>
+        <h4>🎯 { {'fr':'Objectifs','ar':'الأهداف','en':'Objectives'}.get(lang,'') }</h4>
         <ul>
-        <li>{obj1}</li>
-        <li>{obj2}</li>
-        <li>{obj3}</li>
-        <li>{obj4}</li>
+        <li>{ {'fr':'Automatiser la lecture microscopique','ar':'أتمتة القراءة المجهرية','en':'Automate microscopic reading'}.get(lang,'') }</li>
+        <li>{ {'fr':'Réduire les erreurs diagnostiques','ar':'تقليل الأخطاء التشخيصية','en':'Reduce diagnostic errors'}.get(lang,'') }</li>
+        <li>{ {'fr':"Accélérer le processus d'analyse",'ar':'تسريع عملية التحليل','en':'Speed up analysis process'}.get(lang,'') }</li>
+        <li>{ {'fr':'Assister les professionnels de santé','ar':'مساعدة المهنيين الصحيين','en':'Assist healthcare professionals'}.get(lang,'') }</li>
         </ul>
         </div>""", unsafe_allow_html=True)
 
@@ -3312,40 +3186,36 @@ elif pg == "about":
     techs = [("🐍", "Python", "Core"), ("🧠", "TensorFlow", "AI"), ("🎨", "Streamlit", "UI"),
              ("📊", "Plotly", "Charts"), ("🗄️", "SQLite", "DB"), ("🔒", "Bcrypt", "Security"),
              ("📄", "FPDF", "PDF"), ("📱", "QR", "Verify")]
-    for col, (ic, n, d) in zip(tc, techs):
+    for col, (i, n, d) in zip(tc, techs):
         with col:
-            st.markdown(f"""<div class='dm-m'>
-            <span class='dm-m-i'>{ic}</span>
-            <div class='dm-m-v' style='font-size:.85rem;'>{n}</div>
-            <div class='dm-m-l'>{d}</div>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"<div class='dm-m'><span class='dm-m-i'>{i}</span><div class='dm-m-v' style='font-size:.85rem;'>{n}</div><div class='dm-m-l'>{d}</div></div>", unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown(f"### 🌟 Features v{APP_VERSION}")
     feat_cols = st.columns(4)
     features = [
-        ("📸", "Camera", "Direct capture"),
-        ("🌍", "3 Languages", "FR/AR/EN"),
-        ("🤖", "DM Bot", "AI Chatbot"),
-        ("🧠", "30+ Quiz", "By category"),
-        ("🔬", "7 Parasites", "Complete DB"),
-        ("🎯", "Heatmap", "AI Visualization"),
-        ("📄", "PDF Pro", "QR + Signatures"),
-        ("🔄", "Compare+", "Pixel diff + filters"),
-        ("🔊", "Voice", "Web Speech API"),
-        ("📊", "Plotly", "Pro charts"),
-        ("🔐", "Secure Auth", "Bcrypt + lockout"),
+        ("📸", {"fr": "Caméra", "ar": "كاميرا", "en": "Camera"}, {"fr": "Capture directe", "ar": "التقاط مباشر", "en": "Direct capture"}),
+        ("🌍", {"fr": "3 Langues", "ar": "3 لغات", "en": "3 Languages"}, {"fr": "FR/AR/EN", "ar": "FR/AR/EN", "en": "FR/AR/EN"}),
+        ("🤖", "DM Bot", {"fr": "Chatbot IA avancé", "ar": "شات بوت ذكي", "en": "Advanced AI chatbot"}),
+        ("🧠", {"fr": "60+ Quiz", "ar": "60+ اختبار", "en": "60+ Quiz"}, {"fr": "Par catégorie", "ar": "حسب الفئة", "en": "By category"}),
+        ("🔬", {"fr": "7 Parasites", "ar": "7 طفيليات", "en": "7 Parasites"}, {"fr": "Base complète", "ar": "قاعدة كاملة", "en": "Complete DB"}),
+        ("🎯", "Grad-CAM", {"fr": "Heatmap IA", "ar": "خريطة حرارية", "en": "AI Heatmap"}),
+        ("📄", "PDF Pro", {"fr": "QR + Signatures", "ar": "QR + توقيعات", "en": "QR + Signatures"}),
+        ("🔄", {"fr": "Comparaison+", "ar": "مقارنة+", "en": "Comparison+"}, {"fr": "Pixel diff + filtres", "ar": "فرق بكسل + فلاتر", "en": "Pixel diff + filters"}),
+        ("🔊", {"fr": "Voix", "ar": "صوت", "en": "Voice"}, {"fr": "TTS optionnel", "ar": "نطق اختياري", "en": "Optional TTS"}),
+        ("📊", "Plotly", {"fr": "Graphiques pro", "ar": "رسوم بيانية", "en": "Pro charts"}),
         ("🌌", "Space Theme", "Animated dark UI"),
+        ("🔐", {"fr": "Auth Sécurisé", "ar": "مصادقة آمنة", "en": "Secure Auth"}, {"fr": "Bcrypt + lockout", "ar": "Bcrypt + قفل", "en": "Bcrypt + lockout"}),
+        ("🌙", {"fr": "Thème Neon", "ar": "ثيم نيون", "en": "Neon Theme"}, {"fr": "Jour/Nuit", "ar": "ليل/نهار", "en": "Day/Night"}),
     ]
     for i, (ic, name, desc) in enumerate(features):
         with feat_cols[i % 4]:
-            st.markdown(f"""<div class='dm-card' style='padding:14px;text-align:center;'>
-            <div style='font-size:1.8rem;'>{ic}</div>
-            <p style='font-weight:700;margin:4px 0;font-size:.85rem;'>{name}</p>
-            <p style='font-size:.7rem;opacity:.4;'>{desc}</p>
+            st.markdown(f"""<div class='dm-card' style='padding:12px;text-align:center;'>
+            <div style='font-size:1.6rem;'>{ic}</div>
+            <p style='font-weight:700;margin:2px 0;font-size:.83rem;'>{tl(name) if isinstance(name,dict) else name}</p>
+            <p style='font-size:.68rem;opacity:.5;'>{tl(desc) if isinstance(desc,dict) else desc}</p>
             </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
-    made_label = {"fr": "Fait avec", "ar": "صنع بـ", "en": "Made with"}.get(lang, "Made with")
-    in_label = {"fr": "a", "ar": "في", "en": "in"}.get(lang, "in")
-    st.caption(f"{made_label} ❤️ {in_label} {INSTITUTION['city']} — {INSTITUTION['year']} 🇩🇿")     
+    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Flag_of_Algeria.svg/1200px-Flag_of_Algeria.svg.png", width=80)
+    st.caption(f"{'صُنع بـ ❤️ في' if lang=='ar' else 'Made with ❤️ in' if lang=='en' else 'Fait avec ❤️ à'} {INSTITUTION['city']} — {INSTITUTION['year']} 🇩🇿")
