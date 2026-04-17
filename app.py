@@ -2477,11 +2477,8 @@ elif pg == "scan":
 # ════════════════════════════════════════════
 elif pg == "enc":
     st.title(f"📘 {t('encyclopedia')}")
-    st.markdown(f"**{t('system_desc')}** - {len(CLASS_NAMES)} parasites complets")
-    
-    sr = st.text_input(f"🔍 {t('search')}", key="enc_search")
+    sr = st.text_input(f"🔍 {t('search')}")
     st.markdown("---")
-    
     found = False
     for nm, d in PARASITE_DB.items():
         if nm == "Negative":
@@ -2490,64 +2487,36 @@ elif pg == "enc":
             continue
         found = True
         rc = risk_color(d["risk"])
-        
-        with st.expander(f"{d['icon']} **{nm}** — *{d['sci']}* | {tl(d['risk_d'])}", 
-                        expanded=not sr.strip(), key=f"enc_{nm}"):
-            
-            col_info, col_side = st.columns([3, 1])
-            
-            with col_info:
+        with st.expander(f"{d['icon']} {nm} -- *{d['sci']}* | {tl(d['risk_d'])}", expanded=not sr.strip()):
+            ci, cv = st.columns([2.5, 1])
+            with ci:
                 st.markdown(f"""<div class='dm-card' style='border-left:3px solid {rc};'>
-                <h4 style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-family:Orbitron;margin-top:0;'>{d['sci']}</h4>
-                
-                <p><b>👨‍⚕️ Épidémiologie:</b> {d.get('epidemiology', {}).get('prevalence', 'N/A')}</p>
-                
-                <p><b>🔬 Morphologie:</b><br>{tl(d['morph'])}</p>
-                
-                <p><b>📖 Description:</b><br>{tl(d['desc'])}</p>
-                
-                <p><b>🦠 Type:</b> {d.get('type', 'N/A')} | <b>Catégorie:</b> {d.get('category', 'N/A')}</p>
-                
-                <p><b>⚠️ Risque:</b> <span style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-weight:700;'>{tl(d['risk_d'])}</span></p>
-                
-                <div style='background:rgba(0,255,136,.06);padding:12px;border-radius:10px;margin:8px 0;border:1px solid rgba(0,255,136,.1);'>
-                    <b>💊 Traitement:</b><br>{tl(d['advice'])}
-                </div>
-                
-                <div style='background:rgba(0,100,255,.06);padding:12px;border-radius:10px;font-style:italic;border:1px solid rgba(0,100,255,.1);'>
-                    🤖 {tl(d['funny'])}
-                </div>
-                
-                <p><b>🔬 Examens diagnostiques:</b></p>
-                <ul>
-                {"".join([f"<li>{t}</li>" for t in d.get('tests', [])[:8]])}
-                </ul>
-                
-                <p><b>⚠️ Complications possibles:</b></p>
-                <ul>
-                {"".join([f"<li>{c}</li>" for c in d.get('complications', [])[:5]])}
-                </ul>
+                <h4 style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-family:Orbitron;'>{d['sci']}</h4>
+                <p><b>🔬 {t("morphology")}:</b><br>{tl(d['morph'])}</p>
+                <p><b>📖 {t("description")}:</b><br>{tl(d['desc'])}</p>
+                <p><b>⚠️ {t("risk")}:</b> <span style='color:{rc}!important;-webkit-text-fill-color:{rc}!important;font-weight:700;'>{tl(d['risk_d'])}</span></p>
+                <div style='background:rgba(0,255,136,.06);padding:12px;border-radius:10px;margin:8px 0;'><b>💡:</b> {tl(d['advice'])}</div>
+                <div style='background:rgba(0,100,255,.06);padding:12px;border-radius:10px;font-style:italic;'>🤖 {tl(d['funny'])}</div>
                 </div>""", unsafe_allow_html=True)
-                
                 cy = tl(d.get("cycle", {}))
                 if cy and cy not in ["N/A", "غير متوفر"]:
-                    st.markdown(f"<b>🔄 Cycle de Vie:</b> {cy}", unsafe_allow_html=True)
-                
+                    st.markdown(f"**🔄 {t('lifecycle')}:** {cy}")
                 dk = tl(d.get("keys", {}))
-                if dk and dk not in ["N/A", "غير متوفر"]:
-                    st.markdown(f"<b>🔑 Clés diagnostiques:</b><br>{dk}", unsafe_allow_html=True)
-            
-            with col_side:
+                if dk:
+                    st.markdown(f"**🔑 {t('diagnostic_keys')}:**\n{dk}")
+                if d.get("tests"):
+                    st.markdown(f"**🩺 {t('extra_tests')}:** {', '.join(d['tests'])}")
+            with cv:
                 rp = risk_pct(d["risk"])
                 if rp > 0:
-                    st.progress(rp / 100, text=f"{rp}% Risk")
-                st.markdown(f'<div style="text-align:center;font-size:3.5rem;margin-top:20px;">{d["icon"]}</div>', 
-                           unsafe_allow_html=True)
-                if st.button(f"🔊", key=f"enc_voice_{nm}", use_container_width=True, help="Listen"):
-                    speak(f"{nm}. {tl(d['funny'])}", lang=st.session_state.lang)
-
+                    st.progress(rp / 100, text=f"{rp}%")
+                st.markdown(f'<div style="text-align:center;font-size:4rem;">{d["icon"]}</div>', unsafe_allow_html=True)
+                if st.button(f"🔊 {t('listen')}", key=f"ev_{nm}"):
+                    speak(f"{nm}. {tl(d['desc'])}")
+                    st.rerun()
     if sr.strip() and not found:
-        st.warning(f"❌ {t('no_results')} pour '{sr}'")
+        st.warning(t("no_results"))
+
 
 # ════════════════════════════════════════════
 #  PAGE: DASHBOARD
