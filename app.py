@@ -2055,11 +2055,8 @@ def apply_css():
     }}
     
     </style>""", unsafe_allow_html=True)
+    st.markdown(template, unsafe_allow_html=True)
     return template
-
-
-plot_template = apply_css()
-
 
 # ============================================
 #  ANIMATED LOGO
