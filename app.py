@@ -1061,7 +1061,7 @@ QUIZ_QUESTIONS = [
     {"q": mq("Somnolence+adénopathies cervicales:", "نعاس+تضخم عقد عنقية:", "Drowsiness+cervical lymphadenopathy:"),
      "opts": ["Paludisme", "Leishmaniose", "Trypanosomiase", "Toxoplasmose"], "ans": 2, "cat": "Cas clinique",
      "expl": mq("Maladie du sommeil = THA.", "مرض النوم = THA.", "Sleeping sickness = HAT.")},
-
+]
 # ============================================
 #  CHATBOT KNOWLEDGE BASE
 # ============================================
