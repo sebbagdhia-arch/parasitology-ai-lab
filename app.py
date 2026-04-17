@@ -1713,6 +1713,7 @@ def make_pdf(pat, lab, result, lbl):
 #  CSS - SPACE DARK THEME (Only Night Mode)
 # ============================================
 def apply_css():
+    btn_bg = "#00ADB5" 
     dm = st.session_state.get("dark_mode", True)
     rtl = st.session_state.get("lang") == "ar"
     d = "rtl" if rtl else "ltr"
